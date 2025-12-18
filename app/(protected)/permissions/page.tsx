@@ -27,7 +27,7 @@ export default function PermissionsPage() {
   const defaultPermissions: Permission[] = [
     { id: 1, moduleName: "Dashboard", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     // { id: 2, moduleName: "Institution", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-   
+
     // { id: 4, moduleName: "Users", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     // { id: 5, moduleName: "Permission", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     { id: 6, moduleName: "Application", view: false, create: false, edit: false, delete: false, filter: false, download: false },
@@ -38,6 +38,8 @@ export default function PermissionsPage() {
     { id: 11, moduleName: "Events", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     // { id: 12, moduleName: "Others", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     { id: 13, moduleName: "Settings", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+    { id: 15, moduleName: "Email templates", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+    { id: 16, moduleName: "Dynamic Forms", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     // { id: 14, moduleName: "Applications Settings", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   ];
 
@@ -120,7 +122,7 @@ export default function PermissionsPage() {
       const response = await savePermission(payload);
       toast.success(
         response.message ||
-          (isUpdating ? "Permissions updated successfully ✅" : "Permissions created successfully ✅")
+        (isUpdating ? "Permissions updated successfully ✅" : "Permissions created successfully ✅")
       );
       setIsUpdating(true);
     } catch (error: any) {
@@ -129,19 +131,19 @@ export default function PermissionsPage() {
     }
   };
 
-const customStyles = {
-  control: (provided: any, state: any) => ({
-    ...provided,
-    minHeight: 38,
-    borderRadius: 6,
-    borderColor: state.isFocused ? "#3a4480" : "#3a4480",
-    boxShadow: "none",
-  }),
-  menu: (provided: any) => ({ 
-    ...provided, 
-    zIndex: 9999 
-  }),
-};
+  const customStyles = {
+    control: (provided: any, state: any) => ({
+      ...provided,
+      minHeight: 38,
+      borderRadius: 6,
+      borderColor: state.isFocused ? "#3a4480" : "#3a4480",
+      boxShadow: "none",
+    }),
+    menu: (provided: any) => ({
+      ...provided,
+      zIndex: 9999
+    }),
+  };
 
 
   return (

@@ -21,6 +21,10 @@ interface OptionType {
     value: string;
     label: string;
 }
+type Step = "personal" | "education";
+
+
+
 
 export default function EditApplicationPage() {
     const { id } = useParams();
@@ -33,10 +37,65 @@ export default function EditApplicationPage() {
     const [formData, setFormData] = useState<Record<string, any>>({});
     const [files, setFiles] = useState<Record<string, File | null>>({});
     const [programOptions, setProgramOptions] = useState<OptionType[]>([]);
+    const [activeTab, setActiveTab] = useState<Step>("personal");
     const [program, setProgram] = useState("");
 
     const inputClass =
         "border border-gray-300 dark:border-neutral-700 p-2 rounded bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500";
+
+    const isValidEmail = (email: string) =>
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+    const validatePersonalDetails = () => {
+        if (!formConfig?.personalFields) return true;
+
+        for (const field of formConfig.personalFields) {
+            if (!field.required) continue;
+
+            const value = formData[field.fieldName];
+
+            if (field.fieldType === "file") continue; // file optional in edit
+
+            if (!value || value.toString().trim() === "") {
+                toast.error(`${field.fieldName} is required`);
+                return false;
+            }
+
+            if (field.fieldType === "email" && !isValidEmail(value)) {
+                toast.error("Please enter a valid email");
+                return false;
+            }
+        }
+        return true;
+    };
+
+    const validateEducationDetails = () => {
+        if (!formConfig?.educationFields) return true;
+
+        for (const field of formConfig.educationFields) {
+            if (!field.required) continue;
+
+            const value = formData[field.fieldName];
+
+            if (!value || value.toString().trim() === "") {
+                toast.error(`${field.fieldName} is required`);
+                return false;
+            }
+        }
+        return true;
+    };
+
+
+    const handleNext = () => {
+        if (!validatePersonalDetails()) return;
+        setActiveTab("education");
+    };
+
+    const handlePrev = () => {
+        setActiveTab("personal");
+    };
+
+
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -343,6 +402,15 @@ export default function EditApplicationPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedInstitute) return toast.error("Please select an institute");
+        if (!validatePersonalDetails()) {
+            setActiveTab("personal");
+            return;
+        }
+
+        if (!validateEducationDetails()) {
+            setActiveTab("education");
+            return;
+        }
 
         setLoading(true);
         try {
@@ -392,8 +460,7 @@ export default function EditApplicationPage() {
                 onSubmit={handleSubmit}
                 className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow space-y-6"
             >
-                {/* Institute Selection */}
-
+                {/* INSTITUTE */}
                 {role === "superadmin" && (
                     <div>
                         <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1 block">
@@ -401,109 +468,151 @@ export default function EditApplicationPage() {
                         </label>
                         <Select
                             options={institutions}
-                            value={institutions.find((opt) => opt.value === selectedInstitute) || null}
+                            value={institutions.find(opt => opt.value === selectedInstitute) || null}
                             onChange={(selected) => setSelectedInstitute(selected?.value || "")}
                             placeholder="Select Institute"
-                            isClearable
                             isDisabled
                         />
-                    </div>)}
+                    </div>
+                )}
 
-                {selectedInstitute && (<div className="flex flex-col">
-                    <label className="text-sm font-semibold mb-1">Program <span className="text-red-500">*</span></label>
-                    <Select
-                        options={programOptions}
-                        value={
-                            programOptions.find((opt) => opt.value === program) || null
-                        }
-                        onChange={handleProgramChange}
-                        placeholder="Select Program"
-                        isClearable
-                    />
-                </div>)}
+                {/* PROGRAM */}
+                {selectedInstitute && (
+                    <div>
+                        <label className="text-sm font-semibold mb-1 block">
+                            Program <span className="text-red-500">*</span>
+                        </label>
+                        <Select
+                            options={programOptions}
+                            value={programOptions.find(opt => opt.value === program) || null}
+                            onChange={handleProgramChange}
+                            placeholder="Select Program"
+                        />
+                    </div>
+                )}
 
-                {formConfig ? (
+                {/* TAB HEADER */}
+                <div className="flex gap-4 border-b pb-2">
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab("personal")}
+                        className={`px-4 py-2 font-semibold ${activeTab === "personal"
+                            ? "border-b-2 border-blue-600 text-blue-600"
+                            : "text-gray-500"
+                            }`}
+                    >
+                        Personal Details
+                    </button>
+
+                    <button
+                        type="button"
+                        disabled
+                        className={`px-4 py-2 font-semibold ${activeTab === "education"
+                            ? "border-b-2 border-green-600 text-green-600"
+                            : "text-gray-400 cursor-not-allowed"
+                            }`}
+                    >
+                        Educational Details
+                    </button>
+                </div>
+
+                {!formConfig ? (
+                    <p className="text-center text-gray-500 mt-6">
+                        No form available for the selected institute.
+                    </p>
+                ) : (
                     <>
-                        {/* PERSONAL DETAILS SECTION */}
-                        {formConfig?.personalFields?.length > 0 && (
-                            <div className="border border-gray-200 dark:border-neutral-700 rounded-lg p-4">
+                        {/* PERSONAL TAB */}
+                        {activeTab === "personal" && (
+                            <div className="border rounded-lg p-4">
                                 <div className="flex items-center gap-2 mb-3">
                                     <User className="w-5 h-5 text-blue-500" />
-                                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                                        Personal Details
-                                    </h2>
+                                    <h2 className="text-base font-semibold">Personal Details</h2>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {formConfig.personalFields.map((field: any, i: number) => (
                                         <div key={i} className="flex flex-col">
-                                            <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
-                                                {field.fieldName}{" "}
-                                                {field.required && <span className="text-red-500">*</span>}
+                                            <label className="text-xs font-semibold text-gray-600 mb-1">
+                                                {field.fieldName}
+                                                {field.required && (
+                                                    <span className="text-red-500">*</span>
+                                                )}
                                             </label>
                                             {renderField(field, i)}
                                         </div>
                                     ))}
                                 </div>
+
+                                <div className="flex justify-end mt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (!validatePersonalDetails()) return;
+                                            setActiveTab("education");
+                                        }}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                                    >
+                                        Next →
+                                    </button>
+                                </div>
                             </div>
                         )}
 
-                        {/* EDUCATIONAL DETAILS SECTION */}
-                        {formConfig?.educationFields?.length > 0 && (
-                            <div className="border border-gray-200 dark:border-neutral-700 rounded-lg p-4">
+                        {/* EDUCATION TAB */}
+                        {activeTab === "education" && (
+                            <div className="border rounded-lg p-4">
                                 <div className="flex items-center gap-2 mb-3">
                                     <BookOpen className="w-5 h-5 text-green-500" />
-                                    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                                        Educational Details
-                                    </h2>
+                                    <h2 className="text-base font-semibold">Educational Details</h2>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {formConfig.educationFields.map((field: any, i: number) => (
-                                        <div key={`edu-${i}`} className="flex flex-col">
-                                            <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
-                                                {field.fieldName}{" "}
-                                                {field.required && <span className="text-red-500">*</span>}
+                                        <div key={i} className="flex flex-col">
+                                            <label className="text-xs font-semibold text-gray-600 mb-1">
+                                                {field.fieldName}
+                                                {field.required && (
+                                                    <span className="text-red-500">*</span>
+                                                )}
                                             </label>
                                             {renderField(field, i)}
                                         </div>
                                     ))}
                                 </div>
+
+                                {/* ACTION BUTTONS */}
+                                <div className="flex justify-end gap-2 mt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab("personal")}
+                                        className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                                    >
+                                        ← Previous
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push("/applications")}
+                                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                                    >
+                                        Cancel
+                                    </button>
+
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-60"
+                                    >
+                                        {loading ? "Updating..." : "Update"}
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </>
-                ) : (
-                    <p className="text-center text-gray-500 mt-6">
-                        No form available for the selected institute.
-                    </p>
                 )}
-
-                {/* Submit Buttons */}
-                <div className="flex justify-end gap-2 mt-4">
-                    <button
-                        type="button"
-                        onClick={() => router.push("/applications")}
-                        disabled={loading}
-                        className={`px-4 py-2 rounded text-white transition ${loading
-                            ? "bg-red-400 cursor-not-allowed"
-                            : "bg-red-500 hover:bg-red-600"
-                            }`}
-                    >
-                        Cancel
-                    </button>
-
-                    <button
-                        type="submit"
-                        disabled={loading || !formConfig}
-                        className={`px-4 py-2 rounded text-white transition ${loading || !formConfig
-                            ? "bg-blue-400 cursor-not-allowed"
-                            : "bg-blue-600 hover:bg-blue-700"
-                            }`}
-                    >
-                        {loading ? "Updating..." : "Update"}
-                    </button>
-                </div>
             </form>
+
         </div>
     );
 }

@@ -5,9 +5,9 @@ import { useState, useEffect, useCallback } from "react";
 import {
   MessageSquare,
   Mail,
-  Phone,
+
   FileDown,
-  Loader2,
+
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { DataTable } from "@/components/Tablecomponents";
@@ -16,6 +16,9 @@ import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import { motion, AnimatePresence } from "framer-motion";
 import ExportModal from "@/components/ExportModal";
+import Select, { SingleValue } from "react-select";
+
+import { getAllEmailTemplates } from "@/app/lib/request/emailTemplateRequest";
 
 interface Application {
   _id: string;
@@ -54,7 +57,9 @@ export default function CommunicationsPage() {
   const [emailSubject, setEmailSubject] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [open, setOpen] = useState(false);
-
+  const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [modalType, setModalType] = useState<"mail" | "whatsapp" | "sms" | null>(
     null
@@ -149,12 +154,47 @@ export default function CommunicationsPage() {
     searchApplicantName,
   ]);
 
+  const templateOptions = emailTemplates.map((tpl) => ({
+    value: tpl._id,
+    label: tpl.title,
+    template: tpl,
+  }));
+  const handleTemplateSelect = (option: SingleValue<any>) => {
+    if (!option) return;
+
+    const tpl = option.template;
+
+    setSelectedTemplate(option);
+    setEmailSubject(tpl.title);    
+    setMessageText(tpl.description);    
+  };
 
 
 
   useEffect(() => {
     fetchApplications();
   }, [fetchApplications]);
+
+  useEffect(() => {
+    if (modalType !== "mail") return;
+
+    const fetchTemplates = async () => {
+      try {
+        setLoadingTemplates(true);
+
+        const res = await getAllEmailTemplates(); // ✅ no instituteId
+
+        setEmailTemplates(res.data || res);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to load email templates");
+      } finally {
+        setLoadingTemplates(false);
+      }
+    };
+
+    fetchTemplates();
+  }, [modalType]);
+
 
   const filteredApplications = (applications || []).map((app: any) => ({
     ApplicationId: app.applicationId || "-",
@@ -192,7 +232,7 @@ export default function CommunicationsPage() {
 
     if (modalType === "mail") {
       if (!emailSubject.trim() || !messageText.trim()) {
-        toast.error("Please enter both subject and message");
+        toast.error("Please Choose an email template");
         return;
       }
 
@@ -471,22 +511,27 @@ export default function CommunicationsPage() {
 
               {/* Email subject (only for mail) */}
               {modalType === "mail" && (
-                <input
-                  type="text"
-                  value={emailSubject}
-                  onChange={(e) => setEmailSubject(e.target.value)}
-                  placeholder="Enter email subject"
-                  className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Choose Email Template</label>
+
+                  <Select
+                    options={templateOptions}
+                    value={selectedTemplate}
+                    onChange={handleTemplateSelect}
+                    isLoading={loadingTemplates}
+                    placeholder="Select an email template"
+                  />
+                </div>
               )}
 
+
               {/* Message */}
-              <textarea
+              {modalType !== "mail" && (<textarea
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 placeholder={`Type your ${modalType} message here...`}
                 className="w-full border rounded-md p-2 text-sm min-h-[120px] focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-              />
+              />)}
 
               {/* Actions */}
               <div className="flex justify-end gap-2 pt-2">

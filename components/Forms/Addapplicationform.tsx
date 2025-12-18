@@ -86,36 +86,36 @@ export default function AddapplicationForm({
     };
 
 
- const validateEducationDetails = () => {
-    if (!formConfig?.educationFields) return true;
+    const validateEducationDetails = () => {
+        if (!formConfig?.educationFields) return true;
 
-    for (const field of formConfig.educationFields) {
-        if (!field.required) continue;
+        for (const field of formConfig.educationFields) {
+            if (!field.required) continue;
 
-        // FILE FIELD
-        if (field.fieldType === "file") {
-            if (!files[field.fieldName]) {
+            // FILE FIELD
+            if (field.fieldType === "file") {
+                if (!files[field.fieldName]) {
+                    toast.error(`${field.fieldName} is required`);
+                    return false;
+                }
+                continue;
+            }
+
+            const value = formData[field.fieldName];
+
+            // NORMAL INPUT / SELECT / RADIO
+            if (
+                value === undefined ||
+                value === null ||
+                value.toString().trim() === ""
+            ) {
                 toast.error(`${field.fieldName} is required`);
                 return false;
             }
-            continue;
         }
 
-        const value = formData[field.fieldName];
-
-        // NORMAL INPUT / SELECT / RADIO
-        if (
-            value === undefined ||
-            value === null ||
-            value.toString().trim() === ""
-        ) {
-            toast.error(`${field.fieldName} is required`);
-            return false;
-        }
-    }
-
-    return true;
-};
+        return true;
+    };
 
 
 
@@ -541,7 +541,7 @@ export default function AddapplicationForm({
                                 onClick={handleNext}
                                 className="px-4 py-1.5 bg-blue-600 text-sm text-white rounded hover:bg-blue-700"
                             >
-                                Save & Next
+                                Next
                             </button>
                         </div>
                     </div>

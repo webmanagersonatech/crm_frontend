@@ -10,6 +10,7 @@ interface ConfirmDialogProps {
   onCancel: () => void;
   confirmLabel?: string;
   cancelLabel?: string;
+  extraInput?: any;
 }
 
 export default function ConfirmDialog({
@@ -20,6 +21,8 @@ export default function ConfirmDialog({
   onCancel,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
+  extraInput,
+
 }: ConfirmDialogProps) {
   return (
     <Modal open={open} title="" onClose={onCancel}>
@@ -55,8 +58,7 @@ export default function ConfirmDialog({
 
         {/* Buttons */}
         <div className="flex justify-center gap-4 mt-4">
-
-          {/* Cancel */}
+        
           <button
             onClick={onCancel}
             className="px-5 py-2 rounded-lg border border-gray-400 text-gray-700 

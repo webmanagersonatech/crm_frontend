@@ -15,9 +15,10 @@ import {
   MessageCircle,
   BarChart3,
   History,
-  CalendarDays,
+  Mail,
   Settings,
   Settings2,
+  Layers
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -29,13 +30,14 @@ const allItems = [
   { href: "/applications", label: "Applications", icon: FileText },
   { href: "/leads", label: "Leads", icon: UserPlus },
   { href: "/communications", label: "Communications", icon: MessageCircle },
+  { href: "/templates", label: "Email Templates", icon: Mail },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/login-history", label: "Login History", icon: History },
   // { href: "/events", label: "Events", icon: CalendarDays },
+  { href: "/dynamic-forms", label: "Dynamic Forms", icon: Layers },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/application-settings", label: "Application Settings", icon: Settings2 },
 ];
-
 const roleMenus = {
   superadmin: allItems,
   admin: allItems.filter(item =>
@@ -46,10 +48,12 @@ const roleMenus = {
       "/reports",
       "/login-history",
       "/communications",
+      "/templates",
+      "/dynamic-forms",
     ].includes(item.href)
   ),
   user: allItems.filter(item =>
-    ["/dashboard", "/applications", "/leads", "/communications", ,].includes(item.href)
+    ["/dashboard", "/applications", "/leads", "/communications", "/templates", "/dynamic-forms"].includes(item.href)
   ),
 };
 
@@ -74,7 +78,7 @@ export default function Sidebar({
     try {
       const payload = token.split(".")[1];
       const decoded: any = JSON.parse(atob(payload));
-   
+
 
       const userRole = decoded?.role?.toLowerCase();
       if (!userRole) {

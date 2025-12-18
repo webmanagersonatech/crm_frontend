@@ -56,21 +56,30 @@ export default function ApplicationDetailsPage() {
             <div ref={printRef} className="a4-page bg-white shadow-xl rounded-lg p-10 border border-gray-300">
 
                 {/* HEADER WITH LOGO */}
-                <div className="text-center mb-6">
-                    <img
-                        src="/logo.png"
-                        alt="Logo"
-                        className="mx-auto mb-3 w-20 h-20 object-contain"
-                    />
+                <div className="flex items-center justify-between mb-6">
+                    {/* Left - Logo */}
+                    <div className="flex-shrink-0">
+                        <img
+                            src="/logo.png"
+                            alt="Logo"
+                            className="w-20 h-20 object-contain"
+                        />
+                    </div>
 
-                    <h1 className="text-2xl font-bold tracking-wide">
-                        SONA HIKA - APPLICATION FORM
-                    </h1>
+                    {/* Center - Title */}
+                    <div className="text-center flex-1">
+                        <h1 className="text-2xl font-bold tracking-wide">
+                            SONA HIKA - APPLICATION FORM
+                        </h1>
+                    </div>
 
-                    <p className="text-gray-600 text-sm">
-                        Application ID: <strong>{data?.applicationId}</strong>
-                    </p>
+                    {/* Right - Application ID */}
+                    <div className="text-right text-sm text-gray-600">
+                        Application ID:
+                        <div className="font-semibold">{data?.applicationId}</div>
+                    </div>
                 </div>
+
 
                 {/* PERSONAL DETAILS */}
                 <section className="mb-6">

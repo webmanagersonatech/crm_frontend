@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react'
 import Select from 'react-select'
 import toast, { Toaster } from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
 import { ClipboardList } from 'lucide-react'
 
 import { getActiveInstitutions } from '@/app/lib/request/institutionRequest'
-// import { createDynamicForm } from '@/app/lib/request/dynamicFormRequest'
-
+import { createDynamicForm } from '@/app/lib/request/dynamicfromRequest'
 // ===============================
 // Types
 // ===============================
@@ -24,9 +24,13 @@ interface FormField {
   options?: string[]
 }
 
-// uid helper
+// ===============================
+// Utils
+// ===============================
 const uid = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+
+const normalize = (val: string) => val.trim().toLowerCase()
 
 // ===============================
 // Page
@@ -36,53 +40,116 @@ export default function AddDynamicFormPage() {
   const [selectedInstitute, setSelectedInstitute] =
     useState<InstituteOption | null>(null)
 
+  const router = useRouter()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [fields, setFields] = useState<FormField[]>([])
 
-  // field builder
+  // Field builder
   const [fieldLabel, setFieldLabel] = useState('')
   const [fieldType, setFieldType] = useState('')
   const [required, setRequired] = useState(false)
   const [options, setOptions] = useState('')
+  const [loading, setLoading] = useState(false);
+  const [showInstituteDropdown, setShowInstituteDropdown] = useState(false);
 
   // ===============================
-  // Load institutes
+  // Load Institutes
   // ===============================
+
   useEffect(() => {
-    const load = async () => {
-      const res = await getActiveInstitutions()
-      setInstitutes(
-        res.map((i: any) => ({
-          value: i.instituteId,
-          label: i.name,
-        }))
-      )
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      toast.error("Not authorized: please log in.");
+      setLoading(false);
+      return;
     }
-    load()
-  }, [])
+
+    try {
+      const payload = token.split(".")[1];
+      const decoded: any = JSON.parse(atob(payload));
+
+      const effectiveInstituteId = decoded.instituteId;
+      const role = decoded.role;
+
+
+      if (role === "superadmin") {
+        setShowInstituteDropdown(true);
+      } else {
+        if (effectiveInstituteId) {
+          setSelectedInstitute({
+            value: effectiveInstituteId,
+            label: effectiveInstituteId,
+          });
+        }
+        setShowInstituteDropdown(false);
+      }
+    } catch (error) {
+      console.error("Failed to decode token:", error);
+      setShowInstituteDropdown(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+
+  useEffect(() => {
+    if (!showInstituteDropdown) return;
+    const loadInstitutes = async () => {
+      try {
+        const res = await getActiveInstitutions()
+        setInstitutes(
+          res.map((i: any) => ({
+            value: i.instituteId,
+            label: i.name,
+          }))
+        )
+      } catch {
+        toast.error('Failed to load institutes')
+      }
+    }
+
+    loadInstitutes()
+  }, [showInstituteDropdown])
 
   // ===============================
-  // Add field
+  // Check duplicate field
+  // ===============================
+  const fieldAlreadyExists = (label: string) => {
+    return fields.some(
+      (f) => normalize(f.label) === normalize(label)
+    )
+  }
+
+  // ===============================
+  // Add Field
   // ===============================
   const addField = () => {
-    if (!fieldLabel || !fieldType)
-      return toast.error('Field label & type required')
+    if (!fieldLabel || !fieldType) {
+      return toast.error('Field label and type are required')
+    }
 
-    setFields((prev) => [
-      ...prev,
-      {
-        id: uid(),
-        label: fieldLabel.trim(),
-        type: fieldType,
-        required,
-        options:
-          ['select', 'radio', 'checkbox'].includes(fieldType) && options
-            ? options.split(',').map((o) => o.trim())
-            : [],
-      },
-    ])
+    if (fieldAlreadyExists(fieldLabel)) {
+      return toast.error(`"${fieldLabel}" already exists`)
+    }
 
+    const newField: FormField = {
+      id: uid(),
+      label: fieldLabel.trim(),
+      type: fieldType,
+      required,
+      options:
+        ['select', 'radio', 'checkbox'].includes(fieldType) && options
+          ? options.split(',').map((o) => o.trim())
+          : [],
+    }
+
+    setFields((prev) => [...prev, newField])
+
+    toast.success(`"${fieldLabel}" added successfully`)
+
+    // Reset builder inputs
     setFieldLabel('')
     setFieldType('')
     setRequired(false)
@@ -90,33 +157,47 @@ export default function AddDynamicFormPage() {
   }
 
   // ===============================
-  // Remove field
+  // Remove Field
   // ===============================
   const removeField = (id: string) => {
     setFields((prev) => prev.filter((f) => f.id !== id))
+    toast.success('Field removed')
   }
 
   // ===============================
-  // Submit form
+  // Submit Form
   // ===============================
   const handleSubmit = async () => {
-    if (!selectedInstitute) return toast.error('Select institute')
-    if (!title) return toast.error('Form title required')
-    if (fields.length === 0) return toast.error('Add at least one field')
+    if (!selectedInstitute) {
+      return toast.error('Please select an institute')
+    }
 
-    const payload = {
+    if (!title.trim()) {
+      return toast.error('Form title is required')
+    }
+
+    if (fields.length === 0) {
+      return toast.error('Add at least one field')
+    }
+
+    const payload: any = {
       instituteId: selectedInstitute.value,
-      title,
-      description,
+      title: title.trim(),
+      description: description.trim(),
       fields: fields.map(({ id, ...f }) => f),
     }
 
+
+
     try {
-      // await createDynamicForm(payload)
-      toast.success('Form created successfully')
+      await createDynamicForm(payload)
+      toast.success('Dynamic form created successfully')
+      router.push('/dynamic-forms')
+      // Reset everything
       setTitle('')
       setDescription('')
       setFields([])
+      setSelectedInstitute(null)
     } catch {
       toast.error('Failed to create form')
     }
@@ -137,12 +218,13 @@ export default function AddDynamicFormPage() {
 
       {/* Form Details */}
       <div className="border rounded bg-white p-4 space-y-4">
-        <Select
-          options={institutes}
-          value={selectedInstitute}
-          onChange={(v) => setSelectedInstitute(v)}
-          placeholder="Select Institute"
-        />
+        {showInstituteDropdown &&
+          <Select
+            options={institutes}
+            value={selectedInstitute}
+            onChange={(v) => setSelectedInstitute(v)}
+            placeholder="Select Institute"
+          />}
 
         <input
           className="border rounded px-3 py-2 w-full"
@@ -251,7 +333,11 @@ export default function AddDynamicFormPage() {
                   ))}
                 </div>
               ) : (
-                <input disabled type={f.type} className="border rounded px-3 py-2 w-full" />
+                <input
+                  disabled
+                  type={f.type}
+                  className="border rounded px-3 py-2 w-full"
+                />
               )}
 
               <button
@@ -272,12 +358,21 @@ export default function AddDynamicFormPage() {
       </div>
 
       {/* Submit */}
-      <button
-        onClick={handleSubmit}
-        className="w-full py-2 bg-green-600 text-white rounded"
-      >
-        Create Form
-      </button>
+      <div className="flex justify-end gap-4">
+        <button
+          onClick={() => router.push('/dynamic-forms')}
+          className="px-6 py-2 border rounded text-gray-700 hover:bg-gray-100"
+        >
+          Cancel
+        </button>
+
+        <button
+          onClick={handleSubmit}
+          className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Create Form
+        </button>
+      </div>
     </div>
   )
 }

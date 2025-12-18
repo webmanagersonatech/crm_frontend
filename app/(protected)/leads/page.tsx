@@ -147,9 +147,7 @@ export default function LeadsPage() {
         const data = await getActivedata(
           selectedInstitution !== "all" ? selectedInstitution : undefined
         );
-
         setUserList(data.users || []);
-
         setInstitutions(
           (data.institutions || []).map((inst: any) => ({
             value: inst.instituteId,
