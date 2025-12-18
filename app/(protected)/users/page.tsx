@@ -65,7 +65,7 @@ export default function UsersPage() {
     designation: true,
     instituteId: true,
   });
-  
+
   const columnOptions = [
     { key: "name", label: "Name" },
     { key: "username", label: "Username" },
@@ -365,7 +365,7 @@ export default function UsersPage() {
             className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
           >
             <option value="all">All Roles</option>
-            <option value="superadmin">Super Admin</option>
+            {/* <option value="superadmin">Super Admin</option> */}
             <option value="admin">Admin</option>
             <option value="user">User</option>
           </select>
@@ -426,7 +426,6 @@ export default function UsersPage() {
         onClose={() => setViewOpen(false)}
       />
 
-
       <ConfirmDialog
         open={confirmOpen}
         title={
@@ -450,10 +449,6 @@ export default function UsersPage() {
         onChange={(updated) => setColumnVisibility(prev => ({ ...prev, ...updated }))}
         onClose={() => setCustomizeOpen(false)}
       />
-
-
-
-
 
     </div>
   );
