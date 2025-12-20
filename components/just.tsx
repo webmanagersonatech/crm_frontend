@@ -1,720 +1,361 @@
-"use client";
-import { useState, useEffect, useCallback } from "react";
-import { Eye, Pencil, FileDown, Users, Plus, Trash2, Search, FileText, X, Clock } from "lucide-react";
-import toast from "react-hot-toast";
-import Link from "next/link";
-import { DataTable } from "@/components/Tablecomponents";
-import ViewDialog from "@/components/ViewDialog";
-import ConfirmDialog from "@/components/ConfirmDialog";
-import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
-import AddapplicationForm from "@/components/Forms/Addapplicationform";
-import { getLeads, deleteLead, updateLead } from "@/app/lib/request/leadRequest";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
-import { listAllUsers } from "@/app/lib/request/authRequest";
-import ExportModal from "@/components/ExportModal";
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import Select from "react-select"
+import toast, { Toaster } from "react-hot-toast"
+
+import { getActiveInstitutions } from "@/app/lib/request/institutionRequest"
+import { getFormByInstituteId } from "@/app/lib/request/formManager"
+import { createApplication, getApplicationById, updateApplication } from "@/app/lib/request/application"
+import { getSettingsByInstitute } from "@/app/lib/request/settingRequest"
+
+type Tab = "personal" | "education"
 
 interface OptionType {
-  value: string;
-  label: string;
+    value: string
+    label: string
 }
 
-interface Lead {
-  _id: string;
-  instituteId: string;
-  applicationId?: string;
-  program: string;
-  candidateName: string;
-  phoneNumber?: string;
-  status?: string;
-  dateOfBirth?: string;
-  communication?: string;
-  leadId: string;
-  ugDegree?: string;
-  country?: string;
-  state?: string;
-  city?: string;
-  followUpDate?: string;
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  createdBy?: {
-    firstname?: string;
-    lastname?: string;
-    email?: string;
-  };
-}
+export default function AddApplicationForm({
+    instituteId,
+    LeadId,
+    isEdit = false,
+    applicationId,
+    onSuccess,
+    refetch,
+}: {
+    instituteId?: string
+    applicationId?: string
+    LeadId?: string
+    isEdit?: boolean
+    onSuccess?: () => void
+    refetch?: () => Promise<void>
+}) {
+    const router = useRouter()
+    const [loading, setLoading] = useState(false)
+    const [institutions, setInstitutions] = useState<OptionType[]>([])
+    const [selectedInstitute, setSelectedInstitute] = useState("")
+    const [programOptions, setProgramOptions] = useState<OptionType[]>([])
+    const [program, setProgram] = useState("")
+    const [formConfig, setFormConfig] = useState<any>(null)
+    const [formData, setFormData] = useState<Record<string, any>>({})
+    const [files, setFiles] = useState<Record<string, File>>({})
+    const [activeTab, setActiveTab] = useState<Tab>("personal")
+    const [showCustomField, setShowCustomField] = useState(false)
+    const [showInstituteDropdown, setShowInstituteDropdown] = useState(true)
+    const [newField, setNewField] = useState({
+        tab: "personal" as Tab,
+        sectionName: "",
+        fieldName: "",
+        fieldType: "",
+        options: "",
+        required: false,
+    })
 
-export default function LeadsPage() {
-  const router = useRouter();
-  // ------------------ STATE ------------------
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [institutions, setInstitutions] = useState<OptionType[]>([]);
-  const [selectedInstitution, setSelectedInstitution] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [selectedCommunication, setSelectedCommunication] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [userpermission, setUserpermisssion] = useState<any | null>(null);
-  const [hasPermission, setHasPermission] = useState<boolean>(true);
-  const [open, setOpen] = useState(false);
-  const [newStatus, setNewStatus] = useState<string | null>(null);
-  const [viewOpen, setViewOpen] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [userList, setUserList] = useState<any[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [role, setRole] = useState<string | null>(null);
-  const [confirmType, setConfirmType] = useState<"delete" | "status" | null>(null);
+    const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"]
+    const BASE_URL = "http://localhost:4000/uploads/"
+    const inputClass =
+        "border border-gray-300 p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#5667a8]"
 
-  // ------------------ OPTIONS ------------------
-  const statusOptions: OptionType[] = [
-    { value: "New", label: "New" },
-    { value: "Followup", label: "Followup" },
-    { value: "Not Reachable", label: "Not Reachable" },
-    { value: "Switched Off", label: "Switched Off" },
-    { value: "Not Picked", label: "Not Picked" },
-    { value: "Irrelevant", label: "Irrelevant" },
-    { value: "Interested", label: "Interested" },
-    { value: "Not Interested", label: "Not Interested" },
-    { value: "Cut the call", label: "Cut the call" },
-    { value: "Admitted", label: "Admitted" },
-    { value: "Closed", label: "Closed" },
-  ];
-
-  const communicationOptions: OptionType[] = [
-    { value: "WhatsApp", label: "WhatsApp" },
-    { value: "Offline", label: "Offline" },
-    { value: "Online", label: "Online" },
-    { value: "Phone", label: "Phone" },
-    { value: "Social Media", label: "Social Media" },
-  ];
-
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      const payload = token.split(".")[1];
-      const decoded: any = JSON.parse(atob(payload));
-      setRole(decoded.role);
-    } catch {
-      console.error("Token decode error");
-    }
-  }, []);
-
-  useEffect(() => {
-    const fetchPermissions = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.log("No token found, skipping API call");
-        setHasPermission(false);
-        return;
-      }
-
-      try {
-        const payload = token.split(".")[1];
-        const decoded: any = JSON.parse(atob(payload));
-
-        if ((decoded.role === "admin" || decoded.role === "user") && decoded.instituteId) {
-          const data = await getaccesscontrol({
-            role: decoded.role,
-            instituteId: decoded.instituteId
-          });
-          const leadPermission = data.permissions?.find(
-            (p: any) => p.moduleName === "Lead Manager"
-          );
-          if (
-            leadPermission &&
-            (leadPermission.view ||
-              leadPermission.create ||
-              leadPermission.edit ||
-              leadPermission.delete ||
-              leadPermission.filter ||
-              leadPermission.download)
-          ) {
-
-            setUserpermisssion(leadPermission);
-            setHasPermission(true);
-          } else {
-
-            setUserpermisssion(null);
-            setHasPermission(false);
-          }
-        } else if (decoded.role === "superadmin") {
-
-          setUserpermisssion("superadmin");
-          setHasPermission(true);
-        } else {
-
-          setHasPermission(false);
+    // Load token-based institute
+    useEffect(() => {
+        const token = localStorage.getItem("token")
+        if (!token) return
+        try {
+            const payload = JSON.parse(atob(token.split(".")[1]))
+            if (payload?.instituteId) {
+                setSelectedInstitute(payload.instituteId)
+                setShowInstituteDropdown(false)
+            }
+        } catch {
+            setShowInstituteDropdown(true)
         }
-      } catch (error) {
-        console.error("Failed to decode token or fetch permissions:", error);
-        setHasPermission(false);
-      }
-    };
+    }, [instituteId])
 
-    fetchPermissions();
-  }, []);
+    // Load institutes
+    useEffect(() => {
+        getActiveInstitutions()
+            .then((res) =>
+                setInstitutions(
+                    res.map((i: any) => ({ value: i.instituteId, label: i.name }))
+                )
+            )
+            .catch(() => toast.error("Failed to load institutes"))
+    }, [])
 
-
-
-  // ------------------ FETCH LEADS ------------------
-  const fetchLeads = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await getLeads({
-        page: currentPage,
-        limit: 10,
-        instituteId: selectedInstitution !== "all" ? selectedInstitution : undefined,
-        status: selectedStatus !== "all" ? selectedStatus : undefined,
-        communication: selectedCommunication !== "all" ? selectedCommunication : undefined,
-        candidateName: searchTerm || undefined,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-      });
-      setLeads(res.docs || []);
-      setTotalPages(res.totalPages || 1);
-    } catch {
-      toast.error("Failed to load leads");
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, searchTerm, startDate, endDate]);
-
-
-
-  useEffect(() => {
-    fetchLeads();
-  }, [fetchLeads]);
-
-  // ------------------ LOAD INSTITUTIONS ------------------
-  useEffect(() => {
-    if (role !== "superadmin") return;
-    const loadInstitutions = async () => {
-      try {
-        const activeInstitutions = await getActiveInstitutions();
-        setInstitutions(
-          activeInstitutions.map((inst: any) => ({
-            value: inst.instituteId,
-            label: inst.name,
-          }))
-        );
-      } catch {
-        toast.error("Failed to load institutions");
-      }
-    };
-    loadInstitutions();
-  }, [role]);
-
-  useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        const perrole = role?.toLowerCase();
-        if (perrole === "user") return;
-
-        if (perrole === "superadmin") {
-          // send instituteId as query
-          const data = await listAllUsers(selectedInstitution);
-          setUserList(data);
-          return;
-        }
-
-        if (perrole === "admin") {
-          // don't send instituteId (backend auto filters)
-          const data = await listAllUsers();
-          setUserList(data);
-          return;
-        }
-
-      } catch (err) {
-        console.error("Error loading users", err);
-      }
-    };
-
-    loadUsers();
-  }, [selectedInstitution]);
-
-  const filteredLeads = (leads || []).map((lead: any) => ({
-    Institute: lead.institute?.name || lead.instituteId || "-",
-    Candidate: lead.candidateName || "-",
-    Program: lead.program || "-",
-    Phone: lead.phoneNumber || "-",
-    Communication: lead.communication || "-",
-    FollowUpDate: lead.followUpDate
-      ? new Date(lead.followUpDate).toLocaleString()
-      : "-",
-
-    Status: lead.status || "-",
-    ApplicationStatus: lead.applicationId
-      ? "Applied"
-      : lead.status === "Interested"
-        ? "Pending Application"
-        : "Pending"
-  }));
-
-
-  // ------------------ CONFIRM ACTION ------------------
-  const confirmAction = async () => {
-    if (!selectedLead || !confirmType) return;
-    try {
-      if (confirmType === "delete") {
-        await deleteLead(selectedLead._id);
-        toast.success("Lead deleted successfully");
-      } else if (confirmType === "status" && newStatus) {
-        await updateLead(selectedLead._id, { status: newStatus });
-        toast.success(`Status changed to "${newStatus}"`);
-      }
-      await fetchLeads();
-    } catch (err: any) {
-      toast.error(err.message || "Action failed");
-    } finally {
-      setConfirmOpen(false);
-      setConfirmType(null);
-      setSelectedLead(null);
-      setNewStatus(null);
-    }
-  };
-
-
-  const handleDelete = (lead: Lead) => {
-    setSelectedLead(lead);
-    setConfirmType("delete");
-    setConfirmOpen(true);
-  };
-
-  // ------------------ STATUS CHANGE ------------------
-  const handleStatusChange = (lead: Lead, status: string) => {
-    setSelectedLead(lead);
-    setNewStatus(status);
-    setConfirmType("status");
-    setConfirmOpen(true);
-  };
-
-  // ------------------ COLUMNS ------------------
-  const columns = [
-
-
-
-    {
-      header: "Institute",
-      render: (lead: any) => {
-
-        return lead.institute?.name || lead.instituteId || "—";
-      },
-    },
-    { header: "Candidate", accessor: "candidateName" },
-    { header: "Program", accessor: "program" },
-    { header: "Phone", accessor: "phoneNumber" },
-    { header: "Communication", accessor: "communication" },
-    {
-      header: "Follow Up",
-      render: (lead: Lead) =>
-        lead.followUpDate
-          ? new Date(lead.followUpDate).toLocaleString()
-          : "—",
-    },
-
-    {
-      header: "Created By",
-      render: (lead: any) => {
-
-        return lead.creator
-          ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
-          : "—";
-      },
-    },
-
-    {
-      header: "Status",
-      render: (lead: Lead) => {
-        const statusColorMap: Record<string, string> = {
-          New: "bg-gray-100 text-gray-700 border border-gray-400",
-          Followup: "bg-blue-100 text-blue-700 border border-blue-400",
-          "Not Reachable": "bg-yellow-100 text-yellow-700 border border-yellow-400",
-          "Switched Off": "bg-orange-100 text-orange-700 border border-orange-400",
-          "Not Picked": "bg-amber-100 text-amber-700 border border-amber-400",
-          Irrelevant: "bg-purple-100 text-purple-700 border border-purple-400",
-          Interested: "bg-green-100 text-green-700 border border-green-400",
-          "Not Interested": "bg-red-100 text-red-700 border border-red-400",
-          "Cut the call": "bg-pink-100 text-pink-700 border border-pink-400",
-          Admitted: "bg-emerald-100 text-emerald-700 border border-emerald-400",
-          Closed: "bg-indigo-100 text-indigo-700 border border-indigo-400",
-        };
-
-        const colorClass =
-          statusColorMap[lead.status as keyof typeof statusColorMap] ||
-          "bg-gray-100 text-gray-700 border border-gray-400";
-
-        return (
-          <span
-            className={`px-2 py-1 rounded-lg text-xs font-medium inline-block min-w-[90px] text-center ${colorClass}`}
-          >
-            {lead.status || "Unknown"}
-          </span>
-        );
-      },
-    },
-    {
-      header: "Application Status",
-      render: (lead: Lead) => {
-
-
-        if (lead.status === "Interested") {
-          if (lead.applicationId) {
-            // ✅ View existing application
-            return (
-              <div
-                onClick={() =>
-                  router.push(`/applications/editapplication/${lead.applicationId}`)
+    // Load formConfig
+    useEffect(() => {
+        if (!selectedInstitute) return
+        getFormByInstituteId(selectedInstitute)
+            .then((res) => {
+                if (!res?.data) {
+                    toast.error("No form configuration found")
+                    setFormConfig(null)
+                    return
                 }
-                className="flex items-center gap-2 text-emerald-600 cursor-pointer hover:text-emerald-700 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                <span className="font-medium">View</span>
-              </div>
-            );
-          } else {
-            // 🟦 Apply new application
-            return (
-              <div
-                onClick={() => {
-                  setSelectedLead(lead);
-                  setIsOpen(true);
-                }}
-                className="flex items-center gap-2 text-indigo-600 cursor-pointer hover:text-indigo-700 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                <span className="font-medium">Apply</span>
-              </div>
-            );
-          }
+                setFormConfig(res.data)
+            })
+            .catch(() => toast.error("Failed to load form"))
+    }, [selectedInstitute])
+
+    // Load programs
+    useEffect(() => {
+        if (!selectedInstitute) return
+        getSettingsByInstitute(selectedInstitute)
+            .then((res) => {
+                if (!res?.courses?.length) {
+                    toast.error("No programs found")
+                    setProgramOptions([])
+                    return
+                }
+                setProgramOptions(
+                    res.courses.map((c: string) => ({ value: c, label: c }))
+                )
+            })
+            .catch(() => toast.error("Failed to load programs"))
+    }, [selectedInstitute])
+
+    // Load application on edit AFTER formConfig is loaded
+    useEffect(() => {
+        if (!isEdit || !applicationId || !formConfig) return
+
+        getApplicationById(applicationId)
+            .then((res) => {
+                const app = res.data
+                setSelectedInstitute(app.instituteId)
+                setShowInstituteDropdown(false)
+                setProgram(app.program)
+
+                const flatData: Record<string, any> = {}
+
+                const mergeCustomFields = (sections: any[], type: Tab) => {
+                    sections.forEach((section: any) => {
+                        const configSections = formConfig?.[`${type}Details`] || []
+                        const configSection = configSections.find((s: any) => s.sectionName === section.sectionName)
+                        if (!configSection) return
+
+                        Object.entries(section.fields).forEach(([k, v]) => {
+                            flatData[k] = v
+
+                            const exists = configSection.fields.some((f: any) => f.fieldName === k)
+                            if (!exists) {
+                                configSection.fields.push({
+                                    fieldName: k,
+                                    label: k,
+                                    type: typeof v === "string" && v.match(/\.(jpg|jpeg|png|webp|pdf)$/) ? "file" : "text",
+                                    required: false,
+                                    isCustom: true,
+                                })
+                            }
+                        })
+                    })
+                }
+
+                mergeCustomFields(app.personalDetails, "personal")
+                mergeCustomFields(app.educationDetails, "education")
+
+                setFormData(flatData)
+                setFormConfig((prev: any) => ({ ...prev })) // trigger re-render
+            })
+            .catch(() => toast.error("Failed to load application"))
+    }, [isEdit, applicationId, formConfig])
+
+    // Input handlers
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
+        const { name, value, type, checked } = e.target as HTMLInputElement
+        setFormData((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }))
+    }
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            setFiles((p) => ({ ...p, [e.target.name]: file }))
+            setFormData((p) => ({ ...p, [e.target.name]: file.name }))
         }
+    }
 
-        // ⏳ Default pending
-        return (
-          <div className="flex items-center gap-2 text-gray-500">
-            <Clock className="w-4 h-4" />
-            <span className="italic">Pending</span>
-          </div>
-        );
-      },
-    },
+    const renderField = (field: any) => {
+        const value = formData[field.fieldName] || (field.type === "checkbox" ? [] : "")
 
+        switch (field.type) {
+            case "textarea":
+                return <textarea name={field.fieldName} value={value} onChange={handleChange} className={inputClass} />
+            case "select":
+                return (
+                    <select name={field.fieldName} value={value} onChange={handleChange} className={inputClass}>
+                        <option value="">Select</option>
+                        {field.options?.map((o: string) => (
+                            <option key={o} value={o}>{o}</option>
+                        ))}
+                    </select>
+                )
+            case "radiobutton":
+                return (
+                    <div className="space-y-1">
+                        {field.options?.map((o: string) => (
+                            <label key={o} className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="radio"
+                                    name={field.fieldName}
+                                    value={o}
+                                    checked={formData[field.fieldName] === o}
+                                    onChange={() =>
+                                        setFormData((p) => ({ ...p, [field.fieldName]: o }))
+                                    }
+                                />
+                                {o}
+                            </label>
+                        ))}
+                    </div>
+                )
+            case "checkbox":
+                return (
+                    <div className="space-y-1">
+                        {field.options?.map((o: string) => (
+                            <label key={o} className="flex items-center gap-2 text-sm">
+                                <input
+                                    type="checkbox"
+                                    checked={(formData[field.fieldName] || []).includes(o)}
+                                    onChange={(e) => {
+                                        const prev = formData[field.fieldName] || []
+                                        const updated = e.target.checked ? [...prev, o] : prev.filter((v: string) => v !== o)
+                                        setFormData((p) => ({ ...p, [field.fieldName]: updated }))
+                                    }}
+                                />
+                                {o}
+                            </label>
+                        ))}
+                    </div>
+                )
+            case "file":
+                const fileValue = formData[field.fieldName]
+                const selectedFile = files[field.fieldName]
+                const previewUrl = selectedFile ? URL.createObjectURL(selectedFile) : `${BASE_URL}${fileValue}`
+                const isImage =
+                    selectedFile || (fileValue && IMAGE_EXTENSIONS.includes(fileValue.toString().split(".").pop()?.toLowerCase() || ""))
 
+                return (
+                    <div className="flex flex-col gap-2">
+                        {isImage && previewUrl && (
+                            <img src={previewUrl} alt={field.fieldName} className="w-32 h-32 object-cover border rounded" />
+                        )}
+                        {!isImage && fileValue && (
+                            <a href={`${BASE_URL}${fileValue}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                                {fileValue}
+                            </a>
+                        )}
+                        <input type="file" name={field.fieldName} onChange={handleFileChange} />
+                    </div>
+                )
+            default:
+                return <input type={field.type} name={field.fieldName} value={value} onChange={handleChange} className={inputClass} />
+        }
+    }
 
-    {
-      header: "Actions",
-      render: (lead: Lead) => (
-        <div className="flex  gap-2">
+    // Navigation & validation
+    const validateProgram = () => {
+        if (!program) {
+            toast.error("Please select a program")
+            return false
+        }
+        return true
+    }
 
+    const validateSection = (sections?: any[]) => {
+        if (!Array.isArray(sections)) return true
+        for (const section of sections) {
+            for (const field of section.fields || []) {
+                if (!field.required) continue
+                if (field.type === "file" && !files[field.fieldName]) {
+                    toast.error(`${field.fieldName} is required`)
+                    return false
+                }
+                const value = formData[field.fieldName]
+                if (!value || value.toString().trim() === "") {
+                    toast.error(`${field.fieldName} is required`)
+                    return false
+                }
+                if (field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                    toast.error("Invalid email format")
+                    return false
+                }
+            }
+        }
+        return true
+    }
 
-          {(userpermission === "superadmin" || userpermission?.edit) && (<select
-            onChange={(e) => handleStatusChange(lead, e.target.value)}
-            defaultValue=""
-            disabled={!!lead?.applicationId}
-            className="border text-sm rounded-md py-1 px-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition"
-          >
-            <option value="">Change Status</option>
-            {statusOptions.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>)}
+    const mapSectionData = (sections?: any[]) => {
+        if (!Array.isArray(sections)) return []
+        return sections.map((section) => {
+            const sectionObj: any = { sectionName: section.sectionName, fields: {} }
+            section.fields.forEach((field: any) => {
+                sectionObj.fields[field.fieldName] = field.type === "file"
+                    ? files[field.fieldName]?.name || formData[field.fieldName] || ""
+                    : formData[field.fieldName] || ""
+            })
+            return sectionObj
+        })
+    }
 
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!selectedInstitute) return toast.error("Institute is required")
+        if (!validateProgram()) return
+        if (!validateSection(formConfig?.educationDetails)) return
 
-          {(userpermission === "superadmin" || userpermission?.view) && (
+        try {
+            setLoading(true)
+            const fd = new FormData()
+            fd.append("instituteId", selectedInstitute)
+            fd.append("program", program)
+            fd.append("academicYear", "2025-2026")
+            if (LeadId) fd.append("leadId", LeadId)
+            fd.append("personalDetails", JSON.stringify(mapSectionData(formConfig?.personalDetails)))
+            fd.append("educationDetails", JSON.stringify(mapSectionData(formConfig?.educationDetails)))
+            Object.entries(files).forEach(([k, f]) => fd.append(k, f))
 
-            <button
-              onClick={() => {
-                const limitedLead: any = {
-                  candidateName: lead.candidateName,
-                  phoneNumber: lead.phoneNumber,
-                  program: lead.program,
-                  status: lead.status,
-                  communication: lead.communication,
-                  followUpDate: lead.followUpDate
-                    ? new Date(lead.followUpDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
-                    : '-',
-                  createdAt: lead.createdAt
-                    ? new Date(lead.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
-                    : '-',
-                  dateOfBirth: lead.dateOfBirth
-                    ? new Date(lead.dateOfBirth).toLocaleDateString('en-IN', { dateStyle: 'medium' })
-                    : '-',
-                  country: lead.country || '-',
-                  state: lead.state || '-',
-                  city: lead.city || '-',
-                  description: lead.description || '-',
-                  instituteId: lead.instituteId || '-',
-                };
-                setSelectedLead(limitedLead);
-                setViewOpen(true);
-              }}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md"
-            >
-              <Eye className="w-4 h-4" />
-            </button>)}
+            if (isEdit && applicationId) {
+                await updateApplication(applicationId, fd, true)
+                toast.success("Application updated successfully")
+            } else {
+                await createApplication(fd, true)
+                toast.success("Application submitted successfully")
+            }
+            await refetch?.()
+            onSuccess ? onSuccess() : router.push("/applications")
+        } catch (err: any) {
+            toast.error(err?.message || "Submission failed")
+        } finally {
+            setLoading(false)
+        }
+    }
 
-
-          {(userpermission === "superadmin" || userpermission?.edit) && (
-            <button
-              onClick={() => router.push(`/leads/editlead/${lead._id}`)}
-              disabled={!!lead?.applicationId}
-              className={`flex items-center justify-center px-3 py-1 rounded-md text-white transition-all duration-200
-      ${lead?.applicationId
-                  ? "bg-gray-400 cursor-not-allowed opacity-60"
-                  : "bg-blue-600 hover:bg-blue-700"
-                }`}
-            >
-              <Pencil className="w-4 h-4" />
-            </button>)}
-
-          {(userpermission === "superadmin" || userpermission?.delete) && (
-            <button
-              onClick={() => handleDelete(lead)}
-              disabled={!!lead?.applicationId}
-              className={`flex items-center justify-center px-3 py-1 rounded-md text-white transition-all duration-200
-      ${lead?.applicationId
-                  ? "bg-gray-400 cursor-not-allowed opacity-60"
-                  : "bg-red-600 hover:bg-red-700"
-                }`}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>)}
-        </div>
-      ),
-    },
-  ];
-
-
-  if (!hasPermission) {
     return (
-      <div className="p-6 text-center text-red-600">
-        You do not have permission to access this page. Please contact your superadmin.
-      </div>
-    );
-  }
-  // ------------------ RENDER ------------------
-  return (
-    <div className="p-6 space-y-6">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
-        <div className="flex items-center gap-2">
-          <Users className="w-6 h-6 text-blue-600" />
-          <h1 className="text-2xl font-semibold">Leads</h1>
-        </div>
+        <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow space-y-6">
+            <Toaster position="top-right" />
 
-        {/* FILTERS */}
-
-
-        <div className="flex flex-wrap items-center gap-3 sm:justify-end w-full">
-
-          {(userpermission === "superadmin" || userpermission?.filter) && (
-            <>
-              {/* 🔍 Candidate Search */}
-              <div className="relative w-full sm:w-48 md:w-60">
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+            {showInstituteDropdown && (
+                <Select
+                    options={institutions}
+                    onChange={(o) => setSelectedInstitute(o?.value || "")}
+                    placeholder="Select Institute"
                 />
-              </div>
+            )}
 
-              {/* 🏫 Institution Filter */}
-
-
-              {(userpermission === "superadmin" && <select
-                value={selectedInstitution}
-                onChange={(e) => setSelectedInstitution(e.target.value)}
-                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              >
-                <option value="all">All Institutions</option>
-                {institutions.map((inst) => (
-                  <option key={inst.value} value={inst.value}>
-                    {inst.label}
-                  </option>
-                ))}
-              </select>)}
-
-              {/* 👤 User Select Filter */}
-
-              {role !== "user" && (
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                >
-                  <option value="">Select User</option>
-
-                  {userList.map((user) => (
-                    <option key={user._id} value={user._id}>
-                      {user.firstname} {user.lastname}
-                    </option>
-                  ))}
-                </select>)}
-
-
-              {/* 📊 Status Filter */}
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              >
-                <option value="all">All Status</option>
-                {statusOptions.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-
-              {/* 💬 Communication Filter */}
-              <select
-                value={selectedCommunication}
-                onChange={(e) => setSelectedCommunication(e.target.value)}
-                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              >
-                <option value="all">All Communication</option>
-                {communicationOptions.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+            {selectedInstitute && (
+                <Select
+                    options={programOptions}
+                    value={programOptions.find((p) => p.value === program) || null}
+                    onChange={(o) => setProgram(o?.value || "")}
+                    placeholder="Select Program"
                 />
+            )}
 
-                {/* Center Icon */}
-                <span className="flex items-center justify-center text-gray-500">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </span>
-
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                />
-              </div>
-            </>
-          )}
-
-          {/* 📤 Export */}
-          {(userpermission === "superadmin" || userpermission?.download) && (
-            <button
-              onClick={() => setOpen(true)}
-              className="flex items-center justify-center gap-1 bg-green-700 hover:bg-green-800 text-white px-3 py-2 text-sm rounded-md w-full sm:w-auto transition"
-            >
-              <FileDown className="w-4 h-4" /> Export
-            </button>)}
-
-          {/* ➕ Add Lead */}
-          {(userpermission === "superadmin" || userpermission?.create) && (
-            <Link
-              href="/leads/addlead"
-              className="flex items-center justify-center gap-1 bg-gradient-to-b from-[#2a3970] to-[#5667a8] hover:bg-blue-700 text-white px-3 py-2 text-sm rounded-md w-full sm:w-auto transition"
-            >
-              <Plus className="w-4 h-4" /> Add
-            </Link>)}
-
-        </div>
-        <ExportModal
-          open={open}
-          title={"Leads"}
-          onClose={() => setOpen(false)}
-          data={filteredLeads}
-        />
-      </div>
-
-      {/* TABLE */}
-      <DataTable
-        columns={columns}
-        data={leads}
-        loading={loading}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
-
-      {/* VIEW MODAL */}
-      <ViewDialog open={viewOpen} title="Lead Details" data={selectedLead} onClose={() => setViewOpen(false)} />
-
-      {/* CONFIRM DIALOG */}
-      <ConfirmDialog
-        open={confirmOpen}
-        title={confirmType === "delete" ? "Delete Lead" : "Change Status"}
-        message={
-          confirmType === "delete"
-            ? `Are you sure you want to delete "${selectedLead?.candidateName}"?`
-            : `Change status of "${selectedLead?.candidateName}" to "${newStatus}"?`
-        }
-        onConfirm={confirmAction}
-        onCancel={() => setConfirmOpen(false)}
-      />
-
-      <AnimatePresence>
-        {isOpen && selectedLead && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          >
-            <motion.div
-              initial={{ y: -50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -50, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="bg-white rounded-2xl shadow-xl w-full max-w-4xl h-[80vh] relative flex flex-col"
-            >
-              <button
-                onClick={() => setIsOpen(false)}
-                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-              >
-                <X className="w-6 h-6" />
-              </button>
-
-              <div className="overflow-y-auto p-6 flex-1">
-                {/* ✅ Pass the lead ID safely */}
-                <AddapplicationForm refetch={fetchLeads} instituteId={selectedLead.instituteId} LeadId={selectedLead.leadId} onSuccess={() => setIsOpen(false)} />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-
-
-    </div>
-
-
-  );
+            {/* Custom Field Builder & Step Form Render */}
+            {/* ... keep your current UI code for custom field toggle and step form ... */}
+        </form>
+    )
 }

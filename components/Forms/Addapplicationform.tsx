@@ -1,609 +1,806 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Select from "react-select";
-import toast from "react-hot-toast";
-import { Star, User, BookOpen } from "lucide-react";
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import Select from "react-select"
+import toast, { Toaster } from "react-hot-toast"
 
-import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
-
-import { getFormByInstituteId } from "@/app/lib/request/formManager";
-import { createApplication } from "@/app/lib/request/application";
-import { getSettingsByInstitute } from "@/app/lib/request/settingRequest";
+import { getActiveInstitutions } from "@/app/lib/request/institutionRequest"
+import { getFormByInstituteId } from "@/app/lib/request/formManager"
+import { createApplication, getApplicationById, updateApplication } from "@/app/lib/request/application"
+import { getSettingsByInstitute } from "@/app/lib/request/settingRequest"
 
 interface OptionType {
-    value: string;
-    label: string;
+    value: string
+    label: string
 }
-type Step = "personal" | "education";
 
-export default function AddapplicationForm({
+type Tab = "personal" | "education"
+
+export default function AddApplicationForm({
     instituteId,
     LeadId,
+    isEdit = false,
+    applicationId,
     onSuccess,
     refetch,
 }: {
-    instituteId?: string;
-    LeadId?: string;
-    onSuccess?: () => void;
-    refetch?: () => Promise<void>;
+    instituteId?: string
+    applicationId?: string
+    LeadId?: string
+    isEdit?: boolean
+    onSuccess?: () => void
+    refetch?: () => Promise<void>
 }) {
-
-    const router = useRouter();
-    const [loading, setLoading] = useState(false);
-    const [institutions, setInstitutions] = useState<OptionType[]>([]);
-    const [selectedInstitute, setSelectedInstitute] = useState<string>("");
-    const [formConfig, setFormConfig] = useState<any>(null);
-    const [formData, setFormData] = useState<Record<string, any>>({});
-    const [files, setFiles] = useState<Record<string, File | null>>({});
-    const [showinstituteDropdown, setShowinstituteDropdown] = useState(true);
-    const [programOptions, setProgramOptions] = useState<OptionType[]>([]);
-    const [program, setProgram] = useState("");
-    const [activeTab, setActiveTab] = useState<"personal" | "education">("personal");
-
-
+    const router = useRouter()
+    const [loading, setLoading] = useState(false)
+    const [institutions, setInstitutions] = useState<OptionType[]>([])
+    const [selectedInstitute, setSelectedInstitute] = useState("")
+    const [programOptions, setProgramOptions] = useState<OptionType[]>([])
+    const [program, setProgram] = useState("")
+    const [formConfig, setFormConfig] = useState<any>(null)
+    const [formData, setFormData] = useState<Record<string, any>>({})
+    const [files, setFiles] = useState<Record<string, File>>({})
+    const [activeTab, setActiveTab] = useState<Tab>("personal")
+    const [showCustomField, setShowCustomField] = useState(false)
+    const [showInstituteDropdown, setShowInstituteDropdown] = useState(true)
+    const [newField, setNewField] = useState({
+        tab: "personal" as Tab,
+        sectionName: "",
+        fieldName: "",
+        fieldType: "",
+        options: "",
+        required: false,
+    })
+    const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
+    const BASE_URL = "http://localhost:4000/uploads/";
     const inputClass =
-        "border border-gray-300 dark:border-neutral-700 p-2 rounded bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500";
+        "border border-gray-300 p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#5667a8]"
 
-    const isValidEmail = (email: string) => {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    };
-
-    const validatePersonalDetails = () => {
-        if (!formConfig?.personalFields) return true;
-
-        for (const field of formConfig.personalFields) {
-            if (!field.required) continue;
-
-            const value = formData[field.fieldName];
-
-            // FILE
-            if (field.fieldType === "file") {
-                if (!files[field.fieldName]) {
-                    toast.error(`${field.fieldName} is required`);
-                    return false;
-                }
-                continue;
-            }
-
-            // EMPTY CHECK
-            if (!value || value.toString().trim() === "") {
-                toast.error(`${field.fieldName} is required`);
-                return false;
-            }
-
-            // ✅ EMAIL FORMAT CHECK
-            if (field.fieldType === "email") {
-                if (!isValidEmail(value)) {
-                    toast.error("Please enter a valid email address");
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    };
-
-
-    const validateEducationDetails = () => {
-        if (!formConfig?.educationFields) return true;
-
-        for (const field of formConfig.educationFields) {
-            if (!field.required) continue;
-
-            // FILE FIELD
-            if (field.fieldType === "file") {
-                if (!files[field.fieldName]) {
-                    toast.error(`${field.fieldName} is required`);
-                    return false;
-                }
-                continue;
-            }
-
-            const value = formData[field.fieldName];
-
-            // NORMAL INPUT / SELECT / RADIO
-            if (
-                value === undefined ||
-                value === null ||
-                value.toString().trim() === ""
-            ) {
-                toast.error(`${field.fieldName} is required`);
-                return false;
-            }
-        }
-
-        return true;
-    };
-
-
-
-
-
-    const handleNext = () => {
-        if (!validatePersonalDetails()) return;
-        setActiveTab("education");
-    };
-    const handlePrev = () => {
-        setActiveTab("personal");
-    };
-
-
-
-
+    // Load token-based institute
     useEffect(() => {
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-            toast.error("Not authorized: please log in.");
-            return;
-        }
-
+        const token = localStorage.getItem("token")
+        if (!token) return
         try {
-            const payload = token.split(".")[1];
-            const decoded: any = JSON.parse(atob(payload));
-
-
-            const effectiveInstituteId = decoded.instituteId || instituteId;
-
-            if (effectiveInstituteId) {
-                setSelectedInstitute(effectiveInstituteId);
-                setShowinstituteDropdown(false);
-            } else {
-                setShowinstituteDropdown(true);
+            const payload = JSON.parse(atob(token.split(".")[1]))
+            console.log(payload, "payload")
+            if (payload?.instituteId) {
+                setSelectedInstitute(payload.instituteId)
+                setShowInstituteDropdown(false)
             }
-        } catch (error) {
-            console.error("Failed to decode token:", error);
-            setShowinstituteDropdown(true);
+        } catch {
+            setShowInstituteDropdown(true)
         }
-    }, [instituteId]);
-
-    /** 🔹 Load Institutions */
-    useEffect(() => {
-        const fetchInstitutions = async () => {
-            try {
-                const res = await getActiveInstitutions();
-                const opts = res.map((inst: any) => ({
-                    value: inst.instituteId,
-                    label: inst.name,
-                }));
-                setInstitutions(opts);
-            } catch {
-                toast.error("Failed to load institutions");
-            }
-        };
-        fetchInstitutions();
-    }, []);
-
-    /** 🔹 Load Form Fields When Institute Selected */
-    useEffect(() => {
-        const fetchForm = async () => {
-            if (!selectedInstitute) return;
-            try {
-                const res = await getFormByInstituteId(selectedInstitute);
-                const config = res?.data?.[0];
-                if (!config) {
-                    toast.error("No form configuration found for this institute");
-                    setFormConfig(null);
-                    return;
-                }
-                setFormConfig(config);
-            } catch (error: any) {
-                toast.error(error.message || "Failed to load form");
-                setFormConfig(null);
-            }
-        };
-        fetchForm();
-    }, [selectedInstitute]);
+    }, [instituteId])
 
     useEffect(() => {
-        if (!selectedInstitute) {
-            setProgramOptions([]);
-            setProgram(""); // reset program
-            return;
+        if (!isEdit || !applicationId) return;
+
+        getApplicationById(applicationId)
+            .then((res) => {
+                const app = res.data;
+
+                // Set institute and program
+                setSelectedInstitute(app.instituteId);
+                setShowInstituteDropdown(false);
+                setProgram(app.program);
+
+                // Flatten application data for formData
+                const flatData: Record<string, any> = {};
+                app.personalDetails?.forEach((section: any) => {
+                    Object.entries(section.fields).forEach(([k, v]) => {
+                        flatData[k] = v;
+                    });
+                });
+                app.educationDetails?.forEach((section: any) => {
+                    Object.entries(section.fields).forEach(([k, v]) => {
+                        flatData[k] = v;
+                    });
+                });
+                setFormData(flatData);
+
+                // Load original form config
+                getFormByInstituteId(app.instituteId)
+                    .then((res) => {
+                        let config = res.data;
+                        if (!config) return;
+
+                        const mergeCustomFields = (tab: "personal" | "education", details: any[]) => {
+                            details.forEach((section) => {
+                                const targetSection = config[`${tab}Details`].find(
+                                    (s: any) => s.sectionName === section.sectionName
+                                );
+
+                                if (targetSection) {
+                                    Object.entries(section.fields).forEach(([key, value]) => {
+                                        if (!targetSection.fields.some((f: any) => f.fieldName === key)) {
+                                            targetSection.fields.push({
+                                                fieldName: key,
+                                                label: key,
+                                                type:
+                                                    typeof value === "string" &&
+                                                        value.match(/\.(jpg|jpeg|png|webp|pdf|doc|docx)$/i)
+                                                        ? "file"
+                                                        : "text",
+                                                required: false,
+                                                isCustom: true,
+                                            });
+                                        }
+                                    });
+                                } else {
+                                    // Section doesn't exist, create it
+                                    config[`${tab}Details`].push({
+                                        sectionName: section.sectionName,
+                                        fields: Object.entries(section.fields).map(([key, value]) => ({
+                                            fieldName: key,
+                                            label: key,
+                                            type:
+                                                typeof value === "string" &&
+                                                    value.match(/\.(jpg|jpeg|png|webp|pdf|doc|docx)$/i)
+                                                    ? "file"
+                                                    : "text",
+                                            required: false,
+                                            isCustom: true,
+                                        })),
+                                    });
+                                }
+                            });
+                        };
+
+                        mergeCustomFields("personal", app.personalDetails);
+                        mergeCustomFields("education", app.educationDetails);
+
+                        setFormConfig(config);
+                    })
+                    .catch(() => toast.error("Failed to load form config"));
+            })
+            .catch(() => toast.error("Failed to load application"));
+    }, [isEdit, applicationId]);
+
+
+
+
+    // Load institutes
+    useEffect(() => {
+        getActiveInstitutions()
+            .then((res) =>
+                setInstitutions(
+                    res.map((i: any) => ({ value: i.instituteId, label: i.name }))
+                )
+            )
+            .catch(() => toast.error("Failed to load institutes"))
+    }, [])
+
+    const handleAddManualField = () => {
+        const { tab, sectionName, fieldName, fieldType, options, required } = newField
+
+        if (!sectionName || !fieldName || !fieldType) {
+            toast.error("Section, field name and type are required")
+            return
         }
 
-        const loadPrograms = async () => {
-            try {
-                const settings = await getSettingsByInstitute(selectedInstitute);
+        const sections = formConfig?.[`${tab}Details`] || []
 
-                if (settings.courses && settings.courses.length) {
-                    setProgramOptions(
-                        settings.courses.map((course: string) => ({
-                            value: course,
-                            label: course,
-                        }))
-                    );
-                } else {
-                    setProgramOptions([]);
-                    setProgram("");
-                    toast.error("No courses found in institute settings.");
+        const targetSection = sections.find(
+            (s: any) => s.sectionName === sectionName
+        )
+
+        if (!targetSection) {
+            toast.error("Invalid section selected")
+            return
+        }
+
+        // ❌ DUPLICATE CHECK (BEFORE setState)
+        const alreadyExists = targetSection.fields.some(
+            (f: any) =>
+                f.fieldName.trim().toLowerCase() === fieldName.trim().toLowerCase()
+        )
+
+        if (alreadyExists) {
+            toast.error("Field name already exists in this section")
+            return
+        }
+
+        // ✅ SAFE STATE UPDATE
+        setFormConfig((prev: any) => {
+            const updatedSections = prev[`${tab}Details`].map((section: any) => {
+                if (section.sectionName !== sectionName) return section
+
+                return {
+                    ...section,
+                    fields: [
+                        ...section.fields,
+                        {
+                            fieldName: fieldName.trim(),
+                            label: fieldName.trim(),
+                            type: fieldType,
+                            required,
+                            options:
+                                ["select", "checkbox", "radiobutton"].includes(fieldType)
+                                    ? options
+                                        .split(",")
+                                        .map((o) => o.trim())
+                                        .filter(Boolean)
+                                    : [],
+                            multiple: fieldType === "checkbox",
+                            isCustom: true,
+                        },
+                    ],
                 }
-            } catch (error) {
-                console.error(error);
-                setProgramOptions([]);
-                setProgram("");
-                toast.error("No courses found in institute settings.");
-            }
-        };
+            })
 
-        loadPrograms();
-    }, [selectedInstitute]);
-
-    /** 🔹 Handle Input Changes */
-    const handleChange = (
-        e: React.ChangeEvent<
-            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-        >
-    ) => {
-        const target = e.target;
-        const { name, value, type } = target;
-
-        if (type === "checkbox") {
-            const checked = (target as HTMLInputElement).checked;
-            setFormData((prev) => ({
+            return {
                 ...prev,
-                [name]: checked ? value : "",
-            }));
-        } else {
-            setFormData((prev) => ({ ...prev, [name]: value }));
+                [`${tab}Details`]: updatedSections,
+            }
+        })
+
+        toast.success("Field added")
+
+        setNewField({
+            tab,
+            sectionName: "",
+            fieldName: "",
+            fieldType: "",
+            options: "",
+            required: false,
+        })
+    }
+
+
+
+    const removeField = (tab: Tab, sectionName: string, fieldName: string) => {
+        setFormConfig((prev: any) => {
+            const sections = prev?.[`${tab}Details`] || []
+
+            const updatedSections = sections.map((section: any) => {
+                if (section.sectionName !== sectionName) return section
+
+                return {
+                    ...section,
+                    fields: section.fields.filter(
+                        (f: any) => f.fieldName !== fieldName
+                    ),
+                }
+            })
+
+            return {
+                ...prev,
+                [`${tab}Details`]: updatedSections,
+            }
+        })
+    }
+
+
+
+
+    // Load form config
+    useEffect(() => {
+        if (!selectedInstitute) return
+        getFormByInstituteId(selectedInstitute)
+            .then((res) => {
+                if (!res?.data) {
+                    toast.error("No form configuration found")
+                    setFormConfig(null)
+                    return
+                }
+                setFormConfig(res.data)
+            })
+            .catch(() => toast.error("Failed to load form"))
+    }, [selectedInstitute])
+
+    // Load programs
+    useEffect(() => {
+        if (!selectedInstitute) return
+        getSettingsByInstitute(selectedInstitute)
+            .then((res) => {
+                if (!res?.courses?.length) {
+                    toast.error("No programs found")
+                    setProgramOptions([])
+                    return
+                }
+                setProgramOptions(
+                    res.courses.map((c: string) => ({ value: c, label: c }))
+                )
+            })
+            .catch(() => toast.error("Failed to load programs"))
+    }, [selectedInstitute])
+
+    const validateProgram = () => {
+        if (!program) {
+            toast.error("Please select a program")
+            return false
         }
-    };
+        return true
+    }
 
-    /** 🔹 Handle File Uploads */
+    // Validation for each section
+    const validateSection = (sections?: any[]) => {
+        if (!Array.isArray(sections)) return true
+
+        for (const section of sections) {
+            for (const field of section.fields || []) {
+                if (!field.required) continue
+
+                // File validation
+                if (field.type === "file") {
+                    if (!files[field.fieldName]) {
+                        toast.error(`${field.fieldName} is required`)
+                        return false
+                    }
+                    continue
+                }
+
+                const value = formData[field.fieldName]
+
+                if (!value || value.toString().trim() === "") {
+                    toast.error(`${field.fieldName} is required`)
+                    return false
+                }
+
+                if (
+                    field.type === "email" &&
+                    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+                ) {
+                    toast.error("Invalid email format")
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    // Input handlers
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
+        const { name, value, type, checked } = e.target as HTMLInputElement
+        setFormData((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }))
+    }
+
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, files: fileList } = e.target;
-        const file = fileList?.[0];
-        if (file) setFiles((prev) => ({ ...prev, [name]: file }));
-    };
+        const file = e.target.files?.[0]
+        if (file) {
+            setFiles((p) => ({ ...p, [e.target.name]: file }))
+            setFormData((p) => ({ ...p, [e.target.name]: file.name }))
+        }
+    }
 
-    /** 🔹 Render Dynamic Field */
-    const renderField = (field: any, i: number) => {
-        const { fieldType, fieldName, required, maxLength, options } = field;
-        const value = formData[fieldName] || "";
 
-        switch (fieldType) {
-            case "text":
-            case "number":
-            case "email":
-            case "date":
-                return (
-                    <input
-                        key={i}
-                        type={fieldType}
-                        name={fieldName}
-                        value={value}
-                        maxLength={maxLength || undefined}
-                        required={required}
-                        onChange={handleChange}
-                        className={inputClass}
-                    />
-                );
+    const renderField = (field: any) => {
+        const value = formData[field.fieldName] || (
+            field.type === "checkbox" ? [] : ""
+        )
+
+        switch (field.type) {
+
+            /* TEXTAREA */
             case "textarea":
                 return (
                     <textarea
-                        key={i}
-                        name={fieldName}
+                        name={field.fieldName}
                         value={value}
-                        required={required}
-                        maxLength={maxLength || undefined}
                         onChange={handleChange}
                         className={inputClass}
                     />
-                );
+                )
 
+            /* SELECT */
             case "select":
                 return (
                     <select
-                        key={i}
-                        name={fieldName}
+                        name={field.fieldName}
                         value={value}
-                        required={required}
                         onChange={handleChange}
                         className={inputClass}
                     >
-                        <option value="">Select...</option>
-                        {options?.map((opt: string, idx: number) => (
-                            <option key={idx} value={opt}>
-                                {opt}
-                            </option>
+                        <option value="">Select</option>
+                        {field.options?.map((o: string) => (
+                            <option key={o} value={o}>{o}</option>
                         ))}
                     </select>
-                );
+                )
 
+            /* RADIO BUTTON */
             case "radiobutton":
                 return (
-                    <div key={i} className="flex gap-3 items-center">
-                        {options?.map((opt: string, idx: number) => (
-                            <label key={idx} className="flex items-center gap-1">
+                    <div className="space-y-1">
+                        {field.options?.map((o: string) => (
+                            <label key={o} className="flex items-center gap-2 text-sm">
                                 <input
                                     type="radio"
-                                    name={fieldName}
-                                    value={opt}
-                                    required={required}
-                                    checked={value === opt}
-                                    onChange={handleChange}
+                                    name={field.fieldName}
+                                    value={o}
+                                    checked={formData[field.fieldName] === o}
+                                    onChange={() =>
+                                        setFormData((p) => ({ ...p, [field.fieldName]: o }))
+                                    }
                                 />
-                                <span>{opt}</span>
+                                {o}
                             </label>
                         ))}
                     </div>
-                );
+                )
 
+            /* CHECKBOX */
             case "checkbox":
                 return (
-                    <div key={i} className="flex flex-wrap gap-3">
-                        {options?.map((opt: string, idx: number) => (
-                            <label key={idx} className="flex items-center gap-1">
+                    <div className="space-y-1">
+                        {field.options?.map((o: string) => (
+                            <label key={o} className="flex items-center gap-2 text-sm">
                                 <input
                                     type="checkbox"
-                                    name={fieldName}
-                                    value={opt}
-                                    onChange={handleChange}
-                                    required={required}
+                                    checked={(formData[field.fieldName] || []).includes(o)}
+                                    onChange={(e) => {
+                                        const prev = formData[field.fieldName] || []
+                                        const updated = e.target.checked
+                                            ? [...prev, o]
+                                            : prev.filter((v: string) => v !== o)
+
+                                        setFormData((p) => ({
+                                            ...p,
+                                            [field.fieldName]: updated,
+                                        }))
+                                    }}
                                 />
-                                <span>{opt}</span>
+                                {o}
                             </label>
                         ))}
                     </div>
-                );
+                )
 
-            case "rating":
+            /* FILE */
+            case "file":
+                const fileValue = formData[field.fieldName];
+                const selectedFile = files[field.fieldName]; // actual File object
+                const previewUrl = selectedFile ? URL.createObjectURL(selectedFile) : `${BASE_URL}${fileValue}`;
+                const isImage =
+                    selectedFile || (fileValue && IMAGE_EXTENSIONS.includes(fileValue.toString().split(".").pop()?.toLowerCase() || ""));
+
                 return (
-                    <div key={i} className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map((r) => (
-                            <Star
-                                key={r}
-                                onClick={() =>
-                                    setFormData((prev) => ({ ...prev, [fieldName]: r }))
-                                }
-                                className={`cursor-pointer ${r <= value ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-                                    }`}
+                    <div className="flex flex-col gap-2">
+                        {isImage && previewUrl && (
+                            <img
+                                src={previewUrl}
+                                alt={field.fieldName}
+                                className="w-32 h-32 object-cover border rounded"
                             />
-                        ))}
+                        )}
+
+                        {!isImage && fileValue && (
+                            <a
+                                href={`${BASE_URL}${fileValue}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 underline"
+                            >
+                                {fileValue}
+                            </a>
+                        )}
+
+                        <input
+                            type="file"
+                            name={field.fieldName}
+                            onChange={handleFileChange}
+                        />
                     </div>
                 );
 
-            case "file":
+
+            /* DEFAULT INPUT */
+            default:
                 return (
                     <input
-                        key={i}
-                        type="file"
-                        name={fieldName}
-                        required={required}
-                        onChange={handleFileChange}
-                        className="text-sm text-gray-600"
+                        type={field.type}
+                        name={field.fieldName}
+                        value={value}
+                        onChange={handleChange}
+                        className={inputClass}
                     />
-                );
-
-            case "textonly":
-                return (
-                    <p key={i} className="text-gray-600 dark:text-gray-300 italic">
-                        {fieldName}
-                    </p>
-                );
-
-            default:
-                return null;
+                )
         }
-    };
-    const handleProgramChange = (selected: any) => {
-        setProgram(selected ? selected.value : ""); // 👈 update program state
-    };
-    /** 🔹 Submit Handler */
+    }
+
+
+    // Navigation handlers
+    const handleNext = () => {
+        if (!validateSection(formConfig?.personalDetails)) return
+        setActiveTab("education")
+    }
+
+
+    const handlePrev = () => {
+        if (activeTab === "education") setActiveTab("personal")
+    }
+
+    const mapSectionData = (sections?: any[]) => {
+        if (!Array.isArray(sections)) return []
+
+        return sections.map((section) => {
+            const sectionObj: any = {
+                sectionName: section.sectionName,
+                fields: {},
+            }
+
+            section.fields.forEach((field: any) => {
+                if (field.type === "file") {
+                    // Preserve old file if no new file uploaded
+                    sectionObj.fields[field.fieldName] =
+                        files[field.fieldName]?.name || formData[field.fieldName] || ""
+                } else {
+                    sectionObj.fields[field.fieldName] = formData[field.fieldName] || ""
+                }
+            })
+
+            return sectionObj
+        })
+    }
+
+
+    // Submit
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedInstitute) return toast.error("Please select an institute");
-        if (!validatePersonalDetails()) {
-            setActiveTab("personal");
-            return;
+        e.preventDefault()
+
+        if (!selectedInstitute) {
+            toast.error("Institute is required")
+            return
         }
 
-        if (!validateEducationDetails()) {
-            setActiveTab("education");
-            return;
-        }
-        setLoading(true);
+        if (!validateProgram()) return
+        if (!validateSection(formConfig?.educationDetails)) return
+
         try {
-            const formDataToSend = new FormData();
-            formDataToSend.append("instituteId", selectedInstitute);
-            formDataToSend.append("program", program);
-            formDataToSend.append("academicYear", "2025-2026");
+            setLoading(true)
 
+            const fd = new FormData()
 
-            if (LeadId) {
-                formDataToSend.append("leadId", LeadId);
-            }
+            fd.append("instituteId", selectedInstitute)
+            fd.append("program", program)
+            fd.append("academicYear", "2025-2026")
 
-            const personalData = formConfig.personalFields.reduce((acc: any, f: any) => {
-                if (f.fieldType !== "file") acc[f.fieldName] = formData[f.fieldName] || "";
-                return acc;
-            }, {});
-            const educationData = formConfig.educationFields.reduce((acc: any, f: any) => {
-                acc[f.fieldName] = formData[f.fieldName] || "";
-                return acc;
-            }, {});
+            if (LeadId) fd.append("leadId", LeadId)
 
-            formDataToSend.append("personalData", JSON.stringify(personalData));
-            formDataToSend.append("educationData", JSON.stringify(educationData));
+            fd.append(
+                "personalDetails",
+                JSON.stringify(mapSectionData(formConfig?.personalDetails))
+            )
 
-            Object.entries(files).forEach(([key, file]) => {
-                if (file) formDataToSend.append(key, file);
-            });
+            fd.append(
+                "educationDetails",
+                JSON.stringify(mapSectionData(formConfig?.educationDetails))
+            )
 
-            await createApplication(formDataToSend, true);
-            toast.success("Application submitted successfully!");
+            Object.entries(files).forEach(([k, f]) => {
+                fd.append(k, f)
+            })
 
-            if (refetch) {
-                await refetch();
-            }
-            if (onSuccess) {
-                onSuccess();
+            if (isEdit && applicationId) {
+                await updateApplication(applicationId, fd, true)
+                toast.success("Application updated successfully")
             } else {
-
-                router.push("/applications");
+                await createApplication(fd, true)
+                toast.success("Application submitted successfully")
             }
+
+            await refetch?.()
+            onSuccess ? onSuccess() : router.push("/applications")
         } catch (err: any) {
-            toast.error(err?.response?.data?.message || err.message || "Failed to submit");
+            toast.error(err?.message || "Submission failed")
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
-    };
+    }
+
+
 
     return (
-        <div >
+        <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow space-y-6">
+            <Toaster position="top-right" />
 
-            <form
-                onSubmit={handleSubmit}
-                className="bg-white dark:bg-neutral-900 p-6 rounded-lg shadow space-y-6"
-            >
-                {/* Institute Selection */}
-                {showinstituteDropdown && (
-                    <div>
-                        <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1 block">
-                            Select Institute <span className="text-red-500">*</span>
-                        </label>
-                        <Select
-                            options={institutions}
-                            value={institutions.find(opt => opt.value === selectedInstitute) || null}
-                            onChange={(selected) => setSelectedInstitute(selected?.value || "")}
-                            placeholder="Select Institute"
-                            isClearable
-                        />
-                    </div>
-                )}
+            {/* Institute */}
+            {showInstituteDropdown && (
+                <Select
+                    options={institutions}
+                    onChange={(o) => setSelectedInstitute(o?.value || "")}
+                    placeholder="Select Institute"
+                />
+            )}
 
-                {/* Program */}
-                {selectedInstitute && (
-                    <div>
-                        <label className="text-sm font-semibold mb-1">
-                            Program <span className="text-red-500">*</span>
-                        </label>
-                        <Select
-                            options={programOptions}
-                            value={programOptions.find(opt => opt.value === program) || null}
-                            onChange={handleProgramChange}
-                            placeholder="Select Program"
-                            isClearable
-                        />
-                    </div>
-                )}
+            {/* Program */}
+            {selectedInstitute && (
+                <Select
+                    options={programOptions}
+                    value={programOptions.find((p) => p.value === program) || null}
+                    onChange={(o) => setProgram(o?.value || "")}
+                    placeholder="Select Program"
+                />
 
-                {/* TAB HEADER */}
-                <div className="flex gap-4 border-b pb-2">
-                    <button
-                        type="button"
-                        onClick={() => setActiveTab("personal")}
-                        className={`px-4 py-2 font-semibold ${activeTab === "personal"
-                            ? "border-b-2 border-blue-600 text-blue-600"
-                            : "text-gray-500"
-                            }`}
-                    >
-                        Personal Details
-                    </button>
-
-                    <button
-                        type="button"
-                        disabled
-                        className={`px-4 py-2 font-semibold ${activeTab === "education"
-                            ? "border-b-2 border-green-600 text-green-600"
-                            : "text-gray-400 cursor-not-allowed"
-                            }`}
-                    >
-                        Educational Details
-                    </button>
+            )}
+            <div className="flex items-center justify-between mb-4 p-3 border rounded bg-white">
+                <div>
+                    <h3 className="text-sm font-semibold text-gray-800">
+                        Add Custom Field
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                        Enable to add manual fields to the form
+                    </p>
                 </div>
 
-                {/* PERSONAL DETAILS TAB */}
-                {activeTab === "personal" && formConfig?.personalFields?.length > 0 && (
-                    <div className="border rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <User className="w-5 h-5 text-blue-500" />
-                            <h2 className="text-base font-semibold">Personal Details</h2>
-                        </div>
+                {/* TOGGLE */}
+                <button
+                    type="button"
+                    onClick={() => setShowCustomField(!showCustomField)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition
+      ${showCustomField ? "bg-blue-600" : "bg-gray-300"}`}
+                >
+                    <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition
+        ${showCustomField ? "translate-x-6" : "translate-x-1"}`}
+                    />
+                </button>
+            </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                            {formConfig.personalFields.map((field: any, i: number) => (
-                                <div key={i} className="flex flex-col space-y-0.5">
-                                    <label className="text-xs font-semibold text-gray-600">
-                                        {field.fieldName}
-                                        {field.required && <span className="text-red-500">*</span>}
-                                    </label>
-                                    {renderField(field, i)}
-                                </div>
-                            ))}
-                        </div>
+            {/* MANUAL FIELD BUILDER */}
+            {showCustomField && (
+                <div className="border p-4 rounded bg-gray-50 space-y-4">
+                    {/* HEADER */}
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-sm flex items-center gap-2">
+                            ➕ Add Custom Field
+                        </h3>
 
-                        <div className="flex justify-end mt-3">
-                            <button
-                                type="button"
-                                onClick={handleNext}
-                                className="px-4 py-1.5 bg-blue-600 text-sm text-white rounded hover:bg-blue-700"
-                            >
-                                Next
-                            </button>
-                        </div>
+
                     </div>
-                )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {/* TAB */}
+                        <select
+                            className={inputClass}
+                            value={newField.tab}
+                            onChange={(e) =>
+                                setNewField({ ...newField, tab: e.target.value as Tab })
+                            }
+                        >
+                            <option value="personal">Personal</option>
+                            <option value="education">Education</option>
+                        </select>
 
-
-                {/* EDUCATIONAL DETAILS TAB */}
-                {activeTab === "education" && formConfig?.educationFields?.length > 0 && (
-                    <div className="border rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <BookOpen className="w-5 h-5 text-green-500" />
-                            <h2 className="text-base font-semibold">Educational Details</h2>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                            {formConfig.educationFields.map((field: any, i: number) => (
-                                <div key={i} className="flex flex-col space-y-0.5">
-                                    <label className="text-xs font-semibold text-gray-600">
-                                        {field.fieldName}
-                                        {field.required && <span className="text-red-500">*</span>}
-                                    </label>
-                                    {renderField(field, i)}
-                                </div>
+                        {/* SECTION */}
+                        <select
+                            className={inputClass}
+                            value={newField.sectionName}
+                            onChange={(e) =>
+                                setNewField({ ...newField, sectionName: e.target.value })
+                            }
+                        >
+                            <option value="">Select Section</option>
+                            {formConfig?.[`${newField.tab}Details`]?.map((s: any) => (
+                                <option key={s.sectionName} value={s.sectionName}>
+                                    {s.sectionName}
+                                </option>
                             ))}
-                        </div>
+                        </select>
 
-                        {/* SUBMIT BUTTON */}
-                        <div className="flex justify-end gap-2 mt-3">
+                        {/* FIELD NAME */}
+                        <input
+                            className={inputClass}
+                            placeholder="Field Name"
+                            value={newField.fieldName}
+                            onChange={(e) =>
+                                setNewField({ ...newField, fieldName: e.target.value })
+                            }
+                        />
 
-                            <button
-                                type="button"
-                                onClick={handlePrev}
-                                className="px-4 py-1.5 bg-gray-500 text-sm text-white rounded hover:bg-gray-600"
-                            >
-                                ← Previous
-                            </button>
+                        {/* FIELD TYPE */}
+                        <select
+                            className={inputClass}
+                            value={newField.fieldType}
+                            onChange={(e) =>
+                                setNewField({ ...newField, fieldType: e.target.value })
+                            }
+                        >
+                            <option value="">Select Type</option>
+                            <option value="text">Text</option>
+                            <option value="file">File Upload</option>
+                        </select>
 
-                            {!LeadId && (
-                                <button
-                                    type="button"
-                                    onClick={() => router.push("/applications")}
-                                    className="px-4 py-1.5 bg-red-500 text-sm text-white rounded hover:bg-red-600"
+                        {/* OPTIONS */}
+                        {["select", "checkbox", "radiobutton"].includes(newField.fieldType) && (
+                            <input
+                                className={inputClass}
+                                placeholder="Options (comma separated)"
+                                value={newField.options}
+                                onChange={(e) =>
+                                    setNewField({ ...newField, options: e.target.value })
+                                }
+                            />
+                        )}
+
+                        {/* REQUIRED */}
+                        <label className="flex gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={newField.required}
+                                onChange={(e) =>
+                                    setNewField({ ...newField, required: e.target.checked })
+                                }
+                            />
+                            Required
+                        </label>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleAddManualField}
+                        className="bg-blue-600 text-white px-4 py-2 rounded"
+                    >
+                        Add Field
+                    </button>
+                </div>
+            )}
+
+
+
+            {/* Step Form */}
+            <div className="border p-4 rounded">
+                <h2 className="font-semibold text-lg mb-3">
+                    {activeTab === "personal" ? "Personal Details" : "Education Details"}
+                </h2>
+
+                {formConfig?.[`${activeTab}Details`]?.map((section: any) => (
+                    <div key={section.sectionName} className="border p-3 rounded mb-4">
+                        <h3 className="font-semibold mb-3">{section.sectionName}</h3>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {section.fields.map((f: any) => (
+                                <div
+                                    key={f.fieldName}
+                                    className="flex flex-col relative border rounded p-2"
                                 >
-                                    Cancel
-                                </button>
-                            )}
+                                    {/* ❌ REMOVE BUTTON (only for manually added fields) */}
+                                    {f.isCustom && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                removeField(activeTab, section.sectionName, f.fieldName)
+                                            }
+                                            className="absolute top-1 right-1 text-red-600 font-bold text-sm"
+                                            title="Remove field"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
 
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="px-4 py-1.5 bg-green-600 text-sm text-white rounded hover:bg-green-700 disabled:opacity-60"
-                            >
-                                {loading ? "Submitting..." : "Submit"}
-                            </button>
+                                    <label className="text-xs font-semibold mb-1">
+                                        {f.fieldName}
+                                        {f.required && <span className="text-red-500"> *</span>}
+                                    </label>
+
+                                    {renderField(f)}
+                                </div>
+                            ))}
                         </div>
                     </div>
+                ))}
+
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-end gap-2">
+                {activeTab === "education" && (
+                    <button type="button" onClick={handlePrev} className="px-4 py-2 bg-gray-500 text-white rounded">
+                        ← Previous
+                    </button>
                 )}
-
-            </form>
-
-
-
-        </div>
-    );
+                {activeTab === "personal" && (
+                    <button type="button" onClick={handleNext} className="px-4 py-2 bg-blue-600 text-white rounded">
+                        Next →
+                    </button>
+                )}
+                {activeTab === "education" && (
+                    <button type="submit" disabled={loading} className="px-4 py-2 bg-green-600 text-white rounded">
+                        {loading ? "Submitting..." : "Submit"}
+                    </button>
+                )}
+            </div>
+        </form>
+    )
 }

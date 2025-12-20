@@ -5,66 +5,491 @@ import Select from 'react-select'
 import toast, { Toaster } from 'react-hot-toast'
 import {
   saveFormConfiguration,
-  getFormByInstituteId,
 } from '@/app/lib/request/formManager'
 import { getActiveInstitutions } from '@/app/lib/request/institutionRequest'
+import { getFormByInstituteId } from '@/app/lib/request/formManager'
+import {
+  DndContext,
+  closestCenter,
+} from '@dnd-kit/core'
+import BackButton from '@/components/BackButton'
+import { Settings2 } from 'lucide-react'
 
-// ===============================
-// Interfaces
-// ===============================
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+
+import { CSS } from '@dnd-kit/utilities'
+
+/* ===============================
+   Types
+================================ */
 interface InstituteData {
   id: string
   name: string
 }
 
 interface FieldConfig {
-  id?: string // unique id for local operations (delete, edit)
+  id: string
   instituteId: string
-  fieldType: string
-  maxLength?: number
-  fieldName: string
   fieldFor: 'Personal' | 'Education'
-  sectionName?: string
-  visibility: 'Yes' | 'No'
+  sectionName: string
+  fieldType: string
+  fieldName: string
   required: boolean
+  visibility: 'Yes' | 'No'
   options?: string[]
-  acceptedFileTypes?: string
+  maxLength?: number
+  acceptedFileTypes?: string[]
 }
 
-interface FormManager {
-  instituteId: string
-  personalFields: FieldConfig[]
-  educationFields: FieldConfig[]
-}
 
-// small uid helper
+
 const uid = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 
-// ===============================
-// Component
-// ===============================
+/* ===============================
+   Component
+================================ */
+
+function SortableField({
+  field,
+  inputClass,
+  onRemove,
+}: {
+  field: FieldConfig
+  inputClass: string
+  onRemove: (id: string) => void
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: field.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="border p-2 rounded mb-3 bg-white"
+    >
+      <div className="flex justify-between items-center mb-1">
+        <label
+          className="text-sm font-medium cursor-move"
+          {...attributes}
+          {...listeners}
+        >
+          ⠿ {field.fieldName} {field.required && '*'}
+        </label>
+
+        <button
+          onClick={() => onRemove(field.id)}
+          className="text-red-500 text-xs"
+        >
+          ❌ Remove
+        </button>
+      </div>
+
+      {field.fieldType === 'textarea' ? (
+        <textarea disabled className={inputClass} />
+      ) : field.fieldType === 'select' ? (
+        <select disabled className={inputClass}>
+          <option>Select</option>
+          {field.options?.map((o, i) => (
+            <option key={i}>{o}</option>
+          ))}
+        </select>
+      ) : field.fieldType === 'checkbox' ? (
+        <div className="flex gap-3">
+          {field.options?.map((o, i) => (
+            <label key={i} className="text-sm">
+              <input type="checkbox" disabled /> {o}
+            </label>
+          ))}
+        </div>
+      ) : field.fieldType === 'radiobutton' ? (
+        <div className="flex gap-3">
+          {field.options?.map((o, i) => (
+            <label key={i} className="text-sm">
+              <input type="radio" disabled /> {o}
+            </label>
+          ))}
+        </div>
+      ) : (
+        <input disabled className={inputClass} />
+      )}
+    </div>
+  )
+}
+
+
+const buildSectionPayload = (
+  fields: FieldConfig[],
+  category: 'Personal' | 'Education'
+) => {
+  const grouped: Record<string, any[]> = {}
+
+  fields
+    .filter(f => f.fieldFor === category)
+    .forEach(f => {
+      if (!grouped[f.sectionName]) {
+        grouped[f.sectionName] = []
+      }
+
+      grouped[f.sectionName].push({
+        fieldName: f.fieldName,
+        label: f.fieldName,
+        type: f.fieldType,
+        required: f.required,
+        options: f.options,
+        multiple: false,
+      })
+    })
+
+  return Object.keys(grouped).map(section => ({
+    sectionName: section,
+    fields: grouped[section],
+  }))
+}
+
 export default function SettingsPage() {
   const [institutes, setInstitutes] = useState<InstituteData[]>([])
   const [selectedInstitute, setSelectedInstitute] =
     useState<InstituteData | null>(null)
+
   const [fields, setFields] = useState<FieldConfig[]>([])
 
-  const [fieldFor, setFieldFor] = useState<'Personal' | 'Education'>('Personal')
-  const [activeTab, setActiveTab] = useState<'Personal' | 'Education'>('Personal')
+  const [fieldFor, setFieldFor] =
+    useState<'Personal' | 'Education'>('Personal')
+
+  const [sectionName, setSectionName] = useState('')
+  const [customSection, setCustomSection] = useState('')
+  const [previewTab, setPreviewTab] =
+    useState<'Personal' | 'Education'>('Personal')
 
   const [customMode, setCustomMode] = useState(false)
-  const [fieldType, setFieldType] = useState('')
-  const [maxLength, setMaxLength] = useState<number | ''>('')
   const [fieldName, setFieldName] = useState('')
-  const [sectionName, setSectionName] = useState('')
-  const [visibility, setVisibility] = useState<'Yes' | 'No'>('Yes')
+  const [fieldType, setFieldType] = useState('')
   const [required, setRequired] = useState(false)
   const [options, setOptions] = useState('')
 
-  // ===============================
-  // Load Institutes
-  // ===============================
+  useEffect(() => {
+    const loadConfig = async () => {
+      if (!selectedInstitute) return
+
+      try {
+        const res = await getFormByInstituteId(selectedInstitute.id)
+
+        // ❌ API-level failure (extra safety)
+        if (!res.success) {
+          toast.error(res.message || 'Failed to load form configuration')
+          setFields([])
+          return
+        }
+
+        const apiData = res.data
+
+        // ⚠️ No form exists yet
+        if (!apiData) {
+          setFields([])
+          toast('No form configuration found', { icon: 'ℹ️' })
+          return
+        }
+
+        // ✅ Convert + set fields
+        const converted = convertApiToFieldConfig(
+          apiData,
+          selectedInstitute.id
+        )
+
+        setFields(converted)
+
+        // ✅ SUCCESS TOAST
+        toast.success(res.message || 'Form loaded successfully')
+
+      } catch (error: any) {
+        console.error('Load form error:', error)
+
+        // ❌ ERROR TOAST (backend message)
+        toast.error(error.message || 'Something went wrong while loading form')
+        setFields([])
+      }
+    }
+
+    loadConfig()
+  }, [selectedInstitute])
+
+
+
+  /* ===============================
+     Sections
+  ================================ */
+  const personalSections = [
+    'Personal Details',
+    'Parent Details',
+    'Sibling Details',
+  ]
+
+  const educationSections = [
+    '10th Details',
+    '12th Details',
+    'Diploma Details',
+  ]
+
+  /* ===============================
+     Predefined Fields
+  ================================ */
+  const predefinedFields: Record<
+    'Personal' | 'Education',
+    Record<string, any[]>
+  > = {
+    Personal: {
+      'Personal Details': [
+        { fieldName: 'First Name', fieldType: 'text', required: true },
+        { fieldName: 'Last Name', fieldType: 'text', required: true },
+        { fieldName: 'Full Name', fieldType: 'text', required: true },
+
+        { fieldName: 'Date of Birth', fieldType: 'date', required: true },
+
+        {
+          fieldName: 'Gender',
+          fieldType: 'select',
+          required: true,
+          options: ['Male', 'Female', 'Other'],
+        },
+
+        {
+          fieldName: 'Community',
+          fieldType: 'select',
+          required: true,
+          options: [
+            'OC',
+            'BC',
+            'BCM',
+            'MBC',
+            'DNC',
+            'SC',
+            'ST',
+            'SCA',
+            'Other',
+          ],
+        },
+
+        { fieldName: 'Nationality', fieldType: 'text', required: true },
+        { fieldName: 'Contact Number', fieldType: 'number', required: true },
+        { fieldName: 'Alternate Contact Number', fieldType: 'number', required: false },
+
+        { fieldName: 'Email Address', fieldType: 'email', required: true },
+        { fieldName: 'Address', fieldType: 'textarea', required: true },
+
+        /* ✅ STUDENT IMAGE */
+        {
+          fieldName: 'Student Image',
+          fieldType: 'file',
+          required: false,
+        },
+
+        /* ✅ INSTITUTE BASED DETAILS */
+        { fieldName: 'Aadhaar Number', fieldType: 'number', required: false },
+        {
+          fieldName: 'Blood Group', fieldType: 'select', required: false, options: [
+            'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'
+          ]
+        },
+
+        { fieldName: 'Hostel Required', fieldType: 'select', required: false, options: ['Yes', 'No'] },
+
+        {
+          fieldName: 'Mode of Transport', fieldType: 'select', required: false, options: [
+            'College Bus',
+            'Own Vehicle',
+            'Public Transport'
+          ]
+        },
+      ],
+
+      'Parent Details': [
+        { fieldName: 'Father Name', fieldType: 'text', required: true },
+        { fieldName: 'Father Occupation', fieldType: 'text', required: false },
+        { fieldName: 'Mother Name', fieldType: 'text', required: true },
+        { fieldName: 'Mother Occupation', fieldType: 'text', required: false },
+        { fieldName: 'Annual Income', fieldType: 'number', required: false },
+      ],
+
+      'Sibling Details': [
+        { fieldName: 'Sibling Name', fieldType: 'text', required: false },
+        { fieldName: 'Sibling Age', fieldType: 'number', required: false },
+        { fieldName: 'Sibling Studying', fieldType: 'select', required: false, options: ['Yes', 'No'] },
+      ],
+
+    },
+    Education: {
+      '10th Details': [
+        { fieldName: '10th School Name', fieldType: 'text', required: true },
+
+        {
+          fieldName: '10th Board',
+          fieldType: 'select',
+          required: true,
+          options: ['State Board', 'CBSE', 'ICSE', 'Other'],
+        },
+
+        {
+          fieldName: '10th Medium',
+          fieldType: 'select',
+          required: true,
+          options: ['English', 'Tamil', 'Other'],
+        },
+
+        { fieldName: '10th Year of Completion', fieldType: 'number', required: true },
+
+        {
+          fieldName: '10th Marks Type',
+          fieldType: 'select',
+          required: true,
+          options: ['Percentage', 'CGPA'],
+        },
+
+        { fieldName: '10th Percentage / CGPA', fieldType: 'number', required: true },
+
+        {
+          fieldName: '10th Marksheet',
+          fieldType: 'file',
+          required: false,
+        },
+      ],
+
+      '12th Details': [
+        { fieldName: '12th School Name', fieldType: 'text', required: true },
+
+        {
+          fieldName: '12th Board',
+          fieldType: 'select',
+          required: true,
+          options: ['State Board', 'CBSE', 'ISC', 'Other'],
+        },
+
+        {
+          fieldName: '12th Medium',
+          fieldType: 'select',
+          required: true,
+          options: ['English', 'Tamil', 'Other'],
+        },
+
+        {
+          fieldName: '12th Stream',
+          fieldType: 'select',
+          required: true,
+          options: ['Science', 'Commerce', 'Arts', 'Vocational'],
+        },
+
+        { fieldName: '12th Year of Completion', fieldType: 'number', required: true },
+
+        {
+          fieldName: '12th Marks Type',
+          fieldType: 'select',
+          required: true,
+          options: ['Percentage', 'CGPA'],
+        },
+
+        { fieldName: '12th Percentage / CGPA', fieldType: 'number', required: true },
+
+        {
+          fieldName: '12th Marksheet',
+          fieldType: 'file',
+          required: false,
+        },
+      ],
+
+      'Diploma Details': [
+        { fieldName: 'Diploma College Name', fieldType: 'text', required: false },
+
+        {
+          fieldName: 'Diploma Course',
+          fieldType: 'text',
+          required: false,
+        },
+
+        {
+          fieldName: 'Diploma Specialization',
+          fieldType: 'text',
+          required: false,
+        },
+
+        {
+          fieldName: 'Diploma Year of Completion',
+          fieldType: 'number',
+          required: false,
+        },
+
+        {
+          fieldName: 'Diploma Percentage / CGPA',
+          fieldType: 'number',
+          required: false,
+        },
+
+        {
+          fieldName: 'Diploma Certificate',
+          fieldType: 'file',
+          required: false,
+        },
+      ],
+    },
+  }
+
+  const convertApiToFieldConfig = (
+    data: any,
+    instituteId: string
+  ): FieldConfig[] => {
+    const result: FieldConfig[] = []
+
+    const mapSection = (
+      sections: any[],
+      fieldFor: 'Personal' | 'Education'
+    ) => {
+      sections.forEach((section) => {
+        section.fields.forEach((field: any) => {
+          result.push({
+            id: uid(),
+            instituteId,
+            fieldFor,
+            sectionName: section.sectionName,
+            fieldName: field.fieldName,
+            fieldType: field.type,
+            required: field.required ?? false,
+            visibility: 'Yes',
+            options: field.options ?? [],
+          })
+        })
+      })
+    }
+
+    if (data.personalDetails) {
+      mapSection(data.personalDetails, 'Personal')
+    }
+
+    if (data.educationDetails) {
+      mapSection(data.educationDetails, 'Education')
+    }
+
+    return result
+  }
+
+
+  /* ===============================
+     Load Institutes
+  ================================ */
   useEffect(() => {
     const loadInstitutes = async () => {
       try {
@@ -81,277 +506,186 @@ export default function SettingsPage() {
     loadInstitutes()
   }, [])
 
+  /* ===============================
+     Helpers
+  ================================ */
+  const resolvedSection =
+    sectionName === 'custom' ? customSection.trim() : sectionName
 
-  const fieldExists = (
-    fieldName: string,
-    fieldFor: 'Personal' | 'Education'
-  ) => {
-    return fields.some(
+  const fieldExists = (name: string) =>
+    fields.some(
       (f) =>
         f.fieldFor === fieldFor &&
-        f.fieldName.trim().toLowerCase() === fieldName.trim().toLowerCase()
+        f.sectionName === resolvedSection &&
+        f.fieldName.toLowerCase() === name.toLowerCase()
     )
-  }
 
-  // ===============================
-  // Predefined Fields
-  // ===============================
-  const predefinedFields: Record<
-    'Personal' | 'Education',
-    Array<{
-      fieldName: string
-      fieldType: string
-      required: boolean
-      options?: string[]
-    }>
-  > = {
-    Personal: [
-      { fieldName: 'First Name', fieldType: 'text', required: true },
-      { fieldName: 'Last Name', fieldType: 'text', required: true },
-      { fieldName: 'Full Name', fieldType: 'text', required: true },
-
-      { fieldName: 'Date of Birth', fieldType: 'date', required: true },
-
-      {
-        fieldName: 'Gender',
-        fieldType: 'select',
-        required: true,
-        options: ['Male', 'Female', 'Other'],
-      },
-
-      {
-        fieldName: 'Community',
-        fieldType: 'select',
-        required: true,
-        options: [
-          'OC',
-          'BC',
-          'BCM',
-          'MBC',
-          'DNC',
-          'SC',
-          'ST',
-          'SCA',
-          'Other',
-        ],
-      },
-
-      { fieldName: 'Nationality', fieldType: 'text', required: true },
-      { fieldName: 'Contact Number', fieldType: 'number', required: true },
-      { fieldName: 'Email Address', fieldType: 'email', required: true },
-      { fieldName: 'Address', fieldType: 'textarea', required: true },
-
-      { fieldName: 'Father Name', fieldType: 'text', required: true },
-      { fieldName: 'Father Qualification', fieldType: 'text', required: false },
-      { fieldName: 'Father Occupation', fieldType: 'text', required: false },
-
-      { fieldName: 'Mother Name', fieldType: 'text', required: true },
-      { fieldName: 'Mother Qualification', fieldType: 'text', required: false },
-      { fieldName: 'Mother Occupation', fieldType: 'text', required: false },
-
-      { fieldName: 'Annual Income', fieldType: 'number', required: true },
-
-      { fieldName: 'Student Image', fieldType: 'file', required: false },
-    ],
-
-    Education: [
-      // ---------- 10th ----------
-      { fieldName: '10th School Name', fieldType: 'text', required: true },
-      { fieldName: '10th Marks / Percentage', fieldType: 'number', required: true },
-      { fieldName: '10th Year of Passing', fieldType: 'number', required: true },
-      { fieldName: '10th Marksheet', fieldType: 'file', required: false },
-
-      // ---------- 12th ----------
-      { fieldName: '12th School Name', fieldType: 'text', required: true },
-      { fieldName: '12th Marks / Percentage', fieldType: 'number', required: true },
-      { fieldName: '12th Year of Passing', fieldType: 'number', required: true },
-      { fieldName: '12th Marksheet', fieldType: 'file', required: false },
-
-      // Course selection
-      { fieldName: 'Course Applying For', fieldType: 'text', required: true },
-    ],
-  }
-
-
-  // ===============================
-  // Load Existing Configuration (add local ids)
-  // ===============================
-  useEffect(() => {
-    const loadConfig = async () => {
-      if (!selectedInstitute) return
-      try {
-        const res = await getFormByInstituteId(selectedInstitute.id)
-        const data = res?.data?.[0]
-        if (data) {
-          const merged: FieldConfig[] = [
-            ...(data.personalFields || []),
-            ...(data.educationFields || []),
-          ].map((f: FieldConfig) => ({
-            // give each loaded field a stable id if not present
-            id: f.id || uid(),
-            // preserve other props
-            instituteId: f.instituteId || selectedInstitute.id,
-            fieldType: f.fieldType,
-            maxLength: f.maxLength,
-            fieldName: f.fieldName,
-            fieldFor: f.fieldFor,
-            sectionName: f.sectionName,
-            visibility: f.visibility ?? 'Yes',
-            required: f.required ?? false,
-            options: f.options ?? [],
-            acceptedFileTypes: f.acceptedFileTypes,
-          }))
-          setFields(merged)
-          toast.success('Loaded existing configuration')
-        } else {
-          setFields([])
-        }
-      } catch {
-        toast.error('Failed to load configuration')
-      }
-    }
-    loadConfig()
-  }, [selectedInstitute])
-
-  // ===============================
-  // Add Predefined Field
-  // ===============================
+  /* ===============================
+     Add Predefined Field
+  ================================ */
   const handleAddPredefinedField = (value: string) => {
+    if (!value) return
 
-    if (!selectedInstitute) return toast.error('Select an institute first')
     if (value === 'custom') {
       setCustomMode(true)
       return
     }
+
+    if (!resolvedSection)
+      return toast.error('Select section')
+
+    const list =
+      predefinedFields[fieldFor]?.[resolvedSection] || []
+
+    const field = list.find((f) => f.fieldName === value)
+    if (!field) return
+
+    if (fieldExists(value))
+      return toast.error('Field already exists')
+
+    setFields((prev) => [
+      ...prev,
+      {
+        id: uid(),
+        instituteId: selectedInstitute!.id,
+        fieldFor,
+        sectionName: resolvedSection,
+        fieldName: field.fieldName,
+        fieldType: field.fieldType,
+        required: field.required,
+        visibility: 'Yes',
+        options: field.options || [],
+      },
+    ])
+
+    toast.success('Field added')
+  }
+
+
+
+
+  /* ===============================
+     Add Custom Field
+  ================================ */
+  const handleAddCustomField = () => {
+    if (!fieldName || !fieldType)
+      return toast.error('Field name & type required')
+
+    if (!resolvedSection)
+      return toast.error('Section required')
+
+    if (
+      ['select', 'checkbox', 'radiobutton'].includes(fieldType) &&
+      !options.trim()
+    )
+      return toast.error('Options required')
+
+    if (fieldExists(fieldName))
+      return toast.error('Field already exists')
+
+    setFields((prev) => [
+      ...prev,
+      {
+        id: uid(),
+        instituteId: selectedInstitute!.id,
+        fieldFor,
+        sectionName: resolvedSection,
+        fieldName,
+        fieldType,
+        required,
+        visibility: 'Yes',
+        options:
+          ['select', 'checkbox', 'radiobutton'].includes(fieldType)
+            ? options.split(',').map((o) => o.trim())
+            : [],
+      },
+    ])
+
+    setFieldName('')
+    setFieldType('')
+    setOptions('')
+    setRequired(false)
     setCustomMode(false)
 
-    if (fieldExists(value, fieldFor)) {
-      toast.error(`${value} already exists`)
-      return
-    }
-
-
-
-    const setList = predefinedFields[fieldFor]
-    const field = setList.find((f) => f.fieldName === value)
-    if (!field) return
-    const newField: FieldConfig = {
-      id: uid(),
-      instituteId: selectedInstitute.id,
-      fieldFor,
-      fieldName: field.fieldName,
-      fieldType: field.fieldType,
-      visibility: 'Yes',
-      required: field.required,
-      options: field.options || [],
-    }
-    setFields((prev) => [...prev, newField])
-    toast.success(`${field.fieldName} added!`)
+    toast.success('Custom field added')
   }
 
-  // ===============================
-  // Add Custom Field
-  // ===============================
-  const handleAddCustomField = () => {
-    if (!selectedInstitute) return toast.error('Select an institute first')
-    if (!fieldName || !fieldType)
-      return toast.error('Field name and type required')
-
-    if (fieldExists(fieldName, fieldFor)) {
-      toast.error(`${fieldName} already exists`)
-      return
-    }
-
-
-    const newField: FieldConfig = {
-      id: uid(),
-      instituteId: selectedInstitute.id,
-      fieldFor,
-      fieldType,
-      fieldName,
-      maxLength: maxLength ? Number(maxLength) : undefined,
-      sectionName,
-      visibility,
-      required,
-      options:
-        ['select', 'radiobutton', 'checkbox'].includes(fieldType) && options
-          ? options.split(',').map((o) => o.trim())
-          : [],
-    }
-
-    setFields((prev) => [...prev, newField])
-    resetCustomInputs()
-    toast.success('Custom field added!')
-  }
-
-  const resetCustomInputs = () => {
-    setFieldType('')
-    setFieldName('')
-    setMaxLength('')
-    setSectionName('')
-    setVisibility('Yes')
-    setRequired(false)
-    setOptions('')
-  }
-
-  // ===============================
-  // Remove Field (by id)
-  // ===============================
-  const handleRemoveField = (id?: string) => {
-    if (!id) return
-    setFields((prev) => prev.filter((f) => f.id !== id))
-    toast.success('Field removed!')
-  }
-
-  // ===============================
-  // Submit
-  // ===============================
+  /* ===============================
+     Submit
+  ================================ */
   const handleSubmit = async () => {
-    if (!selectedInstitute) return toast.error('Please select an institute')
-    if (fields.length === 0) return toast.error('No fields to submit')
+    if (!selectedInstitute)
+      return toast.error('Select institute')
 
-    const personalFields = fields
-      .filter((f) => f.fieldFor === 'Personal')
-      .map((f) => {
-        // strip local-only props (like id) if backend doesn't expect them
-        const { id, ...rest } = f
-        return rest
-      })
-    const educationFields = fields
-      .filter((f) => f.fieldFor === 'Education')
-      .map((f) => {
-        const { id, ...rest } = f
-        return rest
-      })
-
-    const payload: FormManager = {
+    const payload = {
       instituteId: selectedInstitute.id,
-      personalFields,
-      educationFields,
+
+      personalDetails: buildSectionPayload(fields, 'Personal'),
+
+      educationDetails: buildSectionPayload(fields, 'Education'),
     }
 
-    try {
-      const res = await saveFormConfiguration(payload)
-      toast.success(res?.message || 'Saved successfully!')
-    } catch {
-      toast.error('Failed to save')
-    }
+    console.log('FINAL PAYLOAD', payload)
+
+    await saveFormConfiguration(payload)
+    toast.success('Saved successfully')
   }
 
-  // ===============================
-  // Styles
-  // ===============================
-  const inputClass =
-    'border rounded px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none w-full'
 
-  // ===============================
-  // Render
-  // ===============================
+  const handleDragEnd = (event: any, section: string) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    setFields((prev) => {
+      // clone array (IMPORTANT)
+      const updated = [...prev]
+
+      // only fields in THIS section + tab
+      const sectionIndexes = updated
+        .map((f, i) =>
+          f.sectionName === section && f.fieldFor === previewTab ? i : -1
+        )
+        .filter((i) => i !== -1)
+
+      const oldIndex = sectionIndexes.find(
+        (i) => updated[i].id === active.id
+      )
+      const newIndex = sectionIndexes.find(
+        (i) => updated[i].id === over.id
+      )
+
+      if (oldIndex === undefined || newIndex === undefined) return prev
+
+      const [moved] = updated.splice(oldIndex, 1)
+      updated.splice(newIndex, 0, moved)
+
+      return updated
+    })
+  }
+
+
+
+  /* ===============================
+     Styles
+  ================================ */
+  const inputClass =
+    'border rounded px-3 py-2 text-sm w-full focus:ring-2 focus:ring-[#5667a8]'
+
   return (
-    <div className="p-6 space-y-8">
+
+    <div className="p-6">
+
+      <div className="flex items-center gap-2 mb-4">
+        <Settings2 className="w-6 h-6 text-blue-600" />
+        <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+          Application settings
+        </h1>
+      </div>
+
+      <BackButton />
+
       <Toaster position="top-right" />
 
-      {/* Select Institute */}
       <div className="border rounded">
         <div className=" bg-gradient-to-b from-[#2a3970] to-[#5667a8]
 
@@ -376,21 +710,23 @@ text-white px-4 py-2 font-semibold rounded-t">
         </div>
       </div>
 
-      {/* Field Builder & Preview */}
       {selectedInstitute && (
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Left - Field Builder */}
-          <div className="border rounded">
-            <div className="bg-gradient-to-b from-[#2a3970] to-[#5667a8]
- text-white px-4 py-2 font-semibold rounded-t">
-              Field Builder
+        <div className="grid md:grid-cols-2 gap-6 mt-6">
+          {/* BUILDER */}
+          <div className="border rounded flex flex-col">
+            {/* HEADER */}
+            <div className="bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white px-4 py-2 font-semibold rounded-t">
+              Form Builder
             </div>
-            <div className="p-4 bg-white space-y-4">
-              {/* Field For */}
+
+            {/* BODY */}
+            <div className="p-4 space-y-6 flex-1 bg-white">
+
+              {/* CATEGORY */}
               <div>
-                <label className="text-sm font-semibold text-gray-600 mb-1 block ">
-                  Field For
-                </label>
+                <h1 className="text-sm font-semibold text-gray-700 mb-1">
+                  Category
+                </h1>
                 <select
                   className={inputClass}
                   value={fieldFor}
@@ -403,211 +739,221 @@ text-white px-4 py-2 font-semibold rounded-t">
                 </select>
               </div>
 
-              {/* Select Predefined Field */}
+              {/* SECTION */}
               <div>
-                <label className="text-sm font-semibold text-gray-600 mb-1 block">
-                  Select Field
-                </label>
+                <h1 className="text-sm font-semibold text-gray-700 mb-1">
+                  Section
+                </h1>
                 <select
                   className={inputClass}
-                  onChange={(e) => handleAddPredefinedField(e.target.value)}
+                  value={sectionName}
+                  onChange={(e) => setSectionName(e.target.value)}
                 >
-                  <option value="">Select...</option>
-                  {predefinedFields[fieldFor].map((f) => (
-                    <option key={f.fieldName} value={f.fieldName}>
-                      {f.fieldName}
-                    </option>
+                  <option value="">Select Section</option>
+                  {(fieldFor === 'Personal'
+                    ? personalSections
+                    : educationSections
+                  ).map((s) => (
+                    <option key={s} value={s}>{s}</option>
                   ))}
+                  <option value="custom">➕ Custom Section</option>
+                </select>
+              </div>
+
+              {/* CUSTOM SECTION */}
+              {sectionName === 'custom' && (
+                <div>
+                  <h1 className="text-sm font-semibold text-gray-700 mb-1">
+                    Custom Section Name
+                  </h1>
+                  <input
+                    className={inputClass}
+                    placeholder="Enter custom section name"
+                    value={customSection}
+                    onChange={(e) => setCustomSection(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {/* FIELD */}
+              <div>
+                <h1 className="text-sm font-semibold text-gray-700 mb-1">
+                  Fields
+                </h1>
+                <select
+                  className={inputClass}
+                  onChange={(e) =>
+                    handleAddPredefinedField(e.target.value)
+                  }
+                >
+                  <option value="">Select Field</option>
+                  {(predefinedFields[fieldFor]?.[resolvedSection] || []).map(
+                    (f) => (
+                      <option key={f.fieldName} value={f.fieldName}>
+                        {f.fieldName}
+                      </option>
+                    )
+                  )}
                   <option value="custom">➕ Custom Field</option>
                 </select>
               </div>
 
-              {/* Custom Field Builder */}
+              {/* CUSTOM FIELD */}
               {customMode && (
-                <div className="border p-4 rounded bg-gray-50 space-y-3">
-                  <div>
-                    <label className="text-sm font-semibold text-gray-600 mb-1 block">
-                      Field Name
-                    </label>
+                <div className="border rounded p-3 space-y-3 bg-gray-50">
+                  <h1 className="text-sm font-semibold text-gray-700">
+                    Custom Field Details
+                  </h1>
+
+                  <input
+                    className={inputClass}
+                    placeholder="Field name"
+                    value={fieldName}
+                    onChange={(e) => setFieldName(e.target.value)}
+                  />
+
+                  <select
+                    className={inputClass}
+                    value={fieldType}
+                    onChange={(e) => setFieldType(e.target.value)}
+                  >
+                    <option value="">Select type</option>
+                    <option value="text">Text</option>
+                    <option value="number">Number</option>
+                    <option value="email">Email</option>
+                    <option value="date">Date</option>
+                    <option value="textarea">Textarea</option>
+                    <option value="select">Select</option>
+                    <option value="checkbox">Checkbox</option>
+                    <option value="radiobutton">Radio Button</option>
+                    <option value="file">File Upload</option>
+                  </select>
+
+                  {['select', 'checkbox', 'radiobutton'].includes(fieldType) && (
                     <input
                       className={inputClass}
-                      value={fieldName}
-                      onChange={(e) => setFieldName(e.target.value)}
+                      placeholder="Options (comma separated)"
+                      value={options}
+                      onChange={(e) => setOptions(e.target.value)}
                     />
-                  </div>
+                  )}
 
-                  <div>
-                    <label className="text-sm font-semibold text-gray-600 mb-1 block">
-                      Field Type
-                    </label>
-                    <select
-                      className={inputClass}
-                      value={fieldType}
-                      onChange={(e) => setFieldType(e.target.value)}
-                    >
-                      <option value="">Select</option>
-                      <option value="text">Text</option>
-                      <option value="number">Number</option>
-                      <option value="email">Email</option>
-                      <option value="date">Date</option>
-                      <option value="textarea">Textarea</option>
-                      <option value="select">Select</option>
-                      <option value="checkbox">Checkbox</option>
-                      <option value="radiobutton">Radio Button</option>
-                      <option value="file">File Upload</option>
-                    </select>
-                  </div>
-
-                  {(fieldType === 'select' ||
-                    fieldType === 'radiobutton' ||
-                    fieldType === 'checkbox') && (
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600 mb-1 block">
-                          Options (comma separated)
-                        </label>
-                        <input
-                          className={inputClass}
-                          value={options}
-                          onChange={(e) => setOptions(e.target.value)}
-                          placeholder="e.g. Option1,Option2"
-                        />
-                      </div>
-                    )}
-
-                  <div className="flex items-center gap-2">
+                  <label className="flex gap-2 text-sm">
                     <input
                       type="checkbox"
                       checked={required}
                       onChange={(e) => setRequired(e.target.checked)}
                     />
-                    <label className="text-sm font-semibold text-gray-600">
-                      Required Field
-                    </label>
-                  </div>
+                    Required
+                  </label>
 
                   <button
                     onClick={handleAddCustomField}
-                    className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                    className="bg-blue-600 text-white py-2 rounded w-full"
                   >
-                    Add Custom Field
+                    Add Field
                   </button>
                 </div>
               )}
-            </div>
 
-            <div className="p-4 bg-white border-t">
+              {/* SAVE */}
               <button
                 onClick={handleSubmit}
-                className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition w-full"
+                className="bg-green-600 text-white py-2 rounded w-full"
               >
-                Submit All
+                Save
               </button>
             </div>
           </div>
 
-          {/* Right - Live Preview */}
-          <div className="border rounded">
-            <div className="bg-gradient-to-b from-[#2a3970] to-[#5667a8]
-text-white px-4 py-2 font-semibold rounded-t">
+
+          {/* PREVIEW */}
+          {/* PREVIEW */}
+          <div className="border rounded flex flex-col max-h-[65vh]">
+            {/* HEADER */}
+            <div className="bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white px-4 py-2 font-semibold rounded-t">
               Live Preview
             </div>
-            <div className="flex border-b bg-white">
-              {['Personal', 'Education'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab as 'Personal' | 'Education')}
-                  className={`flex-1 px-4 py-2 font-semibold ${activeTab === tab
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                >
-                  {tab} Fields
-                </button>
-              ))}
-            </div>
 
-            <div className="p-4 bg-white max-h-[320px] overflow-y-auto space-y-3">
-              {fields
-                .filter((f) => f.fieldFor === activeTab)
-                .map((f) => (
-                  <div
-                    key={f.id}
-                    className="flex items-start justify-between gap-2 border-b pb-2"
+            {/* BODY */}
+            <div className="p-4 overflow-y-auto flex-1 bg-gray-50">
+
+              {/* TABS */}
+              <div className="flex gap-3 mb-4">
+                {(['Personal', 'Education'] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setPreviewTab(t)}
+                    className={`px-4 py-2 rounded text-sm font-medium transition ${previewTab === t
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300'
+                      }`}
                   >
-                    <div className="flex-1">
-                      <label className="text-sm font-semibold text-gray-700 block mb-1">
-                        {f.fieldName}{' '}
-                        {f.required && <span className="text-red-500">*</span>}
-                      </label>
-
-                      {/* Render realistic preview control by type */}
-                      {f.fieldType === 'textarea' ? (
-                        <textarea
-                          disabled
-                          className="border rounded px-3 py-2 text-sm text-gray-600 w-full"
-                          placeholder={`[${f.fieldType}]`}
-                        />
-                      ) : f.fieldType === 'select' ? (
-                        <select disabled className="border rounded px-3 py-2 text-sm text-gray-600 w-full">
-                          <option>{`[${f.fieldType}]`}</option>
-                          {(f.options || []).map((opt, idx) => (
-                            <option key={idx} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
-                        </select>
-                      ) : f.fieldType === 'checkbox' ? (
-                        <div className="flex items-center gap-3">
-                          {(f.options && f.options.length > 0) ? (
-                            f.options.map((opt, idx) => (
-                              <label key={idx} className="text-sm">
-                                <input disabled type="checkbox" className="mr-2" /> {opt}
-                              </label>
-                            ))
-                          ) : (
-                            <input
-                              disabled
-                              type="checkbox"
-                              className="border rounded text-sm"
-                            />
-                          )}
-                        </div>
-                      ) : f.fieldType === 'radiobutton' ? (
-                        <div className="flex items-center gap-3">
-                          {(f.options || []).map((opt, idx) => (
-                            <label key={idx} className="text-sm">
-                              <input disabled type="radio" name={f.id} className="mr-2" /> {opt}
-                            </label>
-                          ))}
-                        </div>
-                      ) : f.fieldType === 'file' ? (
-                        <input disabled type="file" className="border rounded px-3 py-2 text-sm text-gray-600 w-full" />
-                      ) : (
-                        <input
-                          disabled
-                          type={f.fieldType}
-                          className="border rounded px-3 py-2 text-sm text-gray-600 w-full"
-                          placeholder={`[${f.fieldType}]`}
-                        />
-                      )}
-                    </div>
-
-                    <button
-                      onClick={() => handleRemoveField(f.id)}
-                      className="text-red-500 hover:text-red-700 mt-2"
-                    >
-                      ✕
-                    </button>
-                  </div>
+                    {t}
+                  </button>
                 ))}
+              </div>
 
-              {fields.filter((f) => f.fieldFor === activeTab).length === 0 && (
-                <p className="text-gray-400 text-sm text-center">
-                  No {activeTab} fields yet.
+              {/* SECTIONS */}
+              {Array.from(
+                new Set(
+                  fields
+                    .filter((f) => f.fieldFor === previewTab)
+                    .map((f) => f.sectionName)
+                )
+              ).map((sec) => (
+                <div key={sec} className="border bg-white p-3 rounded mb-4">
+                  <h3 className="font-semibold text-gray-800 mb-3">
+                    {sec}
+                  </h3>
+
+                  <DndContext
+                    collisionDetection={closestCenter}
+                    onDragEnd={(e) => handleDragEnd(e, sec)}
+                  >
+                    <SortableContext
+                      items={fields
+                        .filter(
+                          (f) =>
+                            f.fieldFor === previewTab &&
+                            f.sectionName === sec
+                        )
+                        .map((f) => f.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {fields
+                        .filter(
+                          (f) =>
+                            f.fieldFor === previewTab &&
+                            f.sectionName === sec
+                        )
+                        .map((f) => (
+                          <SortableField
+                            key={f.id}
+                            field={f}
+                            inputClass={inputClass}
+                            onRemove={(id) =>
+                              setFields((prev) =>
+                                prev.filter((x) => x.id !== id)
+                              )
+                            }
+                          />
+                        ))}
+                    </SortableContext>
+                  </DndContext>
+                </div>
+              ))}
+
+              {/* EMPTY STATE */}
+              {fields.filter((f) => f.fieldFor === previewTab).length === 0 && (
+                <p className="text-sm text-gray-500 text-center mt-10">
+                  No fields added for {previewTab}
                 </p>
               )}
             </div>
           </div>
+
+
         </div>
       )}
     </div>

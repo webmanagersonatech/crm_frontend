@@ -24,33 +24,39 @@ api.interceptors.request.use(
 );
 
 // ============================
-// Types
+// TYPES (SECTION BASED)
 // ============================
 
-export interface FormField {
-  fieldType: string;
-  maxLength?: number;
+export interface SectionField {
   fieldName: string;
-  fieldFor: "Personal" | "Education";
-  sectionName?: string;
-  visibility: "Yes" | "No";
-  required: boolean;
+  label?: string;
+  type: string;
+  required?: boolean;
   options?: string[];
-  
+  multiple?: boolean;
 }
 
-export interface FormManager {
+export interface FormSection {
+  sectionName: string;
+  fields: SectionField[];
+}
+
+export interface FormBuilderPayload {
   _id?: string;
   instituteId: string;
-  personalFields: FormField[];
-  educationFields: FormField[];
+  personalDetails: FormSection[];
+  educationDetails: FormSection[];
   createdAt?: string;
   updatedAt?: string;
 }
 
+// ============================
+// API FUNCTIONS
+// ============================
 
-
-export async function saveFormConfiguration(data: FormManager) {
+export async function saveFormConfiguration(
+  data: FormBuilderPayload
+) {
   try {
     const response = await api.post("/form-manager", data);
     return response.data;
@@ -61,7 +67,6 @@ export async function saveFormConfiguration(data: FormManager) {
     );
   }
 }
-
 
 export async function getAllFormConfigurations() {
   try {
@@ -77,13 +82,13 @@ export async function getAllFormConfigurations() {
 
 export async function getFormByInstituteId(instituteId: string) {
   try {
-    const response = await api.get(`/form-manager?instituteId=${instituteId}`);
-    return response.data;
+    const response = await api.get(`/form-manager/${instituteId}`)
+    return response.data
   } catch (error: any) {
+    // Pass backend message clearly
     throw new Error(
-      error.response?.data?.message ||
-        "Failed to fetch form configuration for this institute."
-    );
+      error?.response?.data?.message || 'Unable to fetch form configuration'
+    )
   }
 }
 
