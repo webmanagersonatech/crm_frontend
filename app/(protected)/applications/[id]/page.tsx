@@ -120,7 +120,7 @@ export default function ApplicationDetailsPage() {
                 {/* HEADER */}
                 <div className="flex items-center justify-between mb-6">
                     <img
-                        src="/logo.png"
+                        src={data?.instituteLogo || "/logo.png"}
                         alt="Logo"
                         className="w-20 h-20 object-contain"
                     />
