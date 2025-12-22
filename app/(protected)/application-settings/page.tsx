@@ -236,13 +236,16 @@ export default function SettingsPage() {
      Sections
   ================================ */
   const personalSections = [
+
     'Personal Details',
     'Parent Details',
+    'Address Details',
     'Sibling Details',
   ]
 
   const educationSections = [
     '10th Details',
+    '11th Details',
     '12th Details',
     'Diploma Details',
   ]
@@ -318,15 +321,58 @@ export default function SettingsPage() {
           ]
         },
       ],
-
       'Parent Details': [
-        { fieldName: 'Father Name', fieldType: 'text', required: true },
-        { fieldName: 'Father Occupation', fieldType: 'text', required: false },
-        { fieldName: 'Mother Name', fieldType: 'text', required: true },
-        { fieldName: 'Mother Occupation', fieldType: 'text', required: false },
-        { fieldName: 'Annual Income', fieldType: 'number', required: false },
-      ],
+        // 👨 Father Details
+        { fieldName: "Father Name", fieldType: "text", required: true },
+        { fieldName: "Father Age", fieldType: "number", required: false },
+        { fieldName: "Father Mobile No", fieldType: "text", required: false },
+        { fieldName: "Father Occupation", fieldType: "text", required: false },
+        { fieldName: "Father Organization", fieldType: "text", required: false },
+        { fieldName: "Father Designation", fieldType: "text", required: false },
+        { fieldName: "Father Aadhar No", fieldType: "text", required: false },
+        { fieldName: "Father Blood Group", fieldType: "text", required: false },
 
+        // 👩 Mother Details
+        { fieldName: "Mother Name", fieldType: "text", required: true },
+        { fieldName: "Mother Age", fieldType: "number", required: false },
+        { fieldName: "Mother Mobile No", fieldType: "text", required: false },
+        { fieldName: "Mother Occupation", fieldType: "text", required: false },
+        { fieldName: "Mother Organization", fieldType: "text", required: false },
+        { fieldName: "Mother Designation", fieldType: "text", required: false },
+        { fieldName: "Mother Aadhar No", fieldType: "text", required: false },
+        { fieldName: "Mother Blood Group", fieldType: "text", required: false },
+
+        // 💰 Family Info
+        { fieldName: "Annual Income", fieldType: "number", required: false },
+
+      ],
+      'Address Details': [
+        {
+          fieldName: "Address",
+          fieldType: "textarea",
+          required: true,
+        },
+        {
+          fieldName: "City",
+          fieldType: "text",
+          required: true,
+        },
+        {
+          fieldName: "State",
+          fieldType: "text",
+          required: true,
+        },
+        {
+          fieldName: "Country",
+          fieldType: "text",
+          required: true,
+        },
+        {
+          fieldName: "Pincode",
+          fieldType: "text",
+          required: true,
+        },
+      ],
       'Sibling Details': [
         { fieldName: 'Sibling Name', fieldType: 'text', required: false },
         { fieldName: 'Sibling Age', fieldType: 'number', required: false },
@@ -345,33 +391,80 @@ export default function SettingsPage() {
           options: ['State Board', 'CBSE', 'ICSE', 'Other'],
         },
 
+        // 📄 Exam Info
+        { fieldName: '10th Exam Roll No', fieldType: 'text', required: true },
+        { fieldName: 'School Place', fieldType: 'text', required: false },
+
+        // 📊 Subject Marks
+        { fieldName: 'English Marks', fieldType: 'number', required: true },
+        { fieldName: 'Mathematics Marks', fieldType: 'number', required: true },
+        { fieldName: 'Science Marks', fieldType: 'number', required: true },
+        { fieldName: 'Social Science Marks', fieldType: 'number', required: true },
+        { fieldName: '10th Language Marks', fieldType: 'number', required: false },
+
+        // 📈 Totals
+        { fieldName: ' 10th Total Marks', fieldType: 'number', required: true },
+        { fieldName: ' 10th Maximum Marks', fieldType: 'number', required: true },
+      ],
+      '11th Details': [
         {
-          fieldName: '10th Medium',
-          fieldType: 'select',
+          fieldName: '11th Name of the School',
+          fieldType: 'text',
           required: true,
-          options: ['English', 'Tamil', 'Other'],
         },
 
-        { fieldName: '10th Year of Completion', fieldType: 'number', required: true },
-
         {
-          fieldName: '10th Marks Type',
+          fieldName: '11th Board',
           fieldType: 'select',
           required: true,
-          options: ['Percentage', 'CGPA'],
+          options: ['State Board', 'CBSE', 'ICSE', 'Other'],
         },
 
-        { fieldName: '10th Percentage / CGPA', fieldType: 'number', required: true },
+        {
+          fieldName: '11th Exam Roll No',
+          fieldType: 'text',
+          required: true,
+        },
 
         {
-          fieldName: '10th Marksheet',
-          fieldType: 'file',
+          fieldName: '11th Medium',
+          fieldType: 'text',
+          required: true,
+        },
+
+        {
+          fieldName: '11th Year of Passing',
+          fieldType: 'number',
+          required: true,
+        },
+
+        {
+          fieldName: '11th Institution Place',
+          fieldType: 'text',
           required: false,
+        },
+
+        {
+          fieldName: '11th Total Marks',
+          fieldType: 'number',
+          required: true,
+        },
+
+        {
+          fieldName: '11th Maximum Marks',
+          fieldType: 'number',
+          required: true,
         },
       ],
 
+
+
       '12th Details': [
-        { fieldName: '12th School Name', fieldType: 'text', required: true },
+        {
+          fieldName: '12th Name of the School',
+          fieldType: 'text',
+          required: true,
+        },
 
         {
           fieldName: '12th Board',
@@ -394,7 +487,35 @@ export default function SettingsPage() {
           options: ['Science', 'Commerce', 'Arts', 'Vocational'],
         },
 
-        { fieldName: '12th Year of Completion', fieldType: 'number', required: true },
+        {
+          fieldName: '12th Exam Roll No',
+          fieldType: 'text',
+          required: true,
+        },
+
+        {
+          fieldName: '12th Year of Passing',
+          fieldType: 'number',
+          required: true,
+        },
+
+        {
+          fieldName: '12th Institution Place',
+          fieldType: 'text',
+          required: false,
+        },
+
+        {
+          fieldName: '12th Total Marks',
+          fieldType: 'number',
+          required: true,
+        },
+
+        {
+          fieldName: '12th Maximum Marks',
+          fieldType: 'number',
+          required: true,
+        },
 
         {
           fieldName: '12th Marks Type',
@@ -403,7 +524,11 @@ export default function SettingsPage() {
           options: ['Percentage', 'CGPA'],
         },
 
-        { fieldName: '12th Percentage / CGPA', fieldType: 'number', required: true },
+        {
+          fieldName: '12th Percentage / CGPA',
+          fieldType: 'number',
+          required: true,
+        },
 
         {
           fieldName: '12th Marksheet',
@@ -411,6 +536,7 @@ export default function SettingsPage() {
           required: false,
         },
       ],
+
 
       'Diploma Details': [
         { fieldName: 'Diploma College Name', fieldType: 'text', required: false },

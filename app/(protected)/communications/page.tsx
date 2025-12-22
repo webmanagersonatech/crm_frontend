@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ExportModal from "@/components/ExportModal";
 import Select, { SingleValue } from "react-select";
 
+
 import { getAllEmailTemplates } from "@/app/lib/request/emailTemplateRequest";
 
 interface Application {
@@ -29,6 +30,7 @@ interface Application {
   paymentStatus: string;
   status: "Pending" | "Approved" | "Rejected";
   createdAt: string;
+  personalDetails?: Array<{ fields: Record<string, any> }>;
   applicationId: string;
   institute?: {
     _id: string;
@@ -37,7 +39,10 @@ interface Application {
   };
   personalData: Record<string, any>;
 }
-
+type SelectedApplicant = {
+  name: string;
+  email: string;
+};
 
 export default function CommunicationsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -58,9 +63,12 @@ export default function CommunicationsPage() {
   const [isSending, setIsSending] = useState(false);
   const [open, setOpen] = useState(false);
   const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
+  const [selectedApplicants, setSelectedApplicants] = useState<SelectedApplicant[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+  const [isBulkMail, setIsBulkMail] = useState(false);
+
   const [modalType, setModalType] = useState<"mail" | "whatsapp" | "sms" | null>(
     null
   );
@@ -78,6 +86,7 @@ export default function CommunicationsPage() {
       try {
         const payload = token.split(".")[1];
         const decoded: any = JSON.parse(atob(payload));
+        console.log("Decoded Token:", decoded);
 
         if (
           (decoded.role === "admin" || decoded.role === "user") &&
@@ -89,7 +98,7 @@ export default function CommunicationsPage() {
           });
 
           const applicationPermission = data.permissions?.find(
-            (p: any) => p.moduleName === "Application"
+            (p: any) => p.moduleName === "Communication"
           );
 
           if (
@@ -161,15 +170,11 @@ export default function CommunicationsPage() {
   }));
   const handleTemplateSelect = (option: SingleValue<any>) => {
     if (!option) return;
-
     const tpl = option.template;
-
     setSelectedTemplate(option);
-    setEmailSubject(tpl.title);    
-    setMessageText(tpl.description);    
+    setEmailSubject(tpl.title);
+    setMessageText(tpl.description);
   };
-
-
 
   useEffect(() => {
     fetchApplications();
@@ -182,7 +187,7 @@ export default function CommunicationsPage() {
       try {
         setLoadingTemplates(true);
 
-        const res = await getAllEmailTemplates(); // ✅ no instituteId
+        const res = await getAllEmailTemplates({ instituteId: selectedInstitution !== "all" ? selectedInstitution : undefined, });
 
         setEmailTemplates(res.data || res);
       } catch (err: any) {
@@ -193,7 +198,38 @@ export default function CommunicationsPage() {
     };
 
     fetchTemplates();
-  }, [modalType]);
+  }, [modalType, selectedInstitution]);
+
+  const getApplicantEmail = (a: Application): string | null => {
+    return a.personalDetails?.[0]?.fields?.["Email Address"] || null;
+  };
+  const toggleApplicant = (a: Application) => {
+    const email = getApplicantEmail(a);
+
+    if (!email) {
+      toast.error(`${a.applicantName} does not have an email address`);
+      return;
+    }
+
+    setSelectedApplicants((prev) => {
+      const exists = prev.find(p => p.name === a.applicantName);
+
+      if (exists) {
+        // remove if already selected
+        return prev.filter(p => p.name !== a.applicantName);
+      }
+
+      // add applicant
+      return [
+        ...prev,
+        {
+          name: a.applicantName,
+          email,
+        },
+      ];
+    });
+  };
+
 
 
   const filteredApplications = (applications || []).map((app: any) => ({
@@ -226,58 +262,40 @@ export default function CommunicationsPage() {
     loadInstitutions();
   }, []);
 
-  // 🔹 Modal submit (send message)
-  const handleSend = async () => {
-    if (!selectedApp) return toast.error("No applicant selected");
-
-    if (modalType === "mail") {
-      if (!emailSubject.trim() || !messageText.trim()) {
-        toast.error("Please Choose an email template");
-        return;
-      }
-
-      const toEmail = selectedApp.personalData?.["Email Address"];
-      if (!toEmail) {
-        toast.error("Applicant does not have a valid email address");
-        return;
-      }
-
-      try {
-        setIsSending(true);
-
-        await sendMail({
-          toEmail,
-          toName: selectedApp.applicantName,
-          subject: emailSubject,
-          htmlContent: `<p>${messageText}</p>`,
-        });
-
-        toast.success("Email sent successfully!");
-        setModalType(null);
-        setEmailSubject("");
-        setMessageText("");
-      } catch (err: any) {
-        console.error("Mail send failed:", err);
-        toast.error(err.message || "Failed to send email");
-      } finally {
-        setIsSending(false);
-      }
-
+  const handleBulkMail = () => {
+    if (selectedApplicants.length === 0) {
+      toast.error("Please select at least one applicant");
       return;
     }
+    setIsBulkMail(true);
+    setSelectedApp(null);
+    setModalType("mail");
+  };
 
-    // 🟢 WhatsApp redirect for manual send
+
+  // 🔹 Modal submit (send message)
+  const handleSend = async () => {
+    /* ---------------- WHATSAPP (SINGLE ONLY) ---------------- */
     if (modalType === "whatsapp") {
+      if (!selectedApp) {
+        toast.error("No applicant selected");
+        return;
+      }
+
       const phone = selectedApp.personalData?.["Contact Number"];
       if (!phone) {
         toast.error("Applicant does not have a valid contact number");
         return;
       }
 
+      if (!messageText.trim()) {
+        toast.error("Message cannot be empty");
+        return;
+      }
+
       const message = encodeURIComponent(messageText.trim());
       const whatsappURL = `https://wa.me/${phone}?text=${message}`;
 
-      // Open WhatsApp chat in new tab
       window.open(whatsappURL, "_blank");
 
       toast.success("Opening WhatsApp...");
@@ -286,22 +304,89 @@ export default function CommunicationsPage() {
       return;
     }
 
-    // 🟡 SMS or other types (dummy log)
-    console.log(`📤 Sending ${modalType?.toUpperCase()} to:`, {
-      applicant: selectedApp.applicantName,
-      contact: selectedApp.personalData?.["Contact Number"],
-      message: messageText,
-    });
+    /* ---------------- BULK MAIL ---------------- */
+    if (modalType === "mail" && isBulkMail) {
+      if (!selectedTemplate) {
+        toast.error("Please select an email template");
+        return;
+      }
 
-    toast.success(`${modalType?.toUpperCase()} sent successfully (console log)`);
-    setModalType(null);
-    setMessageText("");
+      if (selectedApplicants.length === 0) {
+        toast.error("No applicants selected");
+        return;
+      }
+
+      const payload = {
+        templateId: selectedTemplate.value,
+        recipients: selectedApplicants.map(a => ({
+          name: a.name,
+          email: a.email,
+        })),
+      };
+
+      try {
+        setIsSending(true);
+        await sendMail(payload);
+
+        toast.success("Bulk mail sent successfully ✅");
+
+        setSelectedApplicants([]);
+        setSelectedTemplate(null);
+        setModalType(null);
+        setIsBulkMail(false);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to send bulk mail");
+      } finally {
+        setIsSending(false);
+      }
+
+      return;
+    }
+
+
+    /* ---------------- SMS (OPTIONAL / DUMMY) ---------------- */
+    if (modalType === "sms") {
+      if (!selectedApp) {
+        toast.error("No applicant selected");
+        return;
+      }
+
+      console.log("📤 SMS:", {
+        name: selectedApp.applicantName,
+        phone: selectedApp.personalData?.["Contact Number"],
+        message: messageText,
+      });
+
+      toast.success("SMS sent (dummy)");
+      setModalType(null);
+      setMessageText("");
+    }
   };
-
 
 
   // 🔹 Table Columns
   const columns = [
+    {
+      header: "",
+      render: (a: Application) => {
+        const email = getApplicantEmail(a);
+        const checked = selectedApplicants.some(
+          p => p.name === a.applicantName
+        );
+
+        return (
+          <input
+            type="checkbox"
+            checked={checked}
+            disabled={!email}
+            onChange={() => toggleApplicant(a)}
+            title={!email ? "Applicant does not have email" : "Select applicant"}
+            className="w-4 h-4 cursor-pointer"
+          />
+        );
+      },
+    },
+
     { header: "Application ID", accessor: "applicationId" },
     {
       header: "Institute",
@@ -325,16 +410,7 @@ export default function CommunicationsPage() {
       header: "Actions",
       render: (a: Application) => (
         <div className="flex gap-2">
-          <button
-            onClick={() => {
-              setSelectedApp(a);
-              setModalType("mail");
-            }}
-            className="p-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition"
-            title="Send Email"
-          >
-            <Mail className="w-4 h-4" />
-          </button>
+
 
 
           <button
@@ -366,6 +442,7 @@ export default function CommunicationsPage() {
           >
             <MessageSquare className="w-4 h-4" />
           </button>
+
         </div>
       ),
     },
@@ -379,6 +456,7 @@ export default function CommunicationsPage() {
     );
 
   return (
+
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
@@ -459,6 +537,18 @@ export default function CommunicationsPage() {
               <FileDown className="w-4 h-4" /> Export
             </button>)}
 
+          <button
+            onClick={handleBulkMail}
+            disabled={selectedApplicants.length === 0}
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm transition
+    ${selectedApplicants.length === 0
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
+          >
+            <Mail className="w-4 h-4" />
+            Bulk Send Mail
+          </button>
 
 
 

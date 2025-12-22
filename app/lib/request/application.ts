@@ -49,11 +49,10 @@ export interface PaginatedResponse<T> {
 }
 
 export interface EmailRequest {
-  toEmail: string;
-  toName?: string;
-  subject: string;
-  htmlContent: string;
+  templateId: any;
+  recipients: { name: string; email: string }[];
 }
+
 
 export interface EmailResponse {
   success: boolean;
@@ -90,7 +89,7 @@ export async function getApplications(params?: {
   paymentStatus?: string;
   applicationId?: string;
   applicantName?: string;
-  program?: string;  
+  program?: string;
   startDate?: string;
   endDate?: string;
 }) {
@@ -104,7 +103,7 @@ export async function getApplications(params?: {
     if (params?.paymentStatus) queryParams.append("paymentStatus", params.paymentStatus);
     if (params?.applicationId) queryParams.append("applicationId", params.applicationId);
     if (params?.applicantName) queryParams.append("applicantName", params.applicantName);
-     if (params?.program) queryParams.append("program", params.program);
+    if (params?.program) queryParams.append("program", params.program);
     if (params?.startDate) queryParams.append("startDate", params.startDate);
     if (params?.endDate) queryParams.append("endDate", params.endDate);
 

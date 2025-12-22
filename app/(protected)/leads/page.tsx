@@ -75,6 +75,15 @@ export default function LeadsPage() {
   const [role, setRole] = useState<string | null>(null);
   const [confirmType, setConfirmType] = useState<"delete" | "status" | null>(null);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [statusUpdateOpen, setStatusUpdateOpen] = useState(false);
+  const [statusUpdateData, setStatusUpdateData] = useState<{
+    lead?: Lead;
+    status?: string;
+    communication?: string;
+    followUpDate?: string;
+    description?: string;
+  }>({});
+
   const [columnVisibility, setColumnVisibility] = useState({
     instituteId: true,
     candidateName: true,
@@ -125,6 +134,16 @@ export default function LeadsPage() {
   ];
 
 
+  const handleStatusChange = (lead: Lead, status: string) => {
+    setStatusUpdateData({
+      lead,
+      status,
+      communication: lead.communication || "",
+      followUpDate: lead.followUpDate || "",
+      description: lead.description || "",
+    });
+    setStatusUpdateOpen(true);
+  };
 
 
 
@@ -333,12 +352,7 @@ export default function LeadsPage() {
   };
 
   // ------------------ STATUS CHANGE ------------------
-  const handleStatusChange = (lead: Lead, status: string) => {
-    setSelectedLead(lead);
-    setNewStatus(status);
-    setConfirmType("status");
-    setConfirmOpen(true);
-  };
+
 
   // ------------------ COLUMNS ------------------
 
@@ -419,7 +433,7 @@ export default function LeadsPage() {
     columnVisibility.applicationStatus && {
       header: "Application Status",
       render: (lead: Lead) => {
-        if (lead.status === "Interested") {
+        if (lead) {
           if (lead.applicationId) {
             // ✅ View existing application
             return (
@@ -450,13 +464,6 @@ export default function LeadsPage() {
           }
         }
 
-        // ⏳ Default pending
-        return (
-          <div className="flex items-center gap-2 text-gray-500">
-            <Clock className="w-4 h-4" />
-            <span className="italic">Pending</span>
-          </div>
-        );
       },
     },
 
@@ -483,37 +490,16 @@ export default function LeadsPage() {
 
 
           {(userpermission === "superadmin" || userpermission?.view) && (
-
-            <button
-              onClick={() => {
-                const limitedLead: any = {
-                  candidateName: lead.candidateName,
-                  phoneNumber: lead.phoneNumber,
-                  program: lead.program,
-                  status: lead.status,
-                  communication: lead.communication,
-                  followUpDate: lead.followUpDate
-                    ? new Date(lead.followUpDate).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
-                    : '-',
-                  createdAt: lead.createdAt
-                    ? new Date(lead.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
-                    : '-',
-                  dateOfBirth: lead.dateOfBirth
-                    ? new Date(lead.dateOfBirth).toLocaleDateString('en-IN', { dateStyle: 'medium' })
-                    : '-',
-                  country: lead.country || '-',
-                  state: lead.state || '-',
-                  city: lead.city || '-',
-                  description: lead.description || '-',
-                  instituteId: lead.instituteId || '-',
-                };
-                setSelectedLead(limitedLead);
-                setViewOpen(true);
-              }}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md"
+            <Link
+              href={`/leads/${lead._id}` as any}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md
+               flex items-center justify-center"
             >
               <Eye className="w-4 h-4" />
-            </button>)}
+            </Link>
+          )}
+
+
 
 
           {(userpermission === "superadmin" || userpermission?.edit) && (
@@ -777,8 +763,123 @@ export default function LeadsPage() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {statusUpdateOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          >
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative"
+            >
+              <button
+                onClick={() => setStatusUpdateOpen(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
 
+              <h2 className="text-lg font-semibold mb-4">Update Status</h2>
 
+              {/* Communication */}
+              <label className="block mb-2 text-sm font-medium">Communication</label>
+              <select
+                value={statusUpdateData.communication}
+                onChange={(e) =>
+                  setStatusUpdateData(prev => ({ ...prev, communication: e.target.value }))
+                }
+                className="w-full border rounded-md p-2 mb-4"
+              >
+                {communicationOptions.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+
+              {/* Status (read-only) */}
+              <label className="block mb-2 text-sm font-medium">Status</label>
+              <input
+                type="text"
+                value={statusUpdateData.status}
+                readOnly
+                className="w-full border rounded-md p-2 mb-4 bg-gray-100"
+              />
+
+              {/* Follow-up Date */}
+              <label className="block mb-2 text-sm font-medium">Follow-up Date</label>
+              <input
+                type="datetime-local"
+                value={statusUpdateData.followUpDate}
+                onChange={(e) =>
+                  setStatusUpdateData(prev => ({ ...prev, followUpDate: e.target.value }))
+                }
+                className="w-full border rounded-md p-2 mb-4"
+              />
+
+              {/* Description */}
+              <label className="block mb-2 text-sm font-medium">Description</label>
+              <textarea
+                value={statusUpdateData.description}
+                onChange={(e) =>
+                  setStatusUpdateData(prev => ({ ...prev, description: e.target.value }))
+                }
+                className="w-full border rounded-md p-2 mb-4"
+              />
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setStatusUpdateOpen(false)}
+                  className="px-4 py-2 rounded-md border border-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!statusUpdateData.lead || !statusUpdateData.status) return;
+                    try {
+                      if (!statusUpdateData.status) {
+                        toast.error("Status is required");
+                        return;
+                      }
+                      if (!statusUpdateData.communication) {
+                        toast.error("Communication is required");
+                        return;
+                      }
+                      if (!statusUpdateData.followUpDate) {
+                        toast.error("Follow-up date is required");
+                        return;
+                      }
+                      if (!statusUpdateData.description) {
+                        toast.error("Description is required");
+                        return;
+                      }
+                      await updateLead(statusUpdateData.lead._id, {
+                        status: statusUpdateData.status,
+                        communication: statusUpdateData.communication,
+                        followUpDate: statusUpdateData.followUpDate,
+                        description: statusUpdateData.description,
+                      });
+                      toast.success("Lead updated successfully");
+                      setStatusUpdateOpen(false);
+                      fetchLeads();
+                    } catch (err: any) {
+                      toast.error(err.message || "Update failed");
+                    }
+                  }}
+                  className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Update
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
 
 

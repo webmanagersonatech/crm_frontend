@@ -57,6 +57,9 @@ export default function AddApplicationForm({
     const inputClass =
         "border border-gray-300 p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#5667a8]"
 
+
+
+
     // Load token-based institute
     useEffect(() => {
         const token = localStorage.getItem("token")
@@ -157,8 +160,12 @@ export default function AddApplicationForm({
             .catch(() => toast.error("Failed to load application"));
     }, [isEdit, applicationId]);
 
-
-
+    useEffect(() => {
+        if (instituteId) {
+            setSelectedInstitute(instituteId);
+            setShowInstituteDropdown(false);
+        }
+    }, [instituteId]);
 
     // Load institutes
     useEffect(() => {
@@ -324,12 +331,14 @@ export default function AddApplicationForm({
 
                 // File validation
                 if (field.type === "file") {
-                    if (!files[field.fieldName]) {
+                    // Check if a new file is uploaded OR existing value exists
+                    if (!files[field.fieldName] && !formData[field.fieldName]) {
                         toast.error(`${field.fieldName} is required`)
                         return false
                     }
                     continue
                 }
+
 
                 const value = formData[field.fieldName]
 

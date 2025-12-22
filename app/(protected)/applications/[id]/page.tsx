@@ -125,8 +125,8 @@ export default function ApplicationDetailsPage() {
                         className="w-20 h-20 object-contain"
                     />
 
-                    <h1 className="text-2xl font-bold text-center flex-1">
-                         HIKA – APPLICATION FORM
+                    <h1 className="text-xl font-bold text-center flex-1">
+                        HIKA – APPLICATION FORM
                     </h1>
 
                     <div className="text-right text-sm text-gray-600">
@@ -171,7 +171,7 @@ export default function ApplicationDetailsPage() {
                 </section>
 
                 {/* SIGNATURES */}
-                <div className="mt-16 grid grid-cols-2 text-center gap-10">
+                <div className="mt-16 flex justify-between text-center">
                     <div>
                         <div className="border-t border-gray-500 w-48 mx-auto mb-1" />
                         <p className="text-sm text-gray-700">Applicant Signature</p>
@@ -181,6 +181,7 @@ export default function ApplicationDetailsPage() {
                         <p className="text-sm text-gray-700">Admin Verification</p>
                     </div>
                 </div>
+
 
                 {/* FOOTER */}
                 <div className="mt-10 text-center text-xs text-gray-500">
