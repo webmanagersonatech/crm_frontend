@@ -58,6 +58,30 @@ export default function AddApplicationForm({
         "border border-gray-300 p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#5667a8]"
 
 
+    useEffect(() => {
+        const count = Number(formData["Sibling Count"]) || 0
+        if (!formConfig) return
+
+        const sections = formConfig.personalDetails
+        const siblingSection = sections.find((s: any) => s.sectionName === "Sibling Details")
+        if (!siblingSection) return
+
+        // Remove previous dynamically added sibling fields (keeping the original 1 set)
+        siblingSection.fields = siblingSection.fields.filter(
+            (f: any) => !f.fieldName.match(/Sibling (Name|Age|Studying)\d+/)
+        )
+
+        // Append new sibling fields
+        for (let i = 2; i <= count; i++) {
+            siblingSection.fields.push(
+                { fieldName: `Sibling Name${i}`, label: `Sibling Name ${i}`, type: "text", required: false, isCustom: true },
+                { fieldName: `Sibling Age${i}`, label: `Sibling Age ${i}`, type: "number", required: false, isCustom: true },
+                { fieldName: `Sibling Studying${i}`, label: `Sibling Studying ${i}`, type: "select", options: ["Yes", "No"], required: false, isCustom: true }
+            )
+        }
+
+        setFormConfig({ ...formConfig })
+    }, [formData["Sibling Count"]])
 
 
     // Load token-based institute
@@ -222,6 +246,7 @@ export default function AddApplicationForm({
                             label: fieldName.trim(),
                             type: fieldType,
                             required,
+
                             options:
                                 ["select", "checkbox", "radiobutton"].includes(fieldType)
                                     ? options
@@ -505,6 +530,7 @@ export default function AddApplicationForm({
                         value={value}
                         onChange={handleChange}
                         className={inputClass}
+                        maxLength={field.maxLength || undefined}
                     />
                 )
         }

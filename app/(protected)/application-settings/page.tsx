@@ -153,6 +153,7 @@ const buildSectionPayload = (
         type: f.fieldType,
         required: f.required,
         options: f.options,
+        maxLength: f.maxLength,
         multiple: false,
       })
     })
@@ -180,6 +181,7 @@ export default function SettingsPage() {
 
   const [customMode, setCustomMode] = useState(false)
   const [fieldName, setFieldName] = useState('')
+  const [maxLength, setMaxLength] = useState<number | ''>('')
   const [fieldType, setFieldType] = useState('')
   const [required, setRequired] = useState(false)
   const [options, setOptions] = useState('')
@@ -259,9 +261,9 @@ export default function SettingsPage() {
   > = {
     Personal: {
       'Personal Details': [
-        { fieldName: 'First Name', fieldType: 'text', required: true },
-        { fieldName: 'Last Name', fieldType: 'text', required: true },
-        { fieldName: 'Full Name', fieldType: 'text', required: true },
+        { fieldName: 'First Name', fieldType: 'text', required: true, maxLength: 50 },
+        { fieldName: 'Last Name', fieldType: 'text', required: true, maxLength: 50 },
+        { fieldName: 'Full Name', fieldType: 'text', required: true, maxLength: 100 },
 
         { fieldName: 'Date of Birth', fieldType: 'date', required: true },
 
@@ -276,25 +278,15 @@ export default function SettingsPage() {
           fieldName: 'Community',
           fieldType: 'select',
           required: true,
-          options: [
-            'OC',
-            'BC',
-            'BCM',
-            'MBC',
-            'DNC',
-            'SC',
-            'ST',
-            'SCA',
-            'Other',
-          ],
+          options: ['OC', 'BC', 'BCM', 'MBC', 'DNC', 'SC', 'ST', 'SCA', 'Other'],
         },
 
-        { fieldName: 'Nationality', fieldType: 'text', required: true },
+        { fieldName: 'Nationality', fieldType: 'text', required: true, maxLength: 50 },
         { fieldName: 'Contact Number', fieldType: 'number', required: true },
         { fieldName: 'Alternate Contact Number', fieldType: 'number', required: false },
 
-        { fieldName: 'Email Address', fieldType: 'email', required: true },
-        { fieldName: 'Address', fieldType: 'textarea', required: true },
+        { fieldName: 'Email Address', fieldType: 'email', required: true, maxLength: 100 },
+        { fieldName: 'Address', fieldType: 'textarea', required: true, maxLength: 200 },
 
         /* ✅ STUDENT IMAGE */
         {
@@ -306,272 +298,145 @@ export default function SettingsPage() {
         /* ✅ INSTITUTE BASED DETAILS */
         { fieldName: 'Aadhaar Number', fieldType: 'number', required: false },
         {
-          fieldName: 'Blood Group', fieldType: 'select', required: false, options: [
-            'A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'
-          ]
+          fieldName: 'Blood Group',
+          fieldType: 'select',
+          required: false,
+          options: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-']
         },
 
         { fieldName: 'Hostel Required', fieldType: 'select', required: false, options: ['Yes', 'No'] },
 
         {
-          fieldName: 'Mode of Transport', fieldType: 'select', required: false, options: [
-            'College Bus',
-            'Own Vehicle',
-            'Public Transport'
-          ]
+          fieldName: 'Mode of Transport',
+          fieldType: 'select',
+          required: false,
+          options: ['College Bus', 'Own Vehicle', 'Public Transport']
         },
       ],
+
       'Parent Details': [
-        // 👨 Father Details
-        { fieldName: "Father Name", fieldType: "text", required: true },
+        { fieldName: "Father Name", fieldType: "text", required: true, maxLength: 50 },
         { fieldName: "Father Age", fieldType: "number", required: false },
-        { fieldName: "Father Mobile No", fieldType: "text", required: false },
-        { fieldName: "Father Occupation", fieldType: "text", required: false },
-        { fieldName: "Father Organization", fieldType: "text", required: false },
-        { fieldName: "Father Designation", fieldType: "text", required: false },
-        { fieldName: "Father Aadhar No", fieldType: "text", required: false },
-        { fieldName: "Father Blood Group", fieldType: "text", required: false },
+        { fieldName: "Father Mobile No", fieldType: "text", required: false, maxLength: 15 },
+        { fieldName: "Father Occupation", fieldType: "text", required: false, maxLength: 50 },
+        { fieldName: "Father Organization", fieldType: "text", required: false, maxLength: 50 },
+        { fieldName: "Father Designation", fieldType: "text", required: false, maxLength: 50 },
+        { fieldName: "Father Aadhar No", fieldType: "text", required: false, maxLength: 12 },
+        { fieldName: "Father Blood Group", fieldType: "text", required: false, maxLength: 3 },
 
-        // 👩 Mother Details
-        { fieldName: "Mother Name", fieldType: "text", required: true },
+        { fieldName: "Mother Name", fieldType: "text", required: true, maxLength: 50 },
         { fieldName: "Mother Age", fieldType: "number", required: false },
-        { fieldName: "Mother Mobile No", fieldType: "text", required: false },
-        { fieldName: "Mother Occupation", fieldType: "text", required: false },
-        { fieldName: "Mother Organization", fieldType: "text", required: false },
-        { fieldName: "Mother Designation", fieldType: "text", required: false },
-        { fieldName: "Mother Aadhar No", fieldType: "text", required: false },
-        { fieldName: "Mother Blood Group", fieldType: "text", required: false },
+        { fieldName: "Mother Mobile No", fieldType: "text", required: false, maxLength: 15 },
+        { fieldName: "Mother Occupation", fieldType: "text", required: false, maxLength: 50 },
+        { fieldName: "Mother Organization", fieldType: "text", required: false, maxLength: 50 },
+        { fieldName: "Mother Designation", fieldType: "text", required: false, maxLength: 50 },
+        { fieldName: "Mother Aadhar No", fieldType: "text", required: false, maxLength: 12 },
+        { fieldName: "Mother Blood Group", fieldType: "text", required: false, maxLength: 3 },
 
-        // 💰 Family Info
         { fieldName: "Annual Income", fieldType: "number", required: false },
+      ],
 
-      ],
       'Address Details': [
-        {
-          fieldName: "Address",
-          fieldType: "textarea",
-          required: true,
-        },
-        {
-          fieldName: "City",
-          fieldType: "text",
-          required: true,
-        },
-        {
-          fieldName: "State",
-          fieldType: "text",
-          required: true,
-        },
-        {
-          fieldName: "Country",
-          fieldType: "text",
-          required: true,
-        },
-        {
-          fieldName: "Pincode",
-          fieldType: "text",
-          required: true,
-        },
+        { fieldName: "Address", fieldType: "textarea", required: true, maxLength: 200 },
+        { fieldName: "City", fieldType: "text", required: true, maxLength: 50 },
+        { fieldName: "State", fieldType: "text", required: true, maxLength: 50 },
+        { fieldName: "Country", fieldType: "text", required: true, maxLength: 50 },
+        { fieldName: "Pincode", fieldType: "text", required: true, maxLength: 10 },
       ],
+
+
+
       'Sibling Details': [
-        { fieldName: 'Sibling Name', fieldType: 'text', required: false },
+        { fieldName: 'Sibling Count', fieldType: 'number', required: false, maxLength: 2 },
+        { fieldName: 'Sibling Name', fieldType: 'text', required: false, maxLength: 50 },
         { fieldName: 'Sibling Age', fieldType: 'number', required: false },
         { fieldName: 'Sibling Studying', fieldType: 'select', required: false, options: ['Yes', 'No'] },
       ],
-
     },
+
     Education: {
       '10th Details': [
-        { fieldName: '10th School Name', fieldType: 'text', required: true },
-
+        { fieldName: '10th School Name', fieldType: 'text', required: true, maxLength: 100 },
         {
           fieldName: '10th Board',
           fieldType: 'select',
           required: true,
           options: ['State Board', 'CBSE', 'ICSE', 'Other'],
         },
+        { fieldName: '10th Exam Roll No', fieldType: 'text', required: true, maxLength: 20 },
+        { fieldName: 'School Place', fieldType: 'text', required: false, maxLength: 50 },
 
-        // 📄 Exam Info
-        { fieldName: '10th Exam Roll No', fieldType: 'text', required: true },
-        { fieldName: 'School Place', fieldType: 'text', required: false },
-
-        // 📊 Subject Marks
         { fieldName: 'English Marks', fieldType: 'number', required: true },
         { fieldName: 'Mathematics Marks', fieldType: 'number', required: true },
         { fieldName: 'Science Marks', fieldType: 'number', required: true },
         { fieldName: 'Social Science Marks', fieldType: 'number', required: true },
         { fieldName: '10th Language Marks', fieldType: 'number', required: false },
 
-        // 📈 Totals
-        { fieldName: ' 10th Total Marks', fieldType: 'number', required: true },
-        { fieldName: ' 10th Maximum Marks', fieldType: 'number', required: true },
+        { fieldName: '10th Total Marks', fieldType: 'number', required: true },
+        { fieldName: '10th Maximum Marks', fieldType: 'number', required: true },
       ],
-      '11th Details': [
-        {
-          fieldName: '11th Name of the School',
-          fieldType: 'text',
-          required: true,
-        },
 
+      '11th Details': [
+        { fieldName: '11th Name of the School', fieldType: 'text', required: true, maxLength: 100 },
         {
           fieldName: '11th Board',
           fieldType: 'select',
           required: true,
           options: ['State Board', 'CBSE', 'ICSE', 'Other'],
         },
-
-        {
-          fieldName: '11th Exam Roll No',
-          fieldType: 'text',
-          required: true,
-        },
-
-        {
-          fieldName: '11th Medium',
-          fieldType: 'text',
-          required: true,
-        },
-
-        {
-          fieldName: '11th Year of Passing',
-          fieldType: 'number',
-          required: true,
-        },
-
-        {
-          fieldName: '11th Institution Place',
-          fieldType: 'text',
-          required: false,
-        },
-
-        {
-          fieldName: '11th Total Marks',
-          fieldType: 'number',
-          required: true,
-        },
-
-        {
-          fieldName: '11th Maximum Marks',
-          fieldType: 'number',
-          required: true,
-        },
+        { fieldName: '11th Exam Roll No', fieldType: 'text', required: true, maxLength: 20 },
+        { fieldName: '11th Medium', fieldType: 'text', required: true, maxLength: 50 },
+        { fieldName: '11th Year of Passing', fieldType: 'number', required: true },
+        { fieldName: '11th Institution Place', fieldType: 'text', required: false, maxLength: 50 },
+        { fieldName: '11th Total Marks', fieldType: 'number', required: true },
+        { fieldName: '11th Maximum Marks', fieldType: 'number', required: true },
       ],
 
-
-
       '12th Details': [
-        {
-          fieldName: '12th Name of the School',
-          fieldType: 'text',
-          required: true,
-        },
-
+        { fieldName: '12th Name of the School', fieldType: 'text', required: true, maxLength: 100 },
         {
           fieldName: '12th Board',
           fieldType: 'select',
           required: true,
           options: ['State Board', 'CBSE', 'ISC', 'Other'],
         },
-
         {
           fieldName: '12th Medium',
           fieldType: 'select',
           required: true,
           options: ['English', 'Tamil', 'Other'],
         },
-
         {
           fieldName: '12th Stream',
           fieldType: 'select',
           required: true,
           options: ['Science', 'Commerce', 'Arts', 'Vocational'],
         },
-
-        {
-          fieldName: '12th Exam Roll No',
-          fieldType: 'text',
-          required: true,
-        },
-
-        {
-          fieldName: '12th Year of Passing',
-          fieldType: 'number',
-          required: true,
-        },
-
-        {
-          fieldName: '12th Institution Place',
-          fieldType: 'text',
-          required: false,
-        },
-
-        {
-          fieldName: '12th Total Marks',
-          fieldType: 'number',
-          required: true,
-        },
-
-        {
-          fieldName: '12th Maximum Marks',
-          fieldType: 'number',
-          required: true,
-        },
-
+        { fieldName: '12th Exam Roll No', fieldType: 'text', required: true, maxLength: 20 },
+        { fieldName: '12th Year of Passing', fieldType: 'number', required: true },
+        { fieldName: '12th Institution Place', fieldType: 'text', required: false, maxLength: 50 },
+        { fieldName: '12th Total Marks', fieldType: 'number', required: true },
+        { fieldName: '12th Maximum Marks', fieldType: 'number', required: true },
         {
           fieldName: '12th Marks Type',
           fieldType: 'select',
           required: true,
           options: ['Percentage', 'CGPA'],
         },
-
-        {
-          fieldName: '12th Percentage / CGPA',
-          fieldType: 'number',
-          required: true,
-        },
-
-        {
-          fieldName: '12th Marksheet',
-          fieldType: 'file',
-          required: false,
-        },
+        { fieldName: '12th Percentage / CGPA', fieldType: 'number', required: true },
+        { fieldName: '12th Marksheet', fieldType: 'file', required: false },
       ],
-
 
       'Diploma Details': [
-        { fieldName: 'Diploma College Name', fieldType: 'text', required: false },
-
-        {
-          fieldName: 'Diploma Course',
-          fieldType: 'text',
-          required: false,
-        },
-
-        {
-          fieldName: 'Diploma Specialization',
-          fieldType: 'text',
-          required: false,
-        },
-
-        {
-          fieldName: 'Diploma Year of Completion',
-          fieldType: 'number',
-          required: false,
-        },
-
-        {
-          fieldName: 'Diploma Percentage / CGPA',
-          fieldType: 'number',
-          required: false,
-        },
-
-        {
-          fieldName: 'Diploma Certificate',
-          fieldType: 'file',
-          required: false,
-        },
+        { fieldName: 'Diploma College Name', fieldType: 'text', required: false, maxLength: 100 },
+        { fieldName: 'Diploma Course', fieldType: 'text', required: false, maxLength: 50 },
+        { fieldName: 'Diploma Specialization', fieldType: 'text', required: false, maxLength: 50 },
+        { fieldName: 'Diploma Year of Completion', fieldType: 'number', required: false },
+        { fieldName: 'Diploma Percentage / CGPA', fieldType: 'number', required: false },
+        { fieldName: 'Diploma Certificate', fieldType: 'file', required: false },
       ],
     },
+
   }
 
   const convertApiToFieldConfig = (
@@ -596,6 +461,7 @@ export default function SettingsPage() {
             required: field.required ?? false,
             visibility: 'Yes',
             options: field.options ?? [],
+            maxLength: field.maxLength,
           })
         })
       })
@@ -720,6 +586,10 @@ export default function SettingsPage() {
         fieldType,
         required,
         visibility: 'Yes',
+        maxLength:
+          ['text', 'number', 'email'].includes(fieldType) && maxLength
+            ? maxLength
+            : undefined,
         options:
           ['select', 'checkbox', 'radiobutton'].includes(fieldType)
             ? options.split(',').map((o) => o.trim())
@@ -729,6 +599,8 @@ export default function SettingsPage() {
 
     setFieldName('')
     setFieldType('')
+    setMaxLength('')
+
     setOptions('')
     setRequired(false)
     setCustomMode(false)
@@ -937,6 +809,20 @@ text-white px-4 py-2 font-semibold rounded-t">
                     value={fieldName}
                     onChange={(e) => setFieldName(e.target.value)}
                   />
+
+                  {['text', 'number', 'email'].includes(fieldType) && (
+                    <input
+                      type="number"
+                      className={inputClass}
+                      placeholder="Max length"
+                      value={maxLength}
+                      onChange={(e) =>
+                        setMaxLength(e.target.value ? Number(e.target.value) : '')
+                      }
+                      min={1}
+                    />
+                  )}
+
 
                   <select
                     className={inputClass}
