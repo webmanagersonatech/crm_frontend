@@ -6,6 +6,7 @@ import { ShieldCheck } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { savePermission, getPermissions } from "@/app/lib/request/permissionRequest";
+import { listAllUsers } from "@/app/lib/request/authRequest";
 
 interface Permission {
   id: number;
@@ -48,6 +49,8 @@ export default function PermissionsPage() {
   const [selectedInstitute, setSelectedInstitute] = useState<OptionType | null>(null);
   const [selectedRole, setSelectedRole] = useState<OptionType | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [userId, setUserId] = useState<string>("");
+  const [userList, setUserList] = useState<any[]>([]);
 
   const roleOptions: OptionType[] = [
     { value: "admin", label: "Admin" },
@@ -71,14 +74,39 @@ export default function PermissionsPage() {
     })();
   }, []);
 
+
+  useEffect(() => {
+    if (!selectedInstitute) {
+      setUserList([]);
+      return;
+    }
+    (async () => {
+      try {
+        const users = await listAllUsers(
+          selectedInstitute ? selectedInstitute.value : undefined
+        );
+        const options = users.map((user: any) => ({
+          value: user._id,
+          label: `${user.firstname} ${user.lastname}`,
+        }));
+
+        setUserList(options);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load users");
+      }
+    })();
+  }, [selectedInstitute]);
+
   // 🟧 Fetch existing permissions when both selected
   useEffect(() => {
-    if (selectedInstitute && selectedRole) {
+    if (selectedInstitute && userId) {
       (async () => {
         try {
           const response = await getPermissions({
             instituteId: selectedInstitute.value,
-            role: selectedRole.value,
+            userId: userId,
+
           });
 
           if (response.data && response.data.length > 0) {
@@ -96,7 +124,7 @@ export default function PermissionsPage() {
         }
       })();
     }
-  }, [selectedInstitute, selectedRole]);
+  }, [selectedInstitute, userId]);
 
   const togglePermission = (id: number, field: keyof Permission) => {
     setPermissions((prev) =>
@@ -105,8 +133,8 @@ export default function PermissionsPage() {
   };
 
   const handleSave = async () => {
-    if (!selectedInstitute || !selectedRole) {
-      toast.error("Please select an Institution and a Role!");
+    if (!selectedInstitute || !userId) {
+      toast.error("Please select an Institution and a user!");
       return;
     }
 
@@ -114,7 +142,7 @@ export default function PermissionsPage() {
 
     const payload = {
       instituteId: selectedInstitute.value,
-      role: selectedRole.value as "admin" | "user",
+      userId: userId,
       permissions: cleanedPermissions,
     };
 
@@ -169,12 +197,23 @@ export default function PermissionsPage() {
             />
           </div>
 
-          <div className="w-full sm:w-52">
+          {/* <div className="w-full sm:w-52">
             <Select
               value={selectedRole}
               onChange={setSelectedRole}
               options={roleOptions}
               placeholder="Select Role"
+              styles={customStyles}
+              isClearable
+            />
+          </div> */}
+
+          <div className="w-full sm:w-52">
+            <Select
+              value={userList.find(user => user.value === userId) || null}
+              onChange={(option) => setUserId(option ? option.value : "")}
+              options={userList}
+              placeholder="Select User"
               styles={customStyles}
               isClearable
             />

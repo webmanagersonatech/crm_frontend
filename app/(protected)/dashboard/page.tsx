@@ -113,9 +113,9 @@ export default function DashboardPage() {
         setUserRole(decoded.role);
 
 
-        if ((decoded.role === "admin" || decoded.role === "user") && decoded.instituteId) {
+        if ((decoded.role === "admin" || decoded.role === "user") && decoded.instituteId && decoded.userId) {
           const data = await getaccesscontrol({
-            role: decoded.role,
+            userId: decoded.userId,
             instituteId: decoded.instituteId,
           });
 

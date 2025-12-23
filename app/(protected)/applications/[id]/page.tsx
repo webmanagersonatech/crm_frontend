@@ -54,36 +54,45 @@ export default function ApplicationDetailsPage() {
                 {/* CONTENT */}
                 <div className="p-3">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2 text-sm print:grid-cols-3 print:gap-2">
-                        {Object.entries(section.fields as Record<string, any>).map(([key, value]) => {
-                            if (Array.isArray(value)) value = value.join(", ");
+                        {Object.entries(section.fields as Record<string, any>).map(([key, rawValue]) => {
+                            let value = rawValue;
 
-                            const lowerKey = key.toLowerCase();
-                            const isFile = typeof value === "string" && /\.(png|jpe?g|webp|gif|pdf|docx?|xlsx?)$/i.test(value);
+                            if (Array.isArray(value)) {
+                                value = value.join(", ");
+                            }
+
+                            const isImage =
+                                typeof value === "string" &&
+                                /\.(png|jpe?g|webp|gif)$/i.test(value);
+
+                            const isDocument =
+                                typeof value === "string" &&
+                                /\.(pdf|doc|docx|xls|xlsx)$/i.test(value);
 
                             return (
                                 <div key={key} className="flex gap-1 break-inside-avoid">
                                     {/* LABEL */}
-                                    <span className="font-semibold text-gray-800">{key.replace(/_/g, " ")} :</span>
+                                    <span className="font-semibold text-gray-800">
+                                        {key.replace(/_/g, " ")} :
+                                    </span>
 
                                     {/* VALUE */}
                                     <span className="text-gray-700">
-                                        {isFile ? (
-                                            lowerKey.includes("image") ? (
-                                                <img
-                                                    src={`${BASE_URL}${value}`}
-                                                    alt={key}
-                                                    className="mt-1 max-h-[60px] max-w-[60px] object-contain border"
-                                                />
-                                            ) : (
-                                                <a
-                                                    href={`${BASE_URL}${value}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 underline"
-                                                >
-                                                    {value}
-                                                </a>
-                                            )
+                                        {isImage ? (
+                                            <img
+                                                src={`${BASE_URL}${value}`}
+                                                alt={key}
+                                                className="mt-1 max-h-[60px] max-w-[60px] object-contain border"
+                                            />
+                                        ) : isDocument ? (
+                                            <a
+                                                href={`${BASE_URL}${value}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600 underline break-all"
+                                            >
+                                                {value}
+                                            </a>
                                         ) : value !== undefined && value !== null && value !== "" ? (
                                             String(value)
                                         ) : (
@@ -95,6 +104,7 @@ export default function ApplicationDetailsPage() {
                         })}
                     </div>
                 </div>
+
             </div>
         ));
 

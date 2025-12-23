@@ -37,7 +37,7 @@ export interface PermissionItem {
 export interface Permission {
   _id?: string;
   instituteId: string;
-  role: "admin" | "user";
+  userId: string;
   permissions: PermissionItem[];
   createdAt?: string;
   updatedAt?: string;
@@ -60,16 +60,16 @@ export async function savePermission(data: Permission) {
 // 🟦 Get Permissions (optional filters)
 export async function getPermissions({
   instituteId,
-  role,
+  userId,
 }: {
   instituteId?: string;
-  role?: string;
+  userId?: string;
 }) {
   try {
     const params = new URLSearchParams();
 
     if (instituteId) params.append("instituteId", instituteId);
-    if (role) params.append("role", role);
+    if (userId) params.append("userId", userId);
 
     const response = await api.get(`/permissions?${params.toString()}`);
     return response.data;
@@ -83,16 +83,17 @@ export async function getPermissions({
 
 export async function getaccesscontrol({
   instituteId,
-  role,
+  userId,
 }: {
   instituteId?: string;
-  role?: string;
+  userId?: string;
 }) {
   try {
     const params = new URLSearchParams();
 
     if (instituteId) params.append("instituteId", instituteId);
-    if (role) params.append("role", role);
+    if (userId) params.append("userId", userId);
+
 
     const response = await api.get(`/permissions/getaccesscontrol?${params.toString()}`);
     return response?.data?.data;

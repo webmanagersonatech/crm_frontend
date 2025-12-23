@@ -195,9 +195,9 @@ export default function LeadsPage() {
         const payload = token.split(".")[1];
         const decoded: any = JSON.parse(atob(payload));
 
-        if ((decoded.role === "admin" || decoded.role === "user") && decoded.instituteId) {
+        if ((decoded.role === "admin" || decoded.role === "user") && decoded.instituteId && decoded.userId) {
           const data = await getaccesscontrol({
-            role: decoded.role,
+            userId: decoded.userId,
             instituteId: decoded.instituteId
           });
           const leadPermission = data.permissions?.find(

@@ -90,10 +90,11 @@ export default function CommunicationsPage() {
 
         if (
           (decoded.role === "admin" || decoded.role === "user") &&
-          decoded.instituteId
+          decoded.instituteId &&
+          decoded.userId
         ) {
           const data = await getaccesscontrol({
-            role: decoded.role,
+            userId: decoded.role,
             instituteId: decoded.instituteId,
           });
 
