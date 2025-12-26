@@ -7,7 +7,7 @@ import Spinner from "@/components/Spinner";
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
 // Icons
-import { FaWhatsapp, FaEdit, FaPhone, FaGlobe, FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
+import { FaWhatsapp, FaRegClock, FaEdit, FaPhone, FaGlobe, FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
 import { MdOfflineBolt } from "react-icons/md";
 
 
@@ -26,7 +26,6 @@ const COMMUNICATION_TYPES = [
         )
     },
 ];
-
 
 export default function ApplicationDetailsPage() {
     const { id } = useParams();
@@ -133,21 +132,32 @@ export default function ApplicationDetailsPage() {
                         Update Followups
                     </Link>
                 </div>
-
                 {filteredFollowups.length === 0 ? (
                     <p className="text-gray-500 text-sm">No followups found</p>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="
+    grid gap-6
+    grid-cols-1
+    sm:grid-cols-2
+    md:grid-cols-3
+    lg:grid-cols-4
+  ">
                         {filteredFollowups.map((f: any) => (
                             <div
                                 key={f._id}
-                                className="border-l-4 border-blue-400 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition flex flex-col gap-2"
+                                className="relative bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition"
                             >
-                                <div className="flex justify-between items-center">
-                                    <div className="flex items-center gap-2 text-gray-700">
-                                        {getIcon(f.communication)}
-                                        <span className="text-sm font-medium">{f.communication}</span>
-                                    </div>
+                                {/* Timeline Icon */}
+                                <div className="absolute -top-3 left-4 w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs shadow">
+                                    <FaRegClock />
+                                </div>
+
+                                {/* Top Row */}
+                                <div className="flex justify-between items-start mt-3">
+                                    <p className="text-sm text-gray-600">
+                                        Call Status : <span className="font-medium">{f.status}</span>
+                                    </p>
+
                                     <span className="text-xs text-gray-400">
                                         {new Date(f.followUpDate).toLocaleString("en-IN", {
                                             day: "2-digit",
@@ -158,16 +168,29 @@ export default function ApplicationDetailsPage() {
                                             hour12: true,
                                         })}
                                     </span>
-
                                 </div>
-                                <span className="inline-block w-fit px-2 py-1 rounded text-xs bg-white border text-gray-600">
-                                    {f.status}
-                                </span>
-                                <p className="text-sm text-gray-700">{f.description}</p>
+
+                                {/* Description */}
+                                <p className="mt-2 text-sm text-gray-700 line-clamp-3">
+                                    <span className="font-medium">Description :</span> {f.description}
+                                </p>
+
+                                {/* Footer */}
+                                <div className="mt-4 flex justify-between items-center text-xs text-gray-400">
+                                    <span className="inline-flex items-center gap-1">
+                                        {getIcon(f.communication)}
+                                        {f.communication}
+                                    </span>
+
+                                    <span>
+                                        {new Date(f.createdAt).toLocaleDateString("en-IN")}
+                                    </span>
+                                </div>
                             </div>
                         ))}
                     </div>
                 )}
+
             </div>
         </div>
     );

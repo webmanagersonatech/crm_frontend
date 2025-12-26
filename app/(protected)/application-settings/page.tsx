@@ -546,6 +546,8 @@ export default function SettingsPage() {
         fieldType: field.fieldType,
         required: field.required,
         visibility: 'Yes',
+        maxLength: field.maxLength ?? undefined,
+
         options: field.options || [],
       },
     ])

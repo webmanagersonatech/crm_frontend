@@ -57,31 +57,43 @@ export default function AddApplicationForm({
     const inputClass =
         "border border-gray-300 p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#5667a8]"
 
-
     useEffect(() => {
         const count = Number(formData["Sibling Count"]) || 0
         if (!formConfig) return
 
-        const sections = formConfig.personalDetails
-        const siblingSection = sections.find((s: any) => s.sectionName === "Sibling Details")
+        const siblingSection = formConfig.personalDetails.find(
+            (s: any) => s.sectionName === "Sibling Details"
+        )
         if (!siblingSection) return
 
-        // Remove previous dynamically added sibling fields (keeping the original 1 set)
-        siblingSection.fields = siblingSection.fields.filter(
-            (f: any) => !f.fieldName.match(/Sibling (Name|Age|Studying)\d+/)
+        // 1️⃣ Base fields = everything EXCEPT Sibling Count and generated fields
+        const baseFields = siblingSection.fields.filter(
+            (f: any) =>
+                !f.isCustom &&
+                f.fieldName !== "Sibling Count"
         )
 
-        // Append new sibling fields
+        // 2️⃣ Remove previously generated sibling fields
+        siblingSection.fields = siblingSection.fields.filter(
+            (f: any) => !f.isCustom
+        )
+
+        // 3️⃣ Generate siblings dynamically
         for (let i = 2; i <= count; i++) {
-            siblingSection.fields.push(
-                { fieldName: `Sibling Name${i}`, label: `Sibling Name ${i}`, type: "text", required: false, isCustom: true },
-                { fieldName: `Sibling Age${i}`, label: `Sibling Age ${i}`, type: "number", required: false, isCustom: true },
-                { fieldName: `Sibling Studying${i}`, label: `Sibling Studying ${i}`, type: "select", options: ["Yes", "No"], required: false, isCustom: true }
-            )
+            baseFields.forEach((field: any) => {
+                siblingSection.fields.push({
+                    ...field,
+                    fieldName: `${field.fieldName} ${i}`,
+                    label: `${field.label} ${i}`,
+                    isCustom: true,
+                })
+            })
         }
 
         setFormConfig({ ...formConfig })
     }, [formData["Sibling Count"]])
+
+
 
 
     // Load token-based institute
@@ -416,8 +428,10 @@ export default function AddApplicationForm({
                         value={value}
                         onChange={handleChange}
                         className={inputClass}
+                        maxLength={field.maxLength ?? 500}
                     />
-                )
+                );
+
 
             /* SELECT */
             case "select":
@@ -482,6 +496,26 @@ export default function AddApplicationForm({
                         ))}
                     </div>
                 )
+            /* NUMBER (TEXT + DIGITS ONLY) */
+            case "number":
+                return (
+                    <input
+                        type="text"
+                        name={field.fieldName}
+                        value={value}
+                        className={inputClass}
+                        maxLength={field.maxLength ?? 15}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        onChange={(e) => {
+                            const digitsOnly = e.target.value.replace(/\D/g, "");
+                            setFormData(p => ({
+                                ...p,
+                                [field.fieldName]: digitsOnly,
+                            }));
+                        }}
+                    />
+                );
 
             /* FILE */
             case "file":
