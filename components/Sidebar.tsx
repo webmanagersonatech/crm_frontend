@@ -18,7 +18,8 @@ import {
   Mail,
   Settings,
   Settings2,
-  Layers
+  Layers,
+  Grid
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -34,6 +35,7 @@ const allItems = [
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/login-history", label: "Login History", icon: History },
   // { href: "/events", label: "Events", icon: CalendarDays },
+  { href: "/others", label: "Others", icon: Grid },
   { href: "/dynamic-forms", label: "Dynamic Forms", icon: Layers },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/application-settings", label: "Application Settings", icon: Settings2 },

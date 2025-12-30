@@ -28,6 +28,7 @@ interface Application {
   academicYear: string;
   applicantName: string;
   paymentStatus: string;
+    formStatus: "Incomplete" | "Complete";
   status: "Pending" | "Approved" | "Rejected";
   createdAt: string;
   personalDetails?: Array<{ fields: Record<string, any> }>;
@@ -68,6 +69,7 @@ export default function CommunicationsPage() {
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [isBulkMail, setIsBulkMail] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
   const [modalType, setModalType] = useState<"mail" | "whatsapp" | "sms" | null>(
     null
@@ -144,6 +146,10 @@ export default function CommunicationsPage() {
           selectedInstitution !== "all" ? selectedInstitution : undefined,
         applicationId: searchApplicationId.trim() || undefined,
         applicantName: searchApplicantName.trim() || undefined,
+        paymentStatus:
+          selectedStatus === "unpaid" ? "Unpaid" : undefined,
+        formStatus:
+          selectedStatus === "incomplete" ? "Incomplete" : undefined,
       });
 
       // ✅ Correct access
@@ -159,6 +165,7 @@ export default function CommunicationsPage() {
     currentPage,
     selectedYear,
     selectedInstitution,
+    selectedStatus,
     limit,
     searchApplicationId,
     searchApplicantName,
@@ -404,6 +411,19 @@ export default function CommunicationsPage() {
       ),
     },
     {
+      header: "Form Status",   // <-- New column
+      render: (a: Application) => (
+        <span
+          className={`px-2 py-1 rounded text-xs font-medium ${a.formStatus === "Complete"
+              ? "bg-green-50 text-green-700 border border-green-300"
+              : "bg-yellow-50 text-yellow-700 border border-yellow-300"
+            }`}
+        >
+          {a.formStatus || "Incomplete"}
+        </span>
+      ),
+    },
+    {
       header: "Created At",
       render: (a: Application) => new Date(a.createdAt).toLocaleDateString(),
     },
@@ -456,6 +476,7 @@ export default function CommunicationsPage() {
       </div>
     );
 
+
   return (
 
     <div className="p-6 space-y-6">
@@ -470,7 +491,9 @@ export default function CommunicationsPage() {
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
 
           {(userpermission === "superadmin" || userpermission?.filter) && (
+
             <>
+
               <input
                 type="text"
                 placeholder="Search by Application ID"
@@ -481,6 +504,8 @@ export default function CommunicationsPage() {
                 }}
                 className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
               />
+
+
 
               {/* Applicant Name Search */}
               <input
@@ -493,6 +518,17 @@ export default function CommunicationsPage() {
                 }}
                 className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
               />
+
+              <Select
+                value={selectedStatus}
+                onChange={(option: any) => setSelectedStatus(option.value)}
+                options={[
+                  { value: "all", label: "All" },
+                  { value: "unpaid", label: "Unpaid" },
+                  { value: "incomplete", label: "Incomplete" },
+                ]}
+              />
+
               {/* Institution Filter */}
               {(userpermission === "superadmin" && <select
                 value={selectedInstitution}

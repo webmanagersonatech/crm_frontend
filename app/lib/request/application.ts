@@ -87,6 +87,7 @@ export async function getApplications(params?: {
   academicYear?: string;
   instituteId?: string;
   paymentStatus?: string;
+  formStatus?: string;
   applicationId?: string;
   applicantName?: string;
   program?: string;
@@ -101,6 +102,8 @@ export async function getApplications(params?: {
     if (params?.academicYear) queryParams.append("academicYear", params.academicYear);
     if (params?.instituteId) queryParams.append("instituteId", params.instituteId);
     if (params?.paymentStatus) queryParams.append("paymentStatus", params.paymentStatus);
+    if (params?.formStatus) queryParams.append("formStatus", params.formStatus);
+
     if (params?.applicationId) queryParams.append("applicationId", params.applicationId);
     if (params?.applicantName) queryParams.append("applicantName", params.applicantName);
     if (params?.program) queryParams.append("program", params.program);
@@ -125,6 +128,7 @@ export async function getpendingApplications(params?: {
   academicYear?: string;
   instituteId?: string;
   paymentStatus?: string;
+  formStatus?: string;
   applicationId?: string;
   applicantName?: string;
 }) {
@@ -135,6 +139,7 @@ export async function getpendingApplications(params?: {
     if (params?.limit) queryParams.append("limit", String(params.limit));
     if (params?.academicYear) queryParams.append("academicYear", params.academicYear);
     if (params?.instituteId) queryParams.append("instituteId", params.instituteId);
+    if (params?.formStatus) queryParams.append("formStatus", params.formStatus);
     if (params?.paymentStatus) queryParams.append("paymentStatus", params.paymentStatus);
     if (params?.applicationId) queryParams.append("applicationId", params.applicationId);
     if (params?.applicantName) queryParams.append("applicantName", params.applicantName);

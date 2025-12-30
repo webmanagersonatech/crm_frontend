@@ -109,7 +109,7 @@ export default function DashboardPage() {
       try {
         const payload = token.split(".")[1];
         const decoded: any = JSON.parse(atob(payload));
-console.log(decoded, "decoded")
+        console.log(decoded, "decoded")
         setUserRole(decoded.role);
 
 
@@ -253,6 +253,13 @@ console.log(decoded, "decoded")
           Dashboard
         </h1>
       </div>
+
+      <a href="http://localhost:4000/api/institutions/apply/INS-5AY9A4L6"
+        target="blank"
+        className="apply-btn">
+        Apply Online
+      </a>
+
 
       {/* 🔹 Filters Section */}
       <div className="bg-white dark:bg-neutral-900 shadow-md rounded-2xl p-4 sm:p-5">

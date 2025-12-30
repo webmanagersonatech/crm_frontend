@@ -159,20 +159,21 @@ export default function ApplicationDetailsPage() {
                                     </p>
 
                                     <span className="text-xs text-gray-400">
-                                        {new Date(f.followUpDate).toLocaleString("en-IN", {
+                                        {new Date(f.followUpDate).toLocaleDateString("en-IN", {
                                             day: "2-digit",
                                             month: "short",
                                             year: "numeric",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                            hour12: true,
                                         })}
                                     </span>
+
                                 </div>
 
                                 {/* Description */}
                                 <p className="mt-2 text-sm text-gray-700 line-clamp-3">
                                     <span className="font-medium">Description :</span> {f.description}
+                                </p>
+                                <p className="mt-2 text-sm text-gray-700 line-clamp-3">
+                                    <span className="font-medium">Call taken :</span> {f.calltaken}
                                 </p>
 
                                 {/* Footer */}

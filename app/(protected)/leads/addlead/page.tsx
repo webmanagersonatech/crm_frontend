@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Select, { SingleValue } from "react-select";
-import toast from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import { UserPlus2 } from "lucide-react";
 import { createLead, Lead } from "@/app/lib/request/leadRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
@@ -104,6 +104,22 @@ export default function AddLeadPage() {
   }, []);
 
 
+  const isAtLeast18YearsOld = (dob: string) => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+
+    return age >= 18;
+  };
 
 
 
@@ -243,6 +259,13 @@ export default function AddLeadPage() {
       setLoading(false);
       return;
     }
+
+    if (!isAtLeast18YearsOld(form.dateOfBirth)) {
+      toast.error("You are under 18, you are not eligible for this lead.");
+      setLoading(false);
+      return;
+    }
+
     if (!form.country) {
       toast.error("Country is required.");
       setLoading(false);
@@ -309,6 +332,7 @@ export default function AddLeadPage() {
 
   return (
     <div className="p-6">
+      <Toaster position="top-right" />
       <div className="flex items-center gap-2 mb-6">
         <UserPlus2 className="w-6 h-6 text-blue-600" />
         <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
@@ -457,15 +481,20 @@ export default function AddLeadPage() {
 
         {/* Follow Up Date */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">Follow Up Date <span className="text-red-500">* </span></label>
+          <label className="text-sm font-semibold mb-1">
+            Follow Up Date <span className="text-red-500">*</span>
+          </label>
+
           <input
             type="date"
             name="followUpDate"
-            value={form.followUpDate?.toString() || ""}
+            value={form.followUpDate || ""}
+            min={new Date().toISOString().split("T")[0]} // today + future allowed
             onChange={handleChange}
             className={inputClass}
           />
         </div>
+
 
         {/* Description */}
         <div className="flex flex-col md:col-span-3">

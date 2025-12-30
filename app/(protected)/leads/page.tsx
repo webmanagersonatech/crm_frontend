@@ -809,17 +809,22 @@ export default function LeadsPage() {
                 readOnly
                 className="w-full border rounded-md p-2 mb-4 bg-gray-100"
               />
-
               {/* Follow-up Date */}
               <label className="block mb-2 text-sm font-medium">Follow-up Date</label>
+
               <input
                 type="datetime-local"
                 value={statusUpdateData.followUpDate}
+                min={new Date().toISOString().slice(0, 16)} 
                 onChange={(e) =>
-                  setStatusUpdateData(prev => ({ ...prev, followUpDate: e.target.value }))
+                  setStatusUpdateData(prev => ({
+                    ...prev,
+                    followUpDate: e.target.value,
+                  }))
                 }
                 className="w-full border rounded-md p-2 mb-4"
               />
+
 
               {/* Description */}
               <label className="block mb-2 text-sm font-medium">Description</label>

@@ -43,6 +43,8 @@ export default function AddApplicationForm({
     const [files, setFiles] = useState<Record<string, File>>({})
     const [activeTab, setActiveTab] = useState<Tab>("personal")
     const [showCustomField, setShowCustomField] = useState(false)
+
+
     const [showInstituteDropdown, setShowInstituteDropdown] = useState(true)
     const [newField, setNewField] = useState({
         tab: "personal" as Tab,
@@ -111,6 +113,7 @@ export default function AddApplicationForm({
             setShowInstituteDropdown(true)
         }
     }, [instituteId])
+
 
     useEffect(() => {
         if (!isEdit || !applicationId) return;
@@ -391,6 +394,16 @@ export default function AddApplicationForm({
                     toast.error("Invalid email format")
                     return false
                 }
+
+                if (
+                    field.type === "date" &&
+                    field.fieldName.toLowerCase().includes("date of birth")
+                ) {
+                    if (!isAtLeast16YearsOld(value)) {
+                        toast.error("Student must be at least 16 years old")
+                        return false
+                    }
+                }
             }
         }
         return true
@@ -603,6 +616,19 @@ export default function AddApplicationForm({
 
             return sectionObj
         })
+    }
+    const isAtLeast16YearsOld = (dob: string) => {
+        const birthDate = new Date(dob)
+        const today = new Date()
+
+        let age = today.getFullYear() - birthDate.getFullYear()
+        const m = today.getMonth() - birthDate.getMonth()
+
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--
+        }
+
+        return age >= 16
     }
 
 

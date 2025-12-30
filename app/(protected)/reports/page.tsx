@@ -17,6 +17,7 @@ interface Application {
   instituteId: any;
   userId?: any;
   academicYear: string;
+  formStatus: "Complete" | "Incomplete";
   personalData: Record<string, any>;
   educationData: Record<string, any>;
   paymentStatus: string;
@@ -78,6 +79,7 @@ export default function ReportsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCommunication, setSelectedCommunication] = useState("all");
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [selectedFormStatus, setSelectedFormStatus] = useState("all");
   const [hasPermission, setHasPermission] = useState<boolean>(true);
   const [institutions, setInstitutions] = useState<
     { value: string; label: string }[]
@@ -88,6 +90,7 @@ export default function ReportsPage() {
     applicantName: true,
     program: true,
     academicYear: true,
+    formStatus: true,
     paymentStatus: true,
     createdAt: true,
   });
@@ -207,6 +210,7 @@ export default function ReportsPage() {
     { key: "applicantName", label: "Applicant Name" },
     { key: "program", label: "Program" },
     { key: "academicYear", label: "Academic Year" },
+    { key: "formStatus", label: "Form Status" },
     { key: "paymentStatus", label: "Payment Status" },
     { key: "createdAt", label: "Created At" },
   ];
@@ -257,6 +261,8 @@ export default function ReportsPage() {
           selectedInstitution !== "all" ? selectedInstitution : undefined,
         paymentStatus:
           selectedPayment !== "all" ? selectedPayment : undefined,
+        formStatus:
+          selectedFormStatus !== "all" ? selectedFormStatus : undefined,
         applicationId: searchApplicationId.trim() || undefined,
         applicantName: searchApplicantName.trim() || undefined,
         startDate: startDate || undefined,
@@ -271,7 +277,7 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, startDate, endDate, searchApplicationId, searchApplicantName]);
+  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName]);
 
   useEffect(() => {
     fetchApplications();
@@ -306,6 +312,9 @@ export default function ReportsPage() {
 
     if (columnVisibility.paymentStatus) {
       obj.PaymentStatus = app.paymentStatus || "-";
+    }
+    if (columnVisibility.formStatus) {
+      obj.FormStatus = app.formStatus || "-";
     }
 
     if (columnVisibility.createdAt) {
@@ -434,6 +443,20 @@ export default function ReportsPage() {
             }`}
         >
           {a.paymentStatus}
+        </span>
+      ),
+    },
+    columnVisibility.formStatus && {
+      header: "Form Status",
+      render: (a: Application) => (
+        <span
+          className={`px-2 py-1 rounded-lg text-xs font-medium border
+        ${a.formStatus === "Complete"
+              ? "bg-green-50 text-green-700 border-green-300"
+              : "bg-orange-50 text-orange-700 border-orange-300"
+            }`}
+        >
+          {a.formStatus}
         </span>
       ),
     },
@@ -673,18 +696,32 @@ export default function ReportsPage() {
 
             {/* 💳 Payment Filter */}
             {activeTab !== "lead" && (
-              <select
-                value={selectedPayment}
-                onChange={(e) => {
-                  setSelectedPayment(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              >
-                <option value="all">All Payments</option>
-                <option value="Paid">Paid</option>
-                <option value="Unpaid">Unpaid</option>
-              </select>
+              <>
+                <select
+                  value={selectedPayment}
+                  onChange={(e) => {
+                    setSelectedPayment(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                >
+                  <option value="all">All Payments</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Unpaid">Unpaid</option>
+                </select>
+                <select
+                  value={selectedFormStatus}
+                  onChange={(e) => {
+                    setSelectedFormStatus(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                >
+                  <option value="all">All Form Status</option>
+                  <option value="Complete">Complete</option>
+                  <option value="Incomplete">Incomplete</option>
+                </select>
+              </>
             )}
 
             {/* 📈 Lead Filters */}

@@ -21,6 +21,7 @@ interface Application {
   academicYear: string;
   personalData: Record<string, any>;
   educationData: Record<string, any>;
+  formStatus: "Complete" | "Incomplete";
   paymentStatus: string;
   status: "Pending" | "Approved" | "Rejected";
   createdAt: string;
@@ -52,7 +53,7 @@ export default function ApplicationsPage() {
   const [selectedPaymentApp, setSelectedPaymentApp] = useState<Application | null>(null);
   const [selectedNewStatus, setSelectedNewStatus] = useState<string>("");
   const [searchProgram, setSearchProgram] = useState("");
-
+  const [selectedFormStatus, setSelectedFormStatus] = useState("all");
 
   const [columnVisibility, setColumnVisibility] = useState({
     applicationId: true,
@@ -61,6 +62,7 @@ export default function ApplicationsPage() {
     program: true,
     academicYear: true,
     paymentStatus: true,
+    formStatus: true,
     createdAt: true,
   });
 
@@ -71,6 +73,7 @@ export default function ApplicationsPage() {
     { key: "applicantName", label: "Applicant Name" },
     { key: "program", label: "Program" },
     { key: "academicYear", label: "Academic Year" },
+    { key: "formStatus", label: "Form Status" },
     { key: "paymentStatus", label: "Payment Status" },
     { key: "createdAt", label: "Created At" },
   ];
@@ -162,6 +165,8 @@ export default function ApplicationsPage() {
           selectedInstitution !== "all" ? selectedInstitution : undefined,
         paymentStatus:
           selectedPayment !== "all" ? selectedPayment : undefined,
+        formStatus:
+          selectedFormStatus !== "all" ? selectedFormStatus : undefined,
         applicationId: searchApplicationId.trim() || undefined,
         applicantName: searchApplicantName.trim() || undefined,
         program: searchProgram.trim() || undefined,
@@ -175,7 +180,7 @@ export default function ApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, searchApplicationId, searchApplicantName, searchProgram]);
+  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
 
 
 
@@ -207,6 +212,9 @@ export default function ApplicationsPage() {
 
     if (columnVisibility.paymentStatus) {
       obj.PaymentStatus = app.paymentStatus || "-";
+    }
+    if (columnVisibility.formStatus) { 
+      obj.FormStatus = app.formStatus || "-";
     }
 
     if (columnVisibility.createdAt) {
@@ -301,6 +309,21 @@ export default function ApplicationsPage() {
         </span>
       ),
     },
+    columnVisibility.formStatus && {
+      header: "Form Status",
+      render: (a: Application) => (
+        <span
+          className={`px-2 py-1 rounded-lg text-xs font-medium border
+        ${a.formStatus === "Complete"
+              ? "bg-green-50 text-green-700 border-green-300"
+              : "bg-orange-50 text-orange-700 border-orange-300"
+            }`}
+        >
+          {a.formStatus}
+        </span>
+      ),
+    },
+
 
     columnVisibility.createdAt && {
       header: "Created At",
@@ -314,30 +337,35 @@ export default function ApplicationsPage() {
         <div className="flex gap-2">
           {/* 👁 View */}
           {(userpermission === "superadmin" || userpermission?.edit) && (
-            <select
-              value=""
-              disabled={a.paymentStatus === "Paid"}
-              onChange={(e) => {
-                const newStatus = e.target.value;
-                if (!newStatus) return;
+            <>
 
-                // 🧠 Only open confirmation if different from current status
-                if (newStatus === a.paymentStatus) {
-                  toast.error(`Already marked as ${newStatus}`);
-                  return;
-                }
+              <select
+                value=""
+                disabled={a.paymentStatus === "Paid"}
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  if (!newStatus) return;
 
-                // ✅ Set selected application and new status for confirmation
-                setSelectedPaymentApp(a);
-                setSelectedNewStatus(newStatus);
-                setConfirmPaymentOpen(true);
-              }}
-              className="border text-xs rounded-md py-1 px-2 bg-white cursor-pointer hover:bg-gray-50 focus:outline-none"
-            >
-              <option value="">Select Payment Status</option>
-              <option value="Paid">Paid</option>
-              <option value="Unpaid">Unpaid</option>
-            </select>
+                  // 🧠 Only open confirmation if different from current status
+                  if (newStatus === a.paymentStatus) {
+                    toast.error(`Already marked as ${newStatus}`);
+                    return;
+                  }
+
+                  // ✅ Set selected application and new status for confirmation
+                  setSelectedPaymentApp(a);
+                  setSelectedNewStatus(newStatus);
+                  setConfirmPaymentOpen(true);
+                }}
+                className="border text-xs rounded-md py-1 px-2 bg-white cursor-pointer hover:bg-gray-50 focus:outline-none"
+              >
+                <option value="">Select Payment Status</option>
+                <option value="Paid">Paid</option>
+                <option value="Unpaid">Unpaid</option>
+              </select>
+
+            </>
+
           )}
 
           {(userpermission === "superadmin" || userpermission?.view) && (
@@ -431,13 +459,13 @@ export default function ApplicationsPage() {
 
           {(userpermission === "superadmin" || userpermission?.filter) && (
             <>
-
               <button
                 onClick={() => setCustomizeOpen(true)}
                 className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
               >
                 <Settings className="w-4 h-4" /> Customize Columns
               </button>
+              
               <input
                 type="text"
                 placeholder="Search by Application ID"
@@ -492,7 +520,18 @@ export default function ApplicationsPage() {
                   ))}
                 </select>)}
 
-
+              <select
+                value={selectedFormStatus}
+                onChange={(e) => {
+                  setSelectedFormStatus(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+              >
+                <option value="all">All Form Status</option>
+                <option value="Complete">Complete</option>
+                <option value="Incomplete">Incomplete</option>
+              </select>
               <select
                 value={selectedPayment}
                 onChange={(e) => {

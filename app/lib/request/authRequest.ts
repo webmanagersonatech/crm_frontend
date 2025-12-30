@@ -106,18 +106,18 @@ export async function listUsersRequest({
     }
 }
 export async function listAllUsers(instituteId?: string) {
-  try {
-    let url = "/auth/list-all";
+    try {
+        let url = "/auth/list-all";
 
-    if (instituteId && instituteId !== "all") {
-      url += `?instituteId=${instituteId}`;
+        if (instituteId && instituteId !== "all") {
+            url += `?instituteId=${instituteId}`;
+        }
+
+        const response = await api.get(url);
+        return response.data;
+    } catch (error) {
+        return [];
     }
-
-    const response = await api.get(url);
-    return response.data;
-  } catch (error) {
-    return [];
-  }
 }
 
 
