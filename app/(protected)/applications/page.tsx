@@ -19,6 +19,7 @@ interface Application {
   instituteId: any;
   userId?: any;
   academicYear: string;
+  applicationId: string;
   personalData: Record<string, any>;
   educationData: Record<string, any>;
   formStatus: "Complete" | "Incomplete";
@@ -213,7 +214,7 @@ export default function ApplicationsPage() {
     if (columnVisibility.paymentStatus) {
       obj.PaymentStatus = app.paymentStatus || "-";
     }
-    if (columnVisibility.formStatus) { 
+    if (columnVisibility.formStatus) {
       obj.FormStatus = app.formStatus || "-";
     }
 
@@ -465,7 +466,7 @@ export default function ApplicationsPage() {
               >
                 <Settings className="w-4 h-4" /> Customize Columns
               </button>
-              
+
               <input
                 type="text"
                 placeholder="Search by Application ID"
@@ -624,8 +625,8 @@ export default function ApplicationsPage() {
       <ConfirmDialog
         open={confirmOpen}
         title="Delete Application"
-        message={`Are you sure you want to delete the application from "${selected?.instituteId?.name || "Unknown Institute"
-          }"?`}
+        message={`Are you sure you want to delete the application  ${selected?.applicationId 
+          } ?`}
         onConfirm={handleDelete}
         onCancel={() => setConfirmOpen(false)}
       />

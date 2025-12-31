@@ -52,10 +52,11 @@ const roleMenus = {
       "/communications",
       "/templates",
       "/dynamic-forms",
+      "/others"
     ].includes(item.href)
   ),
   user: allItems.filter(item =>
-    ["/dashboard", "/applications", "/leads", "/communications", "/templates", "/dynamic-forms"].includes(item.href)
+    ["/dashboard", "/applications", "/leads", "/communications", "/templates", "/dynamic-forms","/others"].includes(item.href)
   ),
 };
 
