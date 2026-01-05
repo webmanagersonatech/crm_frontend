@@ -37,6 +37,8 @@ export interface Settings {
   address?: string;
   createdAt?: string;
   updatedAt?: string;
+  applicationFee: number
+  applicantAge: number
 }
 
 // ---------------- API Calls ----------------

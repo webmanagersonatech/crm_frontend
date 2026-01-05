@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { DataTable } from "@/components/Tablecomponents";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
-import { importOthers, getOthers, deleteOther } from "@/app/lib/othersRequest";
+import { importOthers, getOthers, deleteOther, createLeadFromOther } from "@/app/lib/othersRequest";
 import ViewDialog from "@/components/ViewDialog";
 import { Column } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -47,10 +47,14 @@ export default function Otherspages() {
     const [totalCount, setTotalCount] = useState(0);
     const [open, setOpen] = useState(false);
     const [dataSources, setDataSources] = useState<{ value: string; label: string }[]>([]);
+    const [isImporting, setIsImporting] = useState(false);
 
     /* ---------------- Table ---------------- */
     const [others, setOthers] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    const [leadConfirmOpen, setLeadConfirmOpen] = useState(false);
+    const [leadLoading, setLeadLoading] = useState(false);
+
 
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -153,6 +157,7 @@ export default function Otherspages() {
         },
 
 
+
         columnVisibility.createdBy && {
             header: "Created By",
             render: (o: any) =>
@@ -169,36 +174,89 @@ export default function Otherspages() {
 
         {
             header: "Actions",
-            render: (o: any) => (
-                <div className="flex gap-2">
-                    {(userpermission === "superadmin" || userpermission?.view) && (
-                        <button
-                            onClick={() => {
-                                setSelected(o);
-                                setViewOpen(true);
-                            }}
-                            className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md"
-                        >
-                            <Eye className="w-4 h-4" />
-                        </button>
+            render: (o: any) => {
+                const hasLead = Boolean(o.leadId);
 
-                    )}
+                return (
+                    <div className="flex gap-2">
+                        {/* Create Lead */}
+                        {!hasLead && (userpermission === "superadmin" || userpermission?.create) && (
+                            <button
+                                onClick={() => {
+                                    setSelected(o);
+                                    setLeadConfirmOpen(true);
+                                }}
+                                className="
+      w-28 h-6
+      flex items-center justify-center
+      rounded-md
+      bg-indigo-600 text-white text-sm font-medium
+      hover:bg-indigo-700
+      active:scale-95
+      transition
+      shadow-sm
+    "
+                            >
+                                Create Lead
+                            </button>
+                        )}
 
-                    {(userpermission === "superadmin" || userpermission?.delete) && (
-                        <button
-                            onClick={() => {
-                                setSelected(o);
-                                setConfirmType("delete");
-                                setConfirmOpen(true);
-                            }}
-                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
-            ),
-        },
+                        {/* View Lead */}
+                        {hasLead && (
+                            <button
+                                onClick={() => {
+                                    window.location.href = `/leads/${o.leadId}`;
+                                }}
+                                className="
+      w-28 h-6
+      flex items-center justify-center
+      rounded-md
+      bg-emerald-600 text-white text-sm font-medium
+      hover:bg-emerald-700
+      active:scale-95
+      transition
+      shadow-sm
+    "
+                            >
+                                View Lead
+                            </button>
+                        )}
+
+                        {/* View Other */}
+                        {(userpermission === "superadmin" || userpermission?.view) && (
+                            <button
+                                onClick={() => {
+                                    setSelected(o);
+                                    setViewOpen(true);
+                                }}
+                                className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md"
+                            >
+                                <Eye className="w-4 h-4" />
+                            </button>
+                        )}
+
+
+
+
+
+                        {/* Delete */}
+                        {(userpermission === "superadmin" || userpermission?.delete) && (
+                            <button
+                                onClick={() => {
+                                    setSelected(o);
+                                    setConfirmType("delete");
+                                    setConfirmOpen(true);
+                                }}
+                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                );
+            },
+        }
+
 
     ].filter(Boolean) as Column<any>[];
 
@@ -356,6 +414,8 @@ export default function Otherspages() {
 
     /* ---------------- Import Submit ---------------- */
     const handleImportSubmit = async () => {
+        if (isImporting) return; // prevent double click
+
         if (userpermission === "superadmin" && !importInstitution) {
             toast.error("Please select institution");
             return;
@@ -372,7 +432,10 @@ export default function Otherspages() {
         }
 
         try {
+            setIsImporting(true); // 🔥 start loading
+
             await importOthers(importFile, importDataSource, importInstitution);
+
             toast.success("Import started successfully 🚀");
             setShowImportModal(false);
             resetImportState();
@@ -395,9 +458,11 @@ export default function Otherspages() {
             } else {
                 toast.error("Import failed");
             }
+        } finally {
+            setIsImporting(false); // 🔥 stop loading (always runs)
         }
-
     };
+
 
 
     const fetchDataSourcesByInstitution = async (institutionId: string) => {
@@ -452,6 +517,22 @@ export default function Otherspages() {
             toast.error(err.message || "Failed to delete record");
         }
     };
+    const handleCreateLead = async () => {
+        if (!selected?.recordId) return;
+
+        try {
+            await createLeadFromOther(selected.recordId);
+
+            toast.success("Lead created successfully");
+            setLeadConfirmOpen(false);
+            setSelected(null);
+            fetchOthers();
+        } catch (err: any) {
+            toast.error(err.message || "Failed to create lead");
+        }
+    };
+
+
 
 
 
@@ -662,6 +743,15 @@ export default function Otherspages() {
                 onConfirm={handleDelete}
                 onCancel={() => setConfirmOpen(false)}
             />
+            <ConfirmDialog
+                open={leadConfirmOpen}
+                title="Create Lead"
+                message={`Create lead for "${selected?.name}"?`}
+                onConfirm={handleCreateLead}
+                onCancel={() => setConfirmOpen(false)}
+            />
+
+
             <ViewDialog
                 open={viewOpen}
                 title="User Details"
@@ -925,10 +1015,41 @@ export default function Otherspages() {
 
                         <button
                             onClick={handleImportSubmit}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-medium"
+                            disabled={isImporting}
+                            className={`w-full py-2.5 rounded-lg font-medium flex items-center justify-center gap-2
+        ${isImporting
+                                    ? "bg-green-400 cursor-not-allowed"
+                                    : "bg-green-600 hover:bg-green-700 text-white"}
+    `}
                         >
-                            Import Data
+                            {isImporting ? (
+                                <>
+                                    <svg
+                                        className="animate-spin h-5 w-5 text-white"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                            fill="none"
+                                        />
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                        />
+                                    </svg>
+                                    Importing...
+                                </>
+                            ) : (
+                                "Import Data"
+                            )}
                         </button>
+
                     </div>
                 </div>
             )}

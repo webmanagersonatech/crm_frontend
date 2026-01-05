@@ -39,6 +39,7 @@ export default function AddApplicationForm({
     const [programOptions, setProgramOptions] = useState<OptionType[]>([])
     const [program, setProgram] = useState("")
     const [formConfig, setFormConfig] = useState<any>(null)
+    const [minApplicantAge, setMinApplicantAge] = useState<number | null>(null)
     const [formData, setFormData] = useState<Record<string, any>>({})
     const [files, setFiles] = useState<Record<string, File>>({})
     const [activeTab, setActiveTab] = useState<Tab>("personal")
@@ -58,6 +59,8 @@ export default function AddApplicationForm({
     const BASE_URL = "http://localhost:4000/uploads/";
     const inputClass =
         "border border-gray-300 p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#5667a8]"
+
+
 
     useEffect(() => {
         const count = Number(formData["Sibling Count"]) || 0
@@ -95,9 +98,7 @@ export default function AddApplicationForm({
         setFormConfig({ ...formConfig })
     }, [formData["Sibling Count"]])
 
-
-
-
+    
     // Load token-based institute
     useEffect(() => {
         const token = localStorage.getItem("token")
@@ -319,8 +320,6 @@ export default function AddApplicationForm({
     }
 
 
-
-
     // Load form config
     useEffect(() => {
         if (!selectedInstitute) return
@@ -332,13 +331,18 @@ export default function AddApplicationForm({
                     return
                 }
                 setFormConfig(res.data)
+                setMinApplicantAge(res.age ?? null)
             })
-            .catch(() => toast.error("Failed to load form"))
+            .catch(() => {
+                toast.error("Failed to load form")
+                setMinApplicantAge(null)
+            })
     }, [selectedInstitute])
 
     // Load programs
     useEffect(() => {
         if (!selectedInstitute) return
+
         getSettingsByInstitute(selectedInstitute)
             .then((res) => {
                 if (!res?.courses?.length) {
@@ -399,8 +403,10 @@ export default function AddApplicationForm({
                     field.type === "date" &&
                     field.fieldName.toLowerCase().includes("date of birth")
                 ) {
-                    if (!isAtLeast16YearsOld(value)) {
-                        toast.error("Student must be at least 16 years old")
+                    if (!isValidDOB(value)) {
+                        toast.error(
+                            `Student must be at least ${minApplicantAge ?? 16} years old and DOB cannot be in the future`
+                        )
                         return false
                     }
                 }
@@ -617,9 +623,17 @@ export default function AddApplicationForm({
             return sectionObj
         })
     }
-    const isAtLeast16YearsOld = (dob: string) => {
+
+    const isValidDOB = (dob: string) => {
+        if (!dob) return false
+
         const birthDate = new Date(dob)
         const today = new Date()
+
+        // ❌ future date check
+        if (birthDate > today) return false
+
+        const minAge = minApplicantAge ?? 16
 
         let age = today.getFullYear() - birthDate.getFullYear()
         const m = today.getMonth() - birthDate.getMonth()
@@ -628,8 +642,9 @@ export default function AddApplicationForm({
             age--
         }
 
-        return age >= 16
+        return age >= minAge
     }
+
 
 
     // Submit

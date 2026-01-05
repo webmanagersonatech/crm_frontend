@@ -153,6 +153,48 @@ export default function DashboardPage() {
 
     fetchPermissions();
   }, []);
+ 
+
+
+  const generateCSV = () => {
+    const TOTAL = 100;
+
+    const headers = ["Name", "Phone", "Date", "City", "Course", "Source"];
+    const rows: string[] = [];
+
+    rows.push(headers.join(","));
+
+    for (let i = 1; i <= TOTAL; i++) {
+      const name = `Student ${i}`;
+      const phone = `9${(100000000 + i).toString()}`; // 10+ digits
+      const date = `2024-${String((i % 12) + 1).padStart(2, "0")}-${String(
+        (i % 28) + 1
+      ).padStart(2, "0")}`;
+      const city = ["Delhi", "Mumbai", "Pune", "Chennai"][i % 4];
+      const course = ["Maths", "Science", "Commerce", "Arts"][i % 4];
+      const source = "import";
+
+      rows.push(
+        [name, phone, date, city, course, source].join(",")
+      );
+    }
+
+    const csvContent = rows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "others.csv";
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+
+
 
   // 🏫 Load Institutions
   useEffect(() => {
@@ -260,7 +302,12 @@ export default function DashboardPage() {
         Apply Online
       </a>
 
-
+ <button
+      onClick={generateCSV}
+      className="px-4 py-2 bg-blue-600 text-white rounded"
+    >
+      Generate 5000 CSV
+    </button>
       {/* 🔹 Filters Section */}
       <div className="bg-white dark:bg-neutral-900 shadow-md rounded-2xl p-4 sm:p-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">

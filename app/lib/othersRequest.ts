@@ -28,6 +28,8 @@ export interface Other {
     _id?: string;
     instituteId?: string;
     name: string;
+    recordId?: string;
+    leadId?: string;
     phone: string;
     date?: string;
     dataSource: string;
@@ -133,6 +135,21 @@ export async function getOtherById(id: string) {
         throw new Error(error.response?.data?.message || "Failed to fetch record.");
     }
 }
+// Create Lead from Other (by recordId)
+export async function createLeadFromOther(recordId: string) {
+    try {
+        const response = await api.post(
+            `/others/create-lead/${recordId}`
+        );
+        return response.data;
+    } catch (error: any) {
+        throw new Error(
+            error.response?.data?.message || "Failed to create lead"
+        );
+    }
+}
+
+
 
 // Update a record by ID
 export async function updateOther(id: string, data: Partial<Other>) {

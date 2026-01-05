@@ -25,6 +25,8 @@ interface PaymentData {
 export default function SettingsPage() {
   const [institutions, setInstitutions] = useState<OptionType[]>([])
   const [selectedInstitute, setSelectedInstitute] = useState<OptionType | null>(null)
+  const [applicationFee, setApplicationFee] = useState<number | ''>('')
+  const [applicantAge, setApplicantAge] = useState<number | ''>('')
 
   const [formData, setFormData] = useState({
     image: ''
@@ -74,6 +76,8 @@ export default function SettingsPage() {
           apiKey: data.apiKey || '',
           merchantId: data.merchantId || ''
         })
+        setApplicationFee(data.applicationFee || '')
+        setApplicantAge(data.applicantAge || '')
       } catch (error: any) {
         if (error.message.includes('Settings not found')) {
           setFormData({ image: '' })
@@ -124,6 +128,12 @@ export default function SettingsPage() {
   const handleSaveAll = async () => {
     if (!selectedInstitute) return toast.error('Please select an institute')
     if (!formData.image) return toast.error('Please upload an institute logo')
+    if (applicationFee === '' || applicationFee < 0)
+      return toast.error('Please enter valid application fee')
+
+    if (applicantAge === '' || applicantAge < 1)
+      return toast.error('Please enter valid applicant age')
+
     if (customCourses.length === 0) return toast.error('Please add at least one course')
     if (!paymentData.authToken || !paymentData.apiKey || !paymentData.merchantId)
       return toast.error('Please fill all payment details')
@@ -134,7 +144,9 @@ export default function SettingsPage() {
       courses: customCourses,
       authToken: paymentData.authToken,
       apiKey: paymentData.apiKey,
-      merchantId: paymentData.merchantId
+      merchantId: paymentData.merchantId,
+      applicationFee,
+      applicantAge
     }
 
     try {
@@ -192,6 +204,35 @@ export default function SettingsPage() {
               />
             </div>
           </div>
+          {/* Application Fee */}
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Application Fee <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              className={inputClass}
+              placeholder="Enter application fee"
+              value={applicationFee}
+              onChange={(e) => setApplicationFee(Number(e.target.value))}
+            />
+          </div>
+
+          {/* Applicant Age */}
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Applicant Age <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              min="1"
+              className={inputClass}
+              placeholder="Enter minimum applicant age"
+              value={applicantAge}
+              onChange={(e) => setApplicantAge(Number(e.target.value))}
+            />
+          </div>
 
           {/* Courses */}
           <div className="flex flex-col col-span-1 md:col-span-2">
@@ -240,6 +281,8 @@ export default function SettingsPage() {
               <p className="text-sm text-gray-500">No courses added yet.</p>
             )}
           </div>
+
+
         </div>
       </div>
 
