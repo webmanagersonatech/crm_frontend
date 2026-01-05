@@ -1,17 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileDown, X, Layers, Eye, Trash2, Settings, FileUp, } from "lucide-react";
+import { FileDown, X, Calendar, Eye, Pencil, Trash2, Settings, FileUp, } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import toast from "react-hot-toast";
 import { DataTable } from "@/components/Tablecomponents";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
-import { importOthers, getOthers, deleteOther, createLeadFromOther } from "@/app/lib/request/othersRequest";
+import { createLeadFromOther } from "@/app/lib/request/othersRequest";
+import { importEvents, getEvents, deleteEvent, } from "@/app/lib/request/eventsRequest";
+import EditEventForm from "@/components/Forms/Editeventform";
 import ViewDialog from "@/components/ViewDialog";
 import { Column } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ExportModal from "@/components/ExportModal";
+
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 type ImportErrors = {
     missingFields: any[];
@@ -28,7 +32,7 @@ type ImportErrors = {
 };
 
 
-export default function Otherspages() {
+export default function EventsPageClient() {
     /* ---------------- Common ---------------- */
     const [institutions, setInstitutions] = useState<{ value: string; label: string }[]>([]);
     const [userpermission, setUserpermission] = useState<any | null>(null);
@@ -43,18 +47,24 @@ export default function Otherspages() {
     /* ---------------- Import ---------------- */
     const [showImportModal, setShowImportModal] = useState(false);
     const [importInstitution, setImportInstitution] = useState("");
-    const [importDataSource, setImportDataSource] = useState("");
+
     const [importFile, setImportFile] = useState<File | null>(null);
     const [totalCount, setTotalCount] = useState(0);
     const [open, setOpen] = useState(false);
-    const [dataSources, setDataSources] = useState<{ value: string; label: string }[]>([]);
+
+
+    // Importing state
     const [isImporting, setIsImporting] = useState(false);
 
-    /* ---------------- Table ---------------- */
-    const [others, setOthers] = useState<any[]>([]);
+    // Fetched events for the table
+    const [events, setEvents] = useState<any[]>([]);
+
     const [loading, setLoading] = useState(false);
     const [leadConfirmOpen, setLeadConfirmOpen] = useState(false);
-    const [leadLoading, setLeadLoading] = useState(false);
+
+    const [filterName, setFilterName] = useState("");
+    const [filterMobile, setFilterMobile] = useState("");
+    const [filterEventName, setFilterEventName] = useState("");
 
 
     const [currentPage, setCurrentPage] = useState(1);
@@ -65,9 +75,10 @@ export default function Otherspages() {
     const PREVIEW_LIMIT = 3;
 
 
-    const [showNewSourceInput, setShowNewSourceInput] = useState(false);
-    const [newSource, setNewSource] = useState("");
+
+
     const [selected, setSelected] = useState<any | null>(null);
+    const [editOpen, setEditOpen] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [confirmType, setConfirmType] = useState<"delete" | null>(null);
     /* ---------------- CSV Preview ---------------- */
@@ -75,155 +86,86 @@ export default function Otherspages() {
     const [csvRows, setCsvRows] = useState<string[][]>([]);
 
     const [columnVisibility, setColumnVisibility] = useState({
-        recordId: true,
+
         institute: true,
         name: true,
-        phone: true,
-        dataSource: true,
-        date: true,
-        extraFields: true,
+        mobile: true,
+        email: true,
+        location: true,
+        eventName: true,
+
+        enrolledDate: true,
+
         createdBy: true,
         createdAt: true,
     });
+
     const columnOptions = [
         { key: "institute", label: "Institute" },
         { key: "name", label: "Name" },
-        { key: "phone", label: "Phone" },
-        { key: "dataSource", label: "Data Source" },
-        { key: "date", label: "Date" },
-        { key: "extraFields", label: "Extra Fields" },
+        { key: "mobile", label: "Mobile" },
+        { key: "email", label: "Email" },
+        { key: "location", label: "Location" },
+        { key: "eventName", label: "Event Name" },
+        { key: "enrolledDate", label: "Enrolled Date" },
         { key: "createdBy", label: "Created By" },
         { key: "createdAt", label: "Created At" },
     ];
+
     const columns = [
-
-
         columnVisibility.institute && {
             header: "Institute",
             render: (o: any) => o.institute?.name || o.instituteId || "—",
-        },
-        columnVisibility.dataSource && {
-            header: "Data Source",
-            render: (o: any) => o.dataSource || "—",
         },
 
         columnVisibility.name && {
             header: "Name",
             render: (o: any) => o.name || "—",
         },
-
-        columnVisibility.phone && {
-            header: "Phone",
-            render: (o: any) => o.phone || "—",
+        columnVisibility.mobile && {
+            header: "Mobile",
+            render: (o: any) => o.mobile || "—",
         },
 
-        columnVisibility.date && {
-            header: "Date",
-            render: (o: any) => o.date || "—",
+        columnVisibility.email && {
+            header: "Email",
+            render: (o: any) => o.email || "—",
+        },
+        columnVisibility.eventName && {
+            header: "Event Name",
+            render: (o: any) => o.eventName || "—",
+        },
+        columnVisibility.location && {
+            header: "Location",
+            render: (o: any) => o.location || "—",
         },
 
-        columnVisibility.extraFields && {
-            header: "Extra Fields",
-            render: (o: any) => {
-                const entries = o?.extraFields
-                    ? Object.entries(o.extraFields)
-                    : [];
-
-                const visible = entries.slice(0, 2);
-                const remaining = entries.length - 2;
-
-                return (
-                    <div className="max-w-xs text-xs space-y-1">
-                        {visible.length > 0 ? (
-                            <>
-                                {visible.map(([k, v]: any) => (
-                                    <div key={k}>
-                                        <span className="font-semibold">{k}:</span>{" "}
-                                        <span className="text-gray-600">{v}</span>
-                                    </div>
-                                ))}
-
-                                {remaining > 0 && (
-                                    <div className="text-indigo-600 font-medium">
-                                        +{remaining} more
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            "—"
-                        )}
-                    </div>
-                );
-            },
+        columnVisibility.enrolledDate && {
+            header: "Enrolled Date",
+            render: (o: any) => o.enrolledDate ? new Date(o.enrolledDate).toLocaleDateString() : "—",
         },
-
-
-
         columnVisibility.createdBy && {
             header: "Created By",
-            render: (o: any) =>
-                o.creator
-                    ? `${o.creator.firstname} ${o.creator.lastname}`
-                    : "—",
+            render: (o: any) => o.creator ? `${o.creator.firstname} ${o.creator.lastname}` : "—",
         },
-
         columnVisibility.createdAt && {
             header: "Created At",
-            render: (o: any) =>
-                new Date(o.createdAt).toLocaleDateString(),
+            render: (o: any) => new Date(o.createdAt).toLocaleDateString(),
         },
 
         {
             header: "Actions",
             render: (o: any) => {
-                const hasLead = Boolean(o.leadId);
+
 
                 return (
                     <div className="flex gap-2">
-                        {/* Create Lead */}
-                        {!hasLead && (userpermission === "superadmin" || userpermission?.create) && (
-                            <button
-                                onClick={() => {
-                                    setSelected(o);
-                                    setLeadConfirmOpen(true);
-                                }}
-                                className="
-      w-28 h-6
-      flex items-center justify-center
-      rounded-md
-      bg-indigo-600 text-white text-sm font-medium
-      hover:bg-indigo-700
-      active:scale-95
-      transition
-      shadow-sm
-    "
-                            >
-                                Create Lead
-                            </button>
-                        )}
 
-                        {/* View Lead */}
-                        {hasLead && (
-                            <button
-                                onClick={() => {
-                                    window.location.href = `/leads/${o.leadId}`;
-                                }}
-                                className="
-      w-28 h-6
-      flex items-center justify-center
-      rounded-md
-      bg-emerald-600 text-white text-sm font-medium
-      hover:bg-emerald-700
-      active:scale-95
-      transition
-      shadow-sm
-    "
-                            >
-                                View Lead
-                            </button>
-                        )}
 
-                        {/* View Other */}
+
+
+
+                        {/* View Details */}
                         {(userpermission === "superadmin" || userpermission?.view) && (
                             <button
                                 onClick={() => {
@@ -235,10 +177,18 @@ export default function Otherspages() {
                                 <Eye className="w-4 h-4" />
                             </button>
                         )}
-
-
-
-
+                        {/* Edit */}
+                        {(userpermission === "superadmin" || userpermission?.edit) && (
+                            <button
+                                onClick={() => {
+                                    setSelected(o);
+                                    setEditOpen(true);
+                                }}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md"
+                            >
+                                <Pencil className="w-4 h-4" />
+                            </button>
+                        )}
 
                         {/* Delete */}
                         {(userpermission === "superadmin" || userpermission?.delete) && (
@@ -256,39 +206,32 @@ export default function Otherspages() {
                     </div>
                 );
             },
-        }
-
-
+        },
     ].filter(Boolean) as Column<any>[];
 
 
-    const fetchOthers = async () => {
+
+    const fetchEvents = async () => {
         try {
             setLoading(true);
 
-            const res = await getOthers({
+            const res = await getEvents({
                 page: currentPage,
                 limit,
                 instituteId:
                     userpermission === "superadmin" && selectedInstitution !== "all"
                         ? selectedInstitution
                         : undefined,
-                dataSource: filterDataSource || undefined,
+                name: filterName || undefined,
+                mobile: filterMobile || undefined,
+                eventName: filterEventName || undefined,
                 startDate: startDate || undefined,
                 endDate: endDate || undefined,
             });
 
-            setOthers(res.docs);
+            setEvents(res.docs);
             setTotalPages(res.totalPages);
-            setTotalCount(res.totalDocs)
-            if (Array.isArray(res.dataSources)) {
-                setDataSources(
-                    res.dataSources.map((ds: string) => ({
-                        value: ds,
-                        label: ds.charAt(0).toUpperCase() + ds.slice(1), // Capitalize first letter
-                    }))
-                );
-            }
+            setTotalCount(res.totalDocs);
         } catch (err: any) {
             toast.error(err.message || "Failed to fetch records");
         } finally {
@@ -298,15 +241,17 @@ export default function Otherspages() {
 
 
     useEffect(() => {
-        fetchOthers();
-
+        fetchEvents();
     }, [
         currentPage,
         selectedInstitution,
-        filterDataSource,
+        filterName,
+        filterMobile,
+        filterEventName,
         startDate,
         endDate,
     ]);
+
 
 
     /* ---------------- Permissions ---------------- */
@@ -328,11 +273,11 @@ export default function Otherspages() {
                     .then((data) => {
 
                         const permission = data.permissions?.find(
-                            (p: any) => p.moduleName === "Others"
+                            (p: any) => p.moduleName === "events"
                         );
 
                         if (!permission) {
-                            toast.error("Others permission not assigned");
+                            toast.error("Events permission not assigned");
                             return;
                         }
 
@@ -349,37 +294,40 @@ export default function Otherspages() {
         }
     }, []);
 
-    const filteredOthers = (others || []).map((o: any) => {
+    const filteredOthers = (events || []).map((o: any) => {
         const obj: any = {};
 
         if (columnVisibility.institute) {
             obj.Institute = o.institute?.name || o.instituteId || "-";
         }
 
-        if (columnVisibility.dataSource) {
-            obj["Data Source"] = o.dataSource || "-";
-        }
-
         if (columnVisibility.name) {
             obj.Name = o.name || "-";
         }
 
-        if (columnVisibility.phone) {
-            obj.Phone = o.phone || "-";
+        if (columnVisibility.mobile) {
+            obj.Mobile = o.mobile || "-";
         }
 
-        if (columnVisibility.date) {
-            obj.Date = o.date || "-";
+        if (columnVisibility.email) {
+            obj.Email = o.email || "-";
         }
 
-        if (columnVisibility.extraFields) {
-            obj["Extra Fields"] =
-                o.extraFields && Object.keys(o.extraFields).length > 0
-                    ? Object.entries(o.extraFields)
-                        .map(([k, v]) => `${k}: ${String(v)}`)
-                        .join(" | ")
-                    : "-";
+        if (columnVisibility.location) {
+            obj.Location = o.location || "-";
         }
+
+        if (columnVisibility.eventName) {
+            obj.Event = o.eventName || "-";
+        }
+
+
+        if (columnVisibility.enrolledDate) {
+            obj["Enrolled Date"] = o.enrolledDate
+                ? new Date(o.enrolledDate).toLocaleDateString()
+                : "-";
+        }
+
 
         if (columnVisibility.createdBy) {
             obj["Created By"] = o.creator
@@ -395,6 +343,7 @@ export default function Otherspages() {
 
         return obj;
     });
+
 
 
 
@@ -415,105 +364,71 @@ export default function Otherspages() {
 
     /* ---------------- Import Submit ---------------- */
     const handleImportSubmit = async () => {
-        if (isImporting) return; // prevent double click
+        if (isImporting) return;
 
         if (userpermission === "superadmin" && !importInstitution) {
-            toast.error("Please select institution");
-            return;
-        }
-
-        if (!importDataSource) {
-            toast.error("Please select data source");
+            toast.error("Please select an institution");
             return;
         }
 
         if (!importFile) {
-            toast.error("Please upload CSV file");
+            toast.error("Please upload a CSV/XLSX file");
             return;
         }
 
         try {
-            setIsImporting(true); // 🔥 start loading
+            setIsImporting(true);
 
-            await importOthers(importFile, importDataSource, importInstitution);
+            // Call events import API
+            await importEvents(importFile, importInstitution);
 
-            toast.success("Import started successfully 🚀");
+            toast.success("Events import started successfully 🚀");
             setShowImportModal(false);
             resetImportState();
             setImportErrors(null);
         } catch (err: any) {
-            console.log("IMPORT ERROR:", err);
+            console.error("IMPORT ERROR:", err);
 
-            if (
-                err.missingFields ||
-                err.duplicatesInSheet ||
-                err.duplicatesInDB
-            ) {
+            if (err.sheetErrors || err.duplicatesInSheet || err.duplicatesInDB) {
                 setImportErrors({
-                    missingFields: err.missingFields || [],
+                    missingFields: err.sheetErrors || [],
                     duplicatesInSheet: err.duplicatesInSheet || [],
-                    duplicatesInDB: err.duplicatesInDB || []
+                    duplicatesInDB: err.duplicatesInDB || [],
                 });
-
                 toast.error(err.message || "Validation errors found");
             } else {
                 toast.error("Import failed");
             }
         } finally {
-            setIsImporting(false); // 🔥 stop loading (always runs)
+            setIsImporting(false);
         }
     };
 
 
 
-    const fetchDataSourcesByInstitution = async (institutionId: string) => {
-        try {
-            if (!institutionId) return;
 
-            const res = await getOthers({
-                page: 1,
-                limit: 1, // We only need dataSources
-                instituteId: institutionId
-            });
-
-            if (Array.isArray(res.dataSources)) {
-                setDataSources(
-                    res.dataSources.map((ds: string) => ({
-                        value: ds,
-                        label: ds.charAt(0).toUpperCase() + ds.slice(1),
-                    }))
-                );
-            } else {
-                setDataSources([]);
-            }
-        } catch (err: any) {
-            toast.error("Failed to fetch data sources for institution");
-        }
-    };
 
     const resetImportState = () => {
         setImportInstitution("");
-        setImportDataSource("");
+
         setImportFile(null);
         setImportErrors(null);
 
         setCsvHeaders([]);
         setCsvRows([]);
 
-        setShowNewSourceInput(false);
-        setNewSource("");
-        fetchOthers()
+        fetchEvents()
     };
 
     const handleDelete = async () => {
         if (!selected?._id) return;
 
         try {
-            await deleteOther(selected._id);
-            toast.success("Record deleted successfully");
+            await deleteEvent(selected._id);
+            toast.success("Event deleted successfully");
             setConfirmOpen(false);
             setSelected(null);
-            fetchOthers(); // refresh table
+            fetchEvents(); // refresh table
         } catch (err: any) {
             toast.error(err.message || "Failed to delete record");
         }
@@ -527,7 +442,7 @@ export default function Otherspages() {
             toast.success("Lead created successfully");
             setLeadConfirmOpen(false);
             setSelected(null);
-            fetchOthers();
+            fetchEvents();
         } catch (err: any) {
             toast.error(err.message || "Failed to create lead");
         }
@@ -535,25 +450,20 @@ export default function Otherspages() {
 
 
     const downloadRecommendedSheet = () => {
-        const csvContent = `name,phone,date,email,source,remarks
-John Doe,9876543210,2025-01-01,john@example.com,Website,
-Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
+        const csv = `Name,Mobile,Email,Location,Event Name,Enrolled Date
+John Doe,9876543210,john@example.com,Chennai,React Workshop,2025-01-05`;
 
-        const blob = new Blob([csvContent], {
-            type: "text/csv;charset=utf-8;",
-        });
-
+        const blob = new Blob([csv], { type: "text/csv" });
         const url = URL.createObjectURL(blob);
 
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "recommended_template.csv";
-        document.body.appendChild(link);
-        link.click();
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "events_import_template.csv";
+        a.click();
 
-        document.body.removeChild(link);
         URL.revokeObjectURL(url);
     };
+
 
 
 
@@ -566,9 +476,9 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
             <div className="flex items-center justify-between flex-wrap gap-4">
                 {/* LEFT SIDE */}
                 <div className="flex items-center gap-3">
-                    <Layers className="w-6 h-6 text-indigo-700" />
+                    <Calendar className="w-6 h-6 text-indigo-700" />
                     <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">
-                        Others
+                        Events
                     </h1>
 
                     {(userpermission === "superadmin" || userpermission?.filter) && (<button
@@ -617,30 +527,15 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
 
             {/* ---------------- Filters ---------------- */}
             {(userpermission === "superadmin" || userpermission?.filter) && (
+                <div className="bg-white border border-slate-200 rounded-2xl px-6 py-5">
 
-                <div className="
-    bg-white 
-    border border-slate-200 
-    rounded-2xl 
-    px-6 py-5
-">
-
-                    {/* FILTER ROW */}
-                    <div className="
-        flex flex-col lg:flex-row 
-        lg:items-end lg:justify-between 
-        gap-6
-    ">
+                    <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
 
                         {/* LEFT FILTERS */}
-                        <div className="
-            flex flex-col sm:flex-row 
-            flex-wrap gap-5
-        ">
+                        <div className="flex flex-col sm:flex-row flex-wrap gap-5">
 
+                            {/* Institution */}
                             {userpermission === "superadmin" && (
-
-
                                 <div className="flex flex-col w-full sm:w-56">
                                     <label className="text-xs font-medium text-slate-500 mb-1">
                                         Institution
@@ -648,13 +543,7 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                                     <select
                                         value={selectedInstitution}
                                         onChange={(e) => setSelectedInstitution(e.target.value)}
-                                        className="
-                            h-10 px-3 rounded-lg
-                            border border-slate-300
-                            text-sm text-slate-700
-                            focus:outline-none
-                            focus:ring-1 focus:ring-slate-400
-                        "
+                                        className="h-10 px-3 rounded-lg border border-slate-300 text-sm"
                                     >
                                         <option value="all">All Institutions</option>
                                         {institutions.map((i) => (
@@ -666,30 +555,46 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                                 </div>
                             )}
 
+                            {/* Name */}
                             <div className="flex flex-col w-full sm:w-44">
                                 <label className="text-xs font-medium text-slate-500 mb-1">
-                                    Data Source
+                                    Name
                                 </label>
-                                <select
-                                    value={filterDataSource}
-                                    onChange={(e) => setFilterDataSource(e.target.value)}
-                                    className="
-                        h-10 px-3 rounded-lg
-                        border border-slate-300
-                        text-sm text-slate-700
-                        focus:outline-none
-                        focus:ring-1 focus:ring-slate-400
-                    "
-                                >
-                                    <option value="">All</option>
-                                    {dataSources.map((src) => (
-                                        <option key={src.value} value={src.value}>
-                                            {src.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                <input
+                                    value={filterName}
+                                    onChange={(e) => setFilterName(e.target.value)}
+                                    placeholder="Search name"
+                                    className="h-10 px-3 rounded-lg border border-slate-300 text-sm"
+                                />
                             </div>
 
+                            {/* Mobile */}
+                            <div className="flex flex-col w-full sm:w-44">
+                                <label className="text-xs font-medium text-slate-500 mb-1">
+                                    Mobile
+                                </label>
+                                <input
+                                    value={filterMobile}
+                                    onChange={(e) => setFilterMobile(e.target.value)}
+                                    placeholder="Search mobile"
+                                    className="h-10 px-3 rounded-lg border border-slate-300 text-sm"
+                                />
+                            </div>
+
+                            {/* Event Name */}
+                            <div className="flex flex-col w-full sm:w-44">
+                                <label className="text-xs font-medium text-slate-500 mb-1">
+                                    Event
+                                </label>
+                                <input
+                                    value={filterEventName}
+                                    onChange={(e) => setFilterEventName(e.target.value)}
+                                    placeholder="Search event"
+                                    className="h-10 px-3 rounded-lg border border-slate-300 text-sm"
+                                />
+                            </div>
+
+                            {/* Start Date */}
                             <div className="flex flex-col w-full sm:w-40">
                                 <label className="text-xs font-medium text-slate-500 mb-1">
                                     Start Date
@@ -698,16 +603,11 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="
-                        h-10 px-3 rounded-lg
-                        border border-slate-300
-                        text-sm text-slate-700
-                        focus:outline-none
-                        focus:ring-1 focus:ring-slate-400
-                    "
+                                    className="h-10 px-3 rounded-lg border border-slate-300 text-sm"
                                 />
                             </div>
 
+                            {/* End Date */}
                             <div className="flex flex-col w-full sm:w-40">
                                 <label className="text-xs font-medium text-slate-500 mb-1">
                                     End Date
@@ -716,27 +616,14 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="
-                        h-10 px-3 rounded-lg
-                        border border-slate-300
-                        text-sm text-slate-700
-                        focus:outline-none
-                        focus:ring-1 focus:ring-slate-400
-                    "
+                                    className="h-10 px-3 rounded-lg border border-slate-300 text-sm"
                                 />
                             </div>
 
                         </div>
 
-                        {/* RIGHT TOTAL */}
-                        <div className="
-            flex items-center justify-between
-            min-w-[180px]
-            px-5 py-3
-            rounded-xl
-            border border-slate-200
-            bg-slate-50
-        ">
+                        {/* TOTAL */}
+                        <div className="flex items-center justify-between min-w-[180px] px-5 py-3 rounded-xl border bg-slate-50">
                             <p className="text-xs uppercase tracking-wide text-slate-500">
                                 Total Records
                             </p>
@@ -746,21 +633,64 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                         </div>
 
                     </div>
-                </div>)}
+                </div>
+            )}
+
 
 
             <DataTable
                 columns={columns}
-                data={others}
+                data={events}
                 loading={loading}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
             />
 
+            <AnimatePresence>
+                {editOpen && selected && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    >
+                        <motion.div
+                            initial={{ y: -50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: -50, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                            className="bg-white rounded-2xl shadow-xl w-full max-w-4xl h-[70vh] relative flex flex-col"
+                        >
+                            {/* Close */}
+                            <button
+                                onClick={() => setEditOpen(false)}
+                                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+
+                            {/* Content */}
+                            <div className="overflow-y-auto p-6 flex-1">
+                                <EditEventForm
+                                    eventId={selected._id}
+                                    onClose={() => setEditOpen(false)}
+                                    onSuccess={() => {
+                                        setEditOpen(false);
+                                        fetchEvents();
+                                    }}
+                                />
+
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+
             <ConfirmDialog
                 open={confirmOpen}
-                title="Delete Other data"
+                title="Delete Event data"
                 message={`Are you sure you want to delete  "${selected?.name || "Unknown "
                     } data"?`}
                 onConfirm={handleDelete}
@@ -777,29 +707,28 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
 
             <ViewDialog
                 open={viewOpen}
-                title="User Details"
+                title="Event User Details"
                 data={{
+                    Institute: selected?.institute?.name || selected?.instituteId || "—",
                     Name: selected?.name || "—",
-                    Phone: selected?.phone || "—",
-                    "Data Source": selected?.dataSource || "—",
-                    Date: selected?.date || "—",
-                    Institute: selected?.institute?.name || "—",
+                    Mobile: selected?.mobile || "—",
+                    Email: selected?.email || "—",
+                    Location: selected?.location || "—",
+                    "Event Name": selected?.eventName || "—",
+                    "Enrolled Date": selected?.enrolledDate
+                        ? new Date(selected.enrolledDate).toLocaleDateString()
+                        : "—",
                     "Created By": selected?.creator
                         ? `${selected.creator.firstname} ${selected.creator.lastname}`
                         : "—",
                     "Created At": selected?.createdAt
                         ? new Date(selected.createdAt).toLocaleString()
                         : "—",
-                    "Extra Fields":
-                        selected?.extraFields &&
-                            Object.keys(selected.extraFields).length > 0
-                            ? Object.entries(selected.extraFields)
-                                .map(([k, v]) => `${k}: ${v}`)
-                                .join(", ")
-                            : "—",
+
                 }}
                 onClose={() => setViewOpen(false)}
             />
+
             <ColumnCustomizeDialog
                 open={customizeOpen}
                 title="Customize Application Columns"
@@ -812,7 +741,7 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
             />
             <ExportModal
                 open={open}
-                title={"Othersdata"}
+                title={"Events data"}
                 onClose={() => setOpen(false)}
                 data={filteredOthers}
             />
@@ -828,7 +757,7 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                             <X className="w-5 h-5" />
                         </button>
 
-                        <h2 className="text-lg font-semibold">Import Data</h2>
+                        <h2 className="text-lg font-semibold">Import Events</h2>
 
                         {userpermission === "superadmin" && (
                             <div className="flex flex-col">
@@ -838,10 +767,6 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setImportInstitution(value);
-
-                                        // Fetch data sources for this institution
-                                        fetchDataSourcesByInstitution(value);
-                                        setImportDataSource(""); // Reset previously selected
                                     }}
                                     className="border rounded-md py-2 px-3"
                                 >
@@ -855,83 +780,21 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                             </div>
                         )}
 
-
-                        {/* Data Source */}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-sm">Data Source</label>
-                            <select
-                                value={importDataSource}
-                                onChange={(e) => {
-                                    const v = e.target.value;
-                                    if (v === "__add_new__") {
-                                        setShowNewSourceInput(true);
-                                        setImportDataSource("");
-                                    } else {
-                                        setImportDataSource(v);
-                                    }
-                                }}
-                                className="border rounded-md py-2 px-3"
-                            >
-                                <option value="">-- Select Data Source --</option>
-                                {dataSources.map((src) => (
-                                    <option key={src.value} value={src.value}>
-                                        {src.label}
-                                    </option>
-                                ))}
-                                <option value="__add_new__">➕ Add New</option>
-                            </select>
-
-                            {showNewSourceInput && (
-                                <div className="flex gap-2 mt-2">
-                                    <input
-                                        autoFocus
-                                        placeholder="Enter new data source"
-                                        value={newSource}
-                                        onChange={(e) => setNewSource(e.target.value)}
-                                        className="flex-1 border rounded-md py-2 px-3"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            if (!newSource.trim()) {
-                                                toast.error("Enter data source name");
-                                                return;
-                                            }
-                                            const value = newSource.toLowerCase().replace(/\s+/g, "_");
-
-                                            setDataSources((prev) => {
-                                                if (prev.find((p) => p.value === value)) {
-                                                    toast.error("Data source already exists");
-                                                    return prev;
-                                                }
-                                                return [...prev, { value, label: newSource }];
-                                            });
-
-                                            setImportDataSource(value); // auto select new
-                                            setNewSource("");
-                                            setShowNewSourceInput(false);
-                                        }}
-                                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
-                                    >
-                                        Add
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-
-
                         {/* File Upload */}
                         <div className="flex flex-col">
 
 
                             <div className="flex items-center justify-between">
                                 <label className="text-sm font-medium">
-                                    Upload CSV{" "}
-                                    <span className="ml-2 text-xs text-gray-500">
+                                    Upload CSV
+                                    <span className="ml-2 text-xs">
                                         Required columns:
-                                        <b className="ml-1 text-red-500">name, phone, date</b>
+                                        <span className="ml-1 text-red-600 font-semibold">
+                                            Name, Mobile, Email, Location, Event Name
+                                        </span>
                                     </span>
                                 </label>
+
 
                                 <button
                                     type="button"
@@ -1008,47 +871,81 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                         {importErrors && (
                             <div className="border rounded-lg overflow-auto max-h-96">
                                 <table className="w-full text-sm">
-                                    <thead className="bg-red-50 sticky top-0">
+                                    <thead className="bg-red-100 sticky top-0">
                                         <tr>
-                                            <th className="border px-3 py-2 text-left">Type</th>
-                                            <th className="border px-3 py-2 text-left">Phone</th>
-                                            <th className="border px-3 py-2 text-left">Rows</th>
-                                            <th className="border px-3 py-2 text-left">Message</th>
+                                            <th className="border px-3 py-2 text-left">Issue Type</th>
+                                            <th className="border px-3 py-2 text-left">Row</th>
+                                            <th className="border px-3 py-2 text-left">Details</th>
+                                            <th className="border px-3 py-2 text-left">What you should do</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
 
+                                    <tbody>
+                                        {/* ---------------- Missing Fields ---------------- */}
                                         {importErrors.missingFields.map((e, i) => (
                                             <tr key={`missing-${i}`} className="bg-orange-50">
-                                                <td className="border px-3 py-2 font-semibold">Missing Field</td>
-                                                <td className="border px-3 py-2">—</td>
-                                                <td className="border px-3 py-2">Row {e.row}</td>
-                                                <td className="border px-3 py-2 text-red-600">{e.message}</td>
+                                                <td className="border px-3 py-2 font-semibold text-orange-700">
+                                                    Missing Data
+                                                </td>
+                                                <td className="border px-3 py-2 font-medium">
+                                                    Row {e.row}
+                                                </td>
+                                                <td className="border px-3 py-2 text-red-600">
+                                                    {e.message}
+                                                </td>
+                                                <td className="border px-3 py-2 text-gray-700">
+                                                    Fill all required columns and re-upload the file
+                                                </td>
                                             </tr>
                                         ))}
+
+                                        {/* ---------------- Sheet Duplicates ---------------- */}
                                         {importErrors.duplicatesInSheet.map((e, i) => (
                                             <tr key={`sheet-${i}`} className="bg-yellow-50">
-                                                <td className="border px-3 py-2 font-semibold">Sheet Duplicate</td>
-                                                <td className="border px-3 py-2">{e.phone}</td>
-                                                <td className="border px-3 py-2">{e.rows.join(", ")}</td>
-                                                <td className="border px-3 py-2 text-red-600">{e.message}</td>
+                                                <td className="border px-3 py-2 font-semibold text-yellow-700">
+                                                    Duplicate in File
+                                                </td>
+                                                <td className="border px-3 py-2 font-medium">
+                                                    Rows {e.rows.join(", ")}
+                                                </td>
+                                                <td className="border px-3 py-2 text-red-600">
+                                                    Mobile number <b>{e.phone}</b> is repeated
+                                                </td>
+                                                <td className="border px-3 py-2 text-gray-700">
+                                                    Keep only one row with this mobile number
+                                                </td>
                                             </tr>
                                         ))}
 
-                                        {importErrors.duplicatesInDB.map((e, i) => (
+                                        {/* ---------------- DB Duplicates ---------------- */}
+                                        {importErrors.duplicatesInDB.map((e: any, i) => (
                                             <tr key={`db-${i}`} className="bg-red-50">
-                                                <td className="border px-3 py-2 font-semibold">DB Duplicate</td>
-                                                <td className="border px-3 py-2">{e.phone}</td>
-                                                <td className="border px-3 py-2">{e.rows.join(", ")}</td>
-                                                <td className="border px-3 py-2 text-red-600">{e.message}</td>
+                                                <td className="border px-3 py-2 font-semibold text-red-700">
+                                                    Already Exists
+                                                </td>
+                                                <td className="border px-3 py-2 font-medium">
+                                                    Row {e.row}
+                                                </td>
+                                                <td className="border px-3 py-2 text-red-600">
+                                                    {e.message}
+                                                    <div className="text-xs text-gray-600 mt-1">
+                                                        Phone: {e.phone} <br />
+                                                        Email: {e.email}
+                                                    </div>
+                                                </td>
+                                                <td className="border px-3 py-2 text-gray-700">
+                                                    Remove this row or update the existing record instead of importing again
+                                                </td>
                                             </tr>
                                         ))}
 
-                                        {importErrors.duplicatesInSheet.length === 0 &&
+                                        {/* ---------------- No Errors ---------------- */}
+                                        {importErrors.missingFields.length === 0 &&
+                                            importErrors.duplicatesInSheet.length === 0 &&
                                             importErrors.duplicatesInDB.length === 0 && (
                                                 <tr>
-                                                    <td colSpan={4} className="text-center py-4 text-gray-500">
-                                                        No validation errors
+                                                    <td colSpan={4} className="text-center py-4 text-green-600 font-medium">
+                                                        ✅ No validation errors found
                                                     </td>
                                                 </tr>
                                             )}
@@ -1056,6 +953,7 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                                 </table>
                             </div>
                         )}
+
 
 
                         <button

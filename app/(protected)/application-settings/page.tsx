@@ -232,6 +232,27 @@ export default function SettingsPage() {
     loadConfig()
   }, [selectedInstitute])
 
+  const validatePersonalMandatoryFields = () => {
+    const personalDetailsFields = fields.filter(
+      (f) =>
+        f.fieldFor === 'Personal' &&
+        f.sectionName === 'Personal Details'
+    )
+
+    const emailField = personalDetailsFields.find(
+      (f) => f.fieldName === 'Email Address' && f.required
+    )
+
+    const contactField = personalDetailsFields.find(
+      (f) => f.fieldName === 'Contact Number' && f.required
+    )
+
+    if (!emailField || !contactField) {
+      return false
+    }
+
+    return true
+  }
 
 
   /* ===============================
@@ -616,6 +637,13 @@ export default function SettingsPage() {
   const handleSubmit = async () => {
     if (!selectedInstitute)
       return toast.error('Select institute')
+
+     if (!validatePersonalMandatoryFields()) {
+    toast.error(
+      'Personal Details must include required Email Address and Contact Number'
+    )
+    return
+  }
 
     const payload = {
       instituteId: selectedInstitute.id,
