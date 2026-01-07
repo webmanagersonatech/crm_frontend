@@ -28,7 +28,7 @@ interface Application {
   academicYear: string;
   applicantName: string;
   paymentStatus: string;
-    formStatus: "Incomplete" | "Complete";
+  formStatus: "Incomplete" | "Complete";
   status: "Pending" | "Approved" | "Rejected";
   createdAt: string;
   personalDetails?: Array<{ fields: Record<string, any> }>;
@@ -43,6 +43,7 @@ interface Application {
 type SelectedApplicant = {
   name: string;
   email: string;
+  applicationId: string;
 };
 
 export default function CommunicationsPage() {
@@ -232,6 +233,7 @@ export default function CommunicationsPage() {
         ...prev,
         {
           name: a.applicantName,
+          applicationId: a.applicationId,
           email,
         },
       ];
@@ -328,6 +330,7 @@ export default function CommunicationsPage() {
         templateId: selectedTemplate.value,
         recipients: selectedApplicants.map(a => ({
           name: a.name,
+          applicationId: a.applicationId,
           email: a.email,
         })),
       };
@@ -379,8 +382,9 @@ export default function CommunicationsPage() {
       render: (a: Application) => {
         const email = getApplicantEmail(a);
         const checked = selectedApplicants.some(
-          p => p.name === a.applicantName
+          p => p.applicationId === a.applicationId
         );
+
 
         return (
           <input
@@ -415,8 +419,8 @@ export default function CommunicationsPage() {
       render: (a: Application) => (
         <span
           className={`px-2 py-1 rounded text-xs font-medium ${a.formStatus === "Complete"
-              ? "bg-green-50 text-green-700 border border-green-300"
-              : "bg-yellow-50 text-yellow-700 border border-yellow-300"
+            ? "bg-green-50 text-green-700 border border-green-300"
+            : "bg-yellow-50 text-yellow-700 border border-yellow-300"
             }`}
         >
           {a.formStatus || "Incomplete"}

@@ -273,8 +273,9 @@ export default function EventsPageClient() {
                     .then((data) => {
 
                         const permission = data.permissions?.find(
-                            (p: any) => p.moduleName === "events"
+                            (p: any) => p.moduleName === "Events"
                         );
+                        console.log(permission)
 
                         if (!permission) {
                             toast.error("Events permission not assigned");

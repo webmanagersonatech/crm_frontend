@@ -653,8 +653,6 @@ export default function SettingsPage() {
       educationDetails: buildSectionPayload(fields, 'Education'),
     }
 
-    console.log('FINAL PAYLOAD', payload)
-
     await saveFormConfiguration(payload)
     toast.success('Saved successfully')
   }

@@ -120,9 +120,9 @@ export default function ReportsPage() {
         const payload = token.split(".")[1];
         const decoded: any = JSON.parse(atob(payload));
 
-        if ((decoded.role === "admin" || decoded.role === "user") && decoded.instituteId && decoded.userId) {
+        if ((decoded.role === "admin" || decoded.role === "user") && decoded.instituteId && decoded.id) {
           const data = await getaccesscontrol({
-            userId: decoded.role,
+            userId: decoded.id,
             instituteId: decoded.instituteId
           });
 
