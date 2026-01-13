@@ -91,8 +91,14 @@ export async function getApplications(params?: {
   applicationId?: string;
   applicantName?: string;
   program?: string;
+
   startDate?: string;
   endDate?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  applicationSource?: string;
+  interactions?: string;
 }) {
   try {
     const queryParams = new URLSearchParams();
@@ -109,6 +115,12 @@ export async function getApplications(params?: {
     if (params?.program) queryParams.append("program", params.program);
     if (params?.startDate) queryParams.append("startDate", params.startDate);
     if (params?.endDate) queryParams.append("endDate", params.endDate);
+
+    if (params?.country) queryParams.append("country", params.country);
+    if (params?.state) queryParams.append("state", params.state);
+    if (params?.city) queryParams.append("city", params.city);
+    if (params?.applicationSource) queryParams.append("applicationSource", params.applicationSource);
+    if (params?.interactions) queryParams.append("interactions", params.interactions);
 
     const response = await api.get<PaginatedResponse<Application>>(
       `/application?${queryParams.toString()}`

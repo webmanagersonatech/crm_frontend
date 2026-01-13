@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, } from "react";
+import { DataTable } from "@/components/Tablecomponents";
 import { Building2, FileStack, Users2, PhoneCall, UserPlus } from "lucide-react";
 import {
   LineChart,
@@ -14,15 +15,51 @@ import {
 
   ResponsiveContainer,
 } from "recharts";
-import { getDashboardData } from "@/app/lib/request/dashboard";
+import { getDashboardData, getNewAndFollowupLeads } from "@/app/lib/request/dashboard";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import toast from "react-hot-toast";
-import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
+import { getaccesscontrol, } from "@/app/lib/request/permissionRequest";
 
 interface OptionType {
   value: string;
   label: string;
 }
+
+export interface Lead {
+  _id: string;
+  leadId: string;
+  instituteId: string;
+  program: string;
+  candidateName: string;
+  ugDegree?: string;
+  applicationId?: string;
+  phoneNumber: string;
+  isduplicate: boolean;
+  duplicateReason?: string;
+  dateOfBirth?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  leadSource?: string;
+  status: string;
+  communication?: string;
+  followUpDate?: string;
+  description?: string;
+  followups?: {
+    _id: string;
+    status: string;
+    communication?: string;
+    followUpDate?: string;
+    calltaken?: string;
+    description?: string;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 export default function DashboardPage() {
   const [dateRange, setDateRange] = useState("");
@@ -33,10 +70,12 @@ export default function DashboardPage() {
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
   const [institutionsLoaded, setInstitutionsLoaded] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [hasPermission, setHasPermission] = useState<boolean>(false);
   const [userpermission, setUserpermisssion] = useState<any | null>(null);
@@ -153,7 +192,7 @@ export default function DashboardPage() {
 
     fetchPermissions();
   }, []);
- 
+
 
 
   const generateCSV = () => {
@@ -193,63 +232,63 @@ export default function DashboardPage() {
     URL.revokeObjectURL(url);
   };
   const generateCSV1 = () => {
-  const TOTAL = 15000;
+    const TOTAL = 20000;
 
-  const headers = [
-    "Name",
-    "Mobile",
-    "Email",
-    "Location",
-    "Event Name",
-    "Enrolled Date",
-  ];
+    const headers = [
+      "Name",
+      "Mobile",
+      "Email",
+      "Location",
+      "Event Name",
+      "Enrolled Date",
+    ];
 
-  const rows: string[] = [];
-  rows.push(headers.join(","));
+    const rows: string[] = [];
+    rows.push(headers.join(","));
 
-  const cities = ["Chennai", "Bangalore", "Hyderabad", "Mumbai"];
-  const events = ["Tech Meetup", "Career Fair", "Workshop", "Seminar"];
+    const cities = ["Chennai", "Bangalore", "Hyderabad", "Mumbai"];
+    const events = ["Tech Meetup", "Career Fair", "Workshop", "Seminar"];
 
-  for (let i = 1; i <= TOTAL; i++) {
-    const name = `Student ${i}`;
-    const mobile = `9${(100000000 + i).toString()}`; // valid 10-digit
-    const email = `student${i}@test.com`;
+    for (let i = 1; i <= TOTAL; i++) {
+      const name = `Student ${i}`;
+      const mobile = `9${(100000000 + i).toString()}`; // valid 10-digit
+      const email = `student${i}@test.com`;
 
-    const location = cities[i % cities.length];
-    const eventName = events[i % events.length];
+      const location = cities[i % cities.length];
+      const eventName = events[i % events.length];
 
-    const enrolledDate = `2024-${String((i % 12) + 1).padStart(2, "0")}-${String(
-      (i % 28) + 1
-    ).padStart(2, "0")}`;
+      const enrolledDate = `2024-${String((i % 12) + 1).padStart(2, "0")}-${String(
+        (i % 28) + 1
+      ).padStart(2, "0")}`;
 
-    rows.push(
-      [
-        name,
-        mobile,
-        email,
-        location,
-        eventName,
-        enrolledDate,
-      ].join(",")
-    );
-  }
+      rows.push(
+        [
+          name,
+          mobile,
+          email,
+          location,
+          eventName,
+          enrolledDate,
+        ].join(",")
+      );
+    }
 
-  const csvContent = rows.join("\n");
-  const blob = new Blob([csvContent], {
-    type: "text/csv;charset=utf-8;",
-  });
+    const csvContent = rows.join("\n");
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
 
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
 
-  link.href = url;
-  link.download = "events_7000.csv";
-  document.body.appendChild(link);
-  link.click();
+    link.href = url;
+    link.download = "events_7000.csv";
+    document.body.appendChild(link);
+    link.click();
 
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
 
 
@@ -307,12 +346,186 @@ export default function DashboardPage() {
     fetchDashboard();
   }, [permissionsLoaded, institutionsLoaded, hasPermission, startDate, endDate, selectedInstitution]);
 
+  useEffect(() => {
+    const fetchLeads = async () => {
+      setLoading(true);
+      try {
+        const params: any = { page: currentPage, limit: 5 };
+
+        if (startDate) params.startDate = startDate;
+        if (endDate) params.endDate = endDate;
+        if (selectedInstitution && selectedInstitution !== "all") {
+          params.instituteId = selectedInstitution;
+        }
+
+        const res = await getNewAndFollowupLeads(params);
+        setLeads(res.docs as Lead[]);
+
+        setTotalPages(res.totalPages || 1);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load leads");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeads();
+  }, [startDate, endDate, selectedInstitution, currentPage]);
+
   // 🕓 Handle Manual Custom Date
   const handleCustomDateChange = (setter: any, value: any) => {
     setter(value);
     setDateRange("custom");
   };
+  const columns = [
 
+    {
+      header: "Lead ID",
+      render: (lead: any) => lead.leadId || "—",
+    },
+    {
+      header: "Institute",
+      render: (lead: any) =>
+        lead.institute?.name || lead.instituteId || "—",
+    },
+
+    {
+      header: "Candidate",
+      accessor: "candidateName",
+    },
+
+    {
+      header: "Program",
+      accessor: "program",
+    },
+
+    {
+      header: "Phone",
+      accessor: "phoneNumber",
+    },
+
+    {
+      header: "Communication",
+      accessor: "communication",
+    },
+
+    {
+      header: "Follow Up",
+      render: (lead: Lead) =>
+        lead.followUpDate
+          ? new Date(lead.followUpDate).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+          : "—",
+    },
+
+
+    // columnVisibility.createdBy && {
+    //   header: "Created By",
+    //   render: (lead: any) =>
+    //     lead.creator
+    //       ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
+    //       : "—",
+    // },
+
+    {
+      header: "Status",
+      render: (lead: Lead) => {
+        const statusColorMap: Record<string, string> = {
+          New: "bg-gray-100 text-gray-700 border border-gray-400",
+          Followup: "bg-blue-100 text-blue-700 border border-blue-400",
+          "Not Reachable": "bg-yellow-100 text-yellow-700 border border-yellow-400",
+          "Switched Off": "bg-orange-100 text-orange-700 border border-orange-400",
+          "Not Picked": "bg-amber-100 text-amber-700 border border-amber-400",
+          Irrelevant: "bg-purple-100 text-purple-700 border border-purple-400",
+          Interested: "bg-green-100 text-green-700 border border-green-400",
+          "Not Interested": "bg-red-100 text-red-700 border border-red-400",
+          "Cut the call": "bg-pink-100 text-pink-700 border border-pink-400",
+          Admitted: "bg-emerald-100 text-emerald-700 border border-emerald-400",
+          Closed: "bg-indigo-100 text-indigo-700 border border-indigo-400",
+        };
+
+        const colorClass =
+          statusColorMap[lead.status as keyof typeof statusColorMap] ||
+          "bg-gray-100 text-gray-700 border border-gray-400";
+
+        return (
+          <span
+            className={`px-2 py-1 rounded-lg text-xs font-medium inline-block min-w-[90px] text-center ${colorClass}`}
+          >
+            {lead.status || "Unknown"}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Duplicate",
+      render: (lead: Lead) => {
+        const [showPopup, setShowPopup] = useState(false); // ✅ use imported hook
+
+        if (!lead.isduplicate) return null;
+
+        return (
+          <div className="relative flex items-center justify-center">
+            <button
+              onClick={() => setShowPopup(!showPopup)}
+              className="text-red-600 hover:text-red-700 cursor-pointer"
+              title="Duplicate Lead"
+            >
+              ⚠️
+            </button>
+
+            {showPopup && lead.duplicateReason && (
+              <div
+                className="absolute top-full mt-1 w-64 p-2 bg-white border border-red-400 text-sm text-red-700 rounded shadow-lg z-50"
+                onMouseLeave={() => setShowPopup(false)}
+              >
+                {lead.duplicateReason}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      header: "Lead Source",
+      render: (lead: Lead) => {
+        const source = lead.leadSource || "—";
+
+        const sourceColorMap: Record<string, string> = {
+          offline: "bg-blue-100 text-blue-700 border border-blue-400",
+          online: "bg-green-100 text-green-700 border border-green-400",
+          application: "bg-purple-100 text-purple-700 border border-purple-400",
+        };
+
+        const colorClass =
+          sourceColorMap[source.toLowerCase()] ||
+          "bg-gray-100 text-gray-700 border border-gray-400";
+
+        return (
+          <span
+            className={`px-2 py-1 rounded-lg text-xs font-medium inline-block min-w-[90px] text-center ${colorClass}`}
+          >
+            {source.charAt(0).toUpperCase() + source.slice(1)}
+          </span>
+        );
+      },
+    },
+
+
+
+
+
+
+
+
+
+    // Always visible (actions etc.)
+
+  ].filter(Boolean) as any;
   // 🥧 Pie Chart Data
   const pieData = [
     { name: "Paid", value: dashboardData?.paidApplications || 0 },
@@ -361,12 +574,22 @@ export default function DashboardPage() {
         Apply Online
       </a>
 
- <button
-      onClick={generateCSV1}
-      className="px-4 py-2 bg-blue-600 text-white rounded"
-    >
-      Generate  CSV
-    </button>
+
+      <a href="http://localhost:4000/api/institutions/apply/INS-SGOPHIS9"
+        target="blank"
+        className="apply-btn border border-black">
+        Enquiry
+      </a>
+
+
+
+
+      <button
+        onClick={generateCSV1}
+        className="px-4 py-2 bg-blue-600 text-white rounded"
+      >
+        Generate  CSV
+      </button>
       {/* 🔹 Filters Section */}
       <div className="bg-white dark:bg-neutral-900 shadow-md rounded-2xl p-4 sm:p-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
@@ -495,7 +718,14 @@ export default function DashboardPage() {
                   value={dashboardData?.followUpLeads || 0}
                 />
               </div>
-
+              <DataTable
+                columns={columns}
+                data={leads}
+                loading={loading}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {/* Lead Chart */}
@@ -551,6 +781,8 @@ export default function DashboardPage() {
                   </div>
                 </ChartCard>
               </div>
+
+
             </>
           )}
         </>

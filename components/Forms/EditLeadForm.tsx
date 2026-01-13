@@ -213,11 +213,23 @@ export default function EditLeadPage() {
     }
     try {
       const payload = {
-        ...form,
+        program: form.program,
+        candidateName: form.candidateName,
+        ugDegree: form.ugDegree,
+        phoneNumber: form.phoneNumber,
+        dateOfBirth: form.dateOfBirth,
+        country: form.country,
+        state: form.state,
+        city: form.city,
+        status: form.status,
+        communication: form.communication,
+        followUpDate: form.followUpDate,
+        description: form.description,
       };
+
       await updateLead(id as string, payload);
       toast.success("Lead updated successfully!");
-      router.push("/leads");
+      router.back();
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || "Failed to update lead.");

@@ -10,10 +10,28 @@ import { getFormByInstituteId } from "@/app/lib/request/formManager"
 import { createApplication, getApplicationById, updateApplication } from "@/app/lib/request/application"
 import { getSettingsByInstitute } from "@/app/lib/request/settingRequest"
 
+import { Country, State, City } from "country-state-city"
+
+
 interface OptionType {
     value: string
     label: string
 }
+
+type SelectedLead = {
+    _id: string;
+    instituteId?: string;
+    candidateName?: string;
+    program?: string;
+    phoneNumber?: string;
+    dateOfBirth?: string;
+    country?: string;
+    state?: string;
+    city?: string;
+    status?: string;
+};
+
+
 
 type Tab = "personal" | "education"
 
@@ -24,11 +42,15 @@ export default function AddApplicationForm({
     applicationId,
     onSuccess,
     refetch,
+    selectedLead,
+    applicationSource,
 }: {
     instituteId?: string
     applicationId?: string
     LeadId?: string
     isEdit?: boolean
+    selectedLead?: SelectedLead;
+    applicationSource?: "online" | "offline" | "lead";
     onSuccess?: () => void
     refetch?: () => Promise<void>
 }) {
@@ -44,6 +66,21 @@ export default function AddApplicationForm({
     const [files, setFiles] = useState<Record<string, File>>({})
     const [activeTab, setActiveTab] = useState<Tab>("personal")
     const [showCustomField, setShowCustomField] = useState(false)
+    const [showAcademicYear, setShowAcademicYear] = useState(false)
+    const [academicYear, setAcademicYear] = useState<string>('')
+    const [startYear, setStartYear] = useState<OptionType | null>(null)
+    const [endYear, setEndYear] = useState<OptionType | null>(null)
+
+    const countryOptions = Country.getAllCountries().map(c => ({
+        value: c.isoCode,
+        label: c.name,
+    }))
+
+
+
+
+
+    const DEFAULT_COUNTRY_CODE = "IN"; // India
 
 
     const [showInstituteDropdown, setShowInstituteDropdown] = useState(true)
@@ -60,6 +97,70 @@ export default function AddApplicationForm({
     const inputClass =
         "border border-gray-300 p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#5667a8]"
 
+    const currentYear = new Date().getFullYear()
+
+    const startYearOptions: OptionType[] = Array.from(
+        { length: 2060 - currentYear + 1 },
+        (_, i) => {
+            const year = currentYear + i
+            return { value: year.toString(), label: year.toString() }
+        }
+    )
+    const mapLeadToFormData = (lead: any) => {
+        const fullName = lead.candidateName || "";
+
+
+        const firstName = fullName.split(" ")[0] || "";
+
+        return {
+            "First Name": firstName,
+            "Full Name": fullName,
+            "Contact Number": lead.phoneNumber || "",
+            "Date of Birth": lead.dateOfBirth
+                ? lead.dateOfBirth.split("T")[0]
+                : "",
+            "Country": lead.country || "",
+            "State": lead.state || "",
+            "City": lead.city || "",
+            "Status": lead.status || "",
+        };
+    };
+
+
+    const endYearOptions: OptionType[] = startYear
+        ? Array.from(
+            { length: 2060 - Number(startYear.value) },
+            (_, i) => {
+                const year = Number(startYear.value) + i + 1
+                return { value: year.toString(), label: year.toString() }
+            }
+        )
+        : []
+
+    useEffect(() => {
+        if (!selectedLead || !formConfig) return;
+
+        // 🔹 set program separately
+        if (selectedLead.program) {
+            setProgram(selectedLead.program);
+        }
+
+        // 🔹 map lead fields
+        const leadData = mapLeadToFormData(selectedLead);
+
+        setFormData((prev) => ({
+            ...prev,
+            ...leadData,
+        }));
+
+    }, [selectedLead, formConfig]);
+
+    useEffect(() => {
+        if (selectedLead?.instituteId) {
+            setSelectedInstitute(selectedLead.instituteId);
+            setShowInstituteDropdown(false);
+        }
+    }, [selectedLead]);
 
 
     useEffect(() => {
@@ -98,7 +199,7 @@ export default function AddApplicationForm({
         setFormConfig({ ...formConfig })
     }, [formData["Sibling Count"]])
 
-    
+
     // Load token-based institute
     useEffect(() => {
         const token = localStorage.getItem("token")
@@ -192,6 +293,14 @@ export default function AddApplicationForm({
 
                         mergeCustomFields("personal", app.personalDetails);
                         mergeCustomFields("education", app.educationDetails);
+                        // 👇 AFTER you get app data
+                        if (app.academicYear) {
+                            setAcademicYear(app.academicYear)
+
+                            const [s, e] = app.academicYear.split('-')
+                            setStartYear({ value: s, label: s })
+                            setEndYear({ value: e, label: e })
+                        }
 
                         setFormConfig(config);
                     })
@@ -345,6 +454,13 @@ export default function AddApplicationForm({
 
         getSettingsByInstitute(selectedInstitute)
             .then((res) => {
+
+                setAcademicYear(res?.academicYear || '')
+                if (res?.academicYear) {
+                    const [s, e] = res.academicYear.split('-')
+                    setStartYear({ value: s, label: s })
+                    setEndYear({ value: e, label: e })
+                }
                 if (!res?.courses?.length) {
                     toast.error("No programs found")
                     setProgramOptions([])
@@ -364,6 +480,14 @@ export default function AddApplicationForm({
         }
         return true
     }
+
+    const hasPersonalField = (name: string) =>
+        formConfig?.personalDetails?.some((section: any) =>
+            section.fields.some(
+                (f: any) => f.fieldName.toLowerCase() === name.toLowerCase()
+            )
+        )
+
 
     // Validation for each section
     const validateSection = (sections?: any[]) => {
@@ -432,10 +556,163 @@ export default function AddApplicationForm({
     }
 
 
+
     const renderField = (field: any) => {
         const value = formData[field.fieldName] || (
             field.type === "checkbox" ? [] : ""
         )
+
+        /* =========================
+    COUNTRY DROPDOWN
+    ========================= */
+        if (field.fieldName === "Country") {
+            return (
+                <Select
+                    options={countryOptions}
+                    value={countryOptions.find(o => o.label === formData.Country) || null}
+                    onChange={(val) => {
+                        setFormData(p => ({
+                            ...p,
+                            Country: val?.label || "",
+                            State: "",
+                            City: "",
+                        }))
+                    }}
+                    placeholder="Select Country"
+                />
+            )
+        }
+
+
+        /* =========================
+    STATE DROPDOWN
+    ========================= */
+        if (field.fieldName === "State") {
+
+            // CASE 1️⃣ Country exists → depend on Country
+            if (hasPersonalField("Country")) {
+                const countryCode = Country.getAllCountries()
+                    .find(c => c.name === formData.Country)?.isoCode
+
+                const options = countryCode
+                    ? State.getStatesOfCountry(countryCode).map(s => ({
+                        value: s.isoCode,
+                        label: s.name,
+                    }))
+                    : []
+
+                return (
+                    <Select
+                        options={options}
+                        value={options.find(o => o.label === formData.State) || null}
+                        onChange={(val) =>
+                            setFormData(p => ({ ...p, State: val?.label || "", City: "" }))
+                        }
+                        isDisabled={!formData.Country}
+                        placeholder="Select State"
+                    />
+                )
+            }
+
+            // CASE 2️⃣ No Country → show ALL states
+            const options = State.getStatesOfCountry(DEFAULT_COUNTRY_CODE).map(s => ({
+                value: s.isoCode,
+                label: s.name,
+            }))
+
+            return (
+                <Select
+                    options={options}
+                    value={options.find(o => o.label === formData.State) || null}
+                    onChange={(val) =>
+                        setFormData(p => ({ ...p, State: val?.label || "", City: "" }))
+                    }
+                    placeholder="Select State"
+                />
+            )
+        }
+
+
+
+        if (field.fieldName === "City") {
+
+            // CASE 1️⃣ Country + State exist
+            if (hasPersonalField("Country") && hasPersonalField("State")) {
+                const countryCode = Country.getAllCountries()
+                    .find(c => c.name === formData.Country)?.isoCode
+
+                const stateCode = State.getStatesOfCountry(countryCode || "")
+                    .find(s => s.name === formData.State)?.isoCode
+
+                const options =
+                    countryCode && stateCode
+                        ? City.getCitiesOfState(countryCode, stateCode).map(c => ({
+                            value: c.name,
+                            label: c.name,
+                        }))
+                        : []
+
+                return (
+                    <Select
+                        options={options}
+                        value={options.find(o => o.label === formData.City) || null}
+                        onChange={(val) =>
+                            setFormData(p => ({ ...p, City: val?.label || "" }))
+                        }
+                        isDisabled={!formData.State}
+                        placeholder="Select City"
+                    />
+                )
+            }
+
+            // CASE 2️⃣ State + City (NO Country)
+            if (hasPersonalField("State")) {
+                const stateCode = State
+                    .getStatesOfCountry(DEFAULT_COUNTRY_CODE)
+                    .find(s => s.name === formData.State)?.isoCode
+
+                const options = stateCode
+                    ? City.getCitiesOfState(DEFAULT_COUNTRY_CODE, stateCode).map(c => ({
+                        value: c.name,
+                        label: c.name,
+                    }))
+                    : []
+
+                return (
+                    <Select
+                        options={options}
+                        value={options.find(o => o.label === formData.City) || null}
+                        onChange={(val) =>
+                            setFormData(p => ({ ...p, City: val?.label || "" }))
+                        }
+                        isDisabled={!formData.State}
+                        placeholder="Select City"
+                    />
+                )
+            }
+
+            // CASE 3️⃣ ONLY City → show ALL cities
+            const allCities = State.getStatesOfCountry(DEFAULT_COUNTRY_CODE)
+                .flatMap(s =>
+                    City.getCitiesOfState(DEFAULT_COUNTRY_CODE, s.isoCode)
+                )
+                .map(c => ({ value: c.name, label: c.name }))
+
+            return (
+                <Select
+                    options={allCities}
+                    value={allCities.find(o => o.label === formData.City) || null}
+                    onChange={(val) =>
+                        setFormData(p => ({ ...p, City: val?.label || "" }))
+                    }
+                    placeholder="Select City"
+                />
+            )
+        }
+
+
+
+
 
         switch (field.type) {
 
@@ -574,8 +851,29 @@ export default function AddApplicationForm({
                 );
 
 
+      
             /* DEFAULT INPUT */
             default:
+                if (field.type === "text") {
+                    return (
+                        <input
+                            type="text"
+                            name={field.fieldName}
+                            value={value}
+                            onChange={(e) => {
+                                // Allow only letters and spaces
+                                const textOnly = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+                                setFormData(p => ({
+                                    ...p,
+                                    [field.fieldName]: textOnly,
+                                }));
+                            }}
+                            className={inputClass}
+                            maxLength={field.maxLength || undefined}
+                        />
+                    );
+                }
+
                 return (
                     <input
                         type={field.type}
@@ -586,6 +884,7 @@ export default function AddApplicationForm({
                         maxLength={field.maxLength || undefined}
                     />
                 )
+
         }
     }
 
@@ -645,6 +944,11 @@ export default function AddApplicationForm({
         return age >= minAge
     }
 
+    useEffect(() => {
+        if (startYear && endYear) {
+            setAcademicYear(`${startYear.value}-${endYear.value}`)
+        }
+    }, [startYear, endYear])
 
 
     // Submit
@@ -666,9 +970,13 @@ export default function AddApplicationForm({
 
             fd.append("instituteId", selectedInstitute)
             fd.append("program", program)
-            fd.append("academicYear", "2025-2026")
+            fd.append("academicYear", academicYear)
 
+            if (applicationSource) {
+                fd.append("applicationSource", applicationSource);
+            }
             if (LeadId) fd.append("leadId", LeadId)
+
 
             fd.append(
                 "personalDetails",
@@ -748,7 +1056,33 @@ export default function AddApplicationForm({
         ${showCustomField ? "translate-x-6" : "translate-x-1"}`}
                     />
                 </button>
+
+
+
             </div>
+            <div className="flex items-center justify-between mb-3 p-3 border rounded bg-white">
+                <div>
+                    <h3 className="text-sm font-semibold text-gray-800">
+                        Manual Academic Year
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                        Enable to manually select academic year
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => setShowAcademicYear(!showAcademicYear)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition
+      ${showAcademicYear ? "bg-blue-600" : "bg-gray-300"}`}
+                >
+                    <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition
+        ${showAcademicYear ? "translate-x-6" : "translate-x-1"}`}
+                    />
+                </button>
+            </div>
+
 
             {/* MANUAL FIELD BUILDER */}
             {showCustomField && (
@@ -846,6 +1180,34 @@ export default function AddApplicationForm({
                     </button>
                 </div>
             )}
+            {showAcademicYear && (
+                <div className="mb-4 p-3 border rounded bg-gray-50">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                        Academic Year
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Select
+                            options={startYearOptions}
+                            value={startYear}
+                            onChange={(val) => {
+                                setStartYear(val)
+                                setEndYear(null)
+                            }}
+                            placeholder="Start Year"
+                        />
+
+                        <Select
+                            options={endYearOptions}
+                            value={endYear}
+                            onChange={(val) => setEndYear(val)}
+                            placeholder="End Year"
+                            isDisabled={!startYear}
+                        />
+                    </div>
+                </div>
+            )}
+
 
 
 

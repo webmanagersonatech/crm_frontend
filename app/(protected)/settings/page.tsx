@@ -27,6 +27,10 @@ export default function SettingsPage() {
   const [selectedInstitute, setSelectedInstitute] = useState<OptionType | null>(null)
   const [applicationFee, setApplicationFee] = useState<number | ''>('')
   const [applicantAge, setApplicantAge] = useState<number | ''>('')
+  const [startYear, setStartYear] = useState<OptionType | null>(null)
+  const [endYear, setEndYear] = useState<OptionType | null>(null)
+
+
 
   const [formData, setFormData] = useState({
     image: ''
@@ -78,10 +82,20 @@ export default function SettingsPage() {
         })
         setApplicationFee(data.applicationFee || '')
         setApplicantAge(data.applicantAge || '')
+        if (data.academicYear) {
+          const [start, end] = data.academicYear.split('-')
+          setStartYear({ value: start, label: start })
+          setEndYear({ value: end, label: end })
+        }
+
+
       } catch (error: any) {
         if (error.message.includes('Settings not found')) {
           setFormData({ image: '' })
           setCustomCourses([])
+          setStartYear(null)
+          setEndYear(null)
+
           setPaymentData({ authToken: '', apiKey: '', merchantId: '' })
           toast.error('No settings found. You can create new settings.')
         } else {
@@ -124,6 +138,29 @@ export default function SettingsPage() {
     setCustomCourses((prev) => prev.filter((_, i) => i !== index))
   }
 
+  const currentYear = new Date().getFullYear()
+
+  const startYearOptions: OptionType[] = Array.from(
+    { length: 2060 - currentYear + 1 },
+    (_, i) => {
+      const year = currentYear + i
+      return { value: year.toString(), label: year.toString() }
+    }
+  )
+
+
+  const endYearOptions: OptionType[] = startYear
+    ? Array.from(
+      { length: 2060 - Number(startYear.value) },
+      (_, i) => {
+        const year = Number(startYear.value) + i + 1
+        return { value: year.toString(), label: year.toString() }
+      }
+    )
+    : []
+
+
+
   // ------------------- Save All Settings -------------------
   const handleSaveAll = async () => {
     if (!selectedInstitute) return toast.error('Please select an institute')
@@ -133,10 +170,17 @@ export default function SettingsPage() {
 
     if (applicantAge === '' || applicantAge < 1)
       return toast.error('Please enter valid applicant age')
+    if (!startYear || !endYear)
+      return toast.error('Please select application academic year')
+
+    if (Number(endYear.value) <= Number(startYear.value))
+      return toast.error('End year must be greater than start year')
+
 
     if (customCourses.length === 0) return toast.error('Please add at least one course')
     if (!paymentData.authToken || !paymentData.apiKey || !paymentData.merchantId)
       return toast.error('Please fill all payment details')
+    const academicYear = `${startYear.value}-${endYear.value}`
 
     const payload: SettingsType = {
       instituteId: selectedInstitute.value,
@@ -146,7 +190,8 @@ export default function SettingsPage() {
       apiKey: paymentData.apiKey,
       merchantId: paymentData.merchantId,
       applicationFee,
-      applicantAge
+      applicantAge,
+      academicYear
     }
 
     try {
@@ -233,6 +278,40 @@ export default function SettingsPage() {
               onChange={(e) => setApplicantAge(Number(e.target.value))}
             />
           </div>
+
+          {/* Application Academic Year Start */}
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Application Academic Year Start <span className="text-red-500">*</span>
+            </label>
+            <Select
+              options={startYearOptions}
+              value={startYear}
+              onChange={(val) => {
+                setStartYear(val)
+                setEndYear(null) // reset end year when start changes
+              }}
+              placeholder="Select start year"
+              className="text-sm"
+            />
+          </div>
+
+          {/* Application Academic Year End */}
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Application Academic Year End <span className="text-red-500">*</span>
+            </label>
+            <Select
+              options={endYearOptions}
+              value={endYear}
+              onChange={(val) => setEndYear(val)}
+              placeholder="Select end year"
+              className="text-sm"
+              isDisabled={!startYear}
+            />
+          </div>
+
+
 
           {/* Courses */}
           <div className="flex flex-col col-span-1 md:col-span-2">

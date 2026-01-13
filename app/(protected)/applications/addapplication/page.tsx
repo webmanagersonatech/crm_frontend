@@ -1,7 +1,7 @@
 "use client";
 
 
-import { FilePlus2,  } from "lucide-react";
+import { FilePlus2, } from "lucide-react";
 
 import AddapplicationForm from "@/components/Forms/Addapplicationform";
 
@@ -19,7 +19,7 @@ export default function AddApplicationPage() {
                 </h1>
             </div>
 
-            <AddapplicationForm/>
+            <AddapplicationForm  applicationSource="offline" />
 
 
         </div>

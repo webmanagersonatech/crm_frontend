@@ -145,50 +145,68 @@ export default function ApplicationDetailsPage() {
                         {filteredFollowups.map((f: any) => (
                             <div
                                 key={f._id}
-                                className="relative bg-gray-50 border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition"
+                                className="relative bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-lg transition-all duration-200"
                             >
                                 {/* Timeline Icon */}
-                                <div className="absolute -top-3 left-4 w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs shadow">
+                                <div className="absolute -top-3 left-5 w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs shadow-md">
                                     <FaRegClock />
                                 </div>
 
-                                {/* Top Row */}
-                                <div className="flex justify-between items-start mt-3">
-                                    <p className="text-sm text-gray-600">
-                                        Call Status : <span className="font-medium">{f.status}</span>
-                                    </p>
+                                {/* Header */}
+                                <div className="flex flex-wrap justify-between items-center gap-2 mt-3">
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <span className="text-gray-500">Status</span>
+                                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                            {f.status}
+                                        </span>
+                                    </div>
 
-                                    <span className="text-xs text-gray-400">
-                                        {new Date(f.followUpDate).toLocaleDateString("en-IN", {
-                                            day: "2-digit",
-                                            month: "short",
-                                            year: "numeric",
-                                        })}
-                                    </span>
-
+                                    <div className="text-sm text-gray-500">
+                                        Follow-up :
+                                        <span className="ml-1 font-semibold text-gray-800">
+                                            {new Date(f.followUpDate).toLocaleDateString("en-IN", {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                            })}
+                                        </span>
+                                    </div>
                                 </div>
 
-                                {/* Description */}
-                                <p className="mt-2 text-sm text-gray-700 line-clamp-3">
-                                    <span className="font-medium">Description :</span> {f.description}
-                                </p>
-                                <p className="mt-2 text-sm text-gray-700 line-clamp-3">
-                                    <span className="font-medium">Call taken :</span> {f.calltaken}
-                                </p>
+                                {/* Content */}
+                                <div className="mt-4 space-y-2">
+                                    <p className="text-sm text-gray-700">
+                                        <span className="font-medium text-gray-900">Description :</span>{" "}
+                                        {f.description}
+                                    </p>
+
+                                    <p className="text-sm text-gray-700">
+                                        <span className="font-medium text-gray-900">Call Taken :</span>{" "}
+                                        {f.calltaken}
+                                    </p>
+                                </div>
 
                                 {/* Footer */}
-                                <div className="mt-4 flex justify-between items-center text-xs text-gray-400">
-                                    <span className="inline-flex items-center gap-1">
-                                        {getIcon(f.communication)}
-                                        {f.communication}
+                                <div className="mt-5 pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-500">
+                                    <span>
+                                        Created :
+                                        <span className="ml-1 font-medium text-gray-800">
+                                            {new Date(f.createdAt).toLocaleDateString("en-IN", {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                            })}
+                                        </span>
                                     </span>
 
-                                    <span>
-                                        {new Date(f.createdAt).toLocaleDateString("en-IN")}
+                                    <span className="inline-flex items-center gap-1 font-medium text-gray-600">
+                                        {getIcon(f.communication)}
+                                        {f.communication}
                                     </span>
                                 </div>
                             </div>
                         ))}
+
                     </div>
                 )}
 

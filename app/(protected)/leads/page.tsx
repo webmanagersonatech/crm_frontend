@@ -14,7 +14,8 @@ import { useRouter } from "next/navigation";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
-
+import { Country, State, City } from "country-state-city";
+import Select from "react-select";
 
 interface OptionType {
   value: string;
@@ -24,10 +25,15 @@ interface OptionType {
 interface Lead {
   _id: string;
   instituteId: string;
+  leadSource: string;
   applicationId?: string;
   program: string;
   candidateName: string;
   phoneNumber?: string;
+  application?: {
+    _id: string;
+    applicationId: string;
+  };
   status?: string;
   dateOfBirth?: string;
   communication?: string;
@@ -39,11 +45,14 @@ interface Lead {
   followUpDate?: string;
   description?: string;
   createdAt?: string;
+  isduplicate?: boolean;
+  duplicateReason?: string;
   updatedAt?: string;
   createdBy?: {
     firstname?: string;
     lastname?: string;
     email?: string;
+
   };
 }
 
@@ -76,6 +85,54 @@ export default function LeadsPage() {
   const [confirmType, setConfirmType] = useState<"delete" | "status" | null>(null);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [statusUpdateOpen, setStatusUpdateOpen] = useState(false);
+  const [phoneSearch, setPhoneSearch] = useState("");
+  const [leadIdSearch, setLeadIdSearch] = useState("");
+  const [selectedLeadSource, setSelectedLeadSource] = useState("all");
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [activeFilter, setActiveFilter] = useState<string[]>([]);
+
+
+
+  const toggleFilter = (value: string) => {
+    if (!value) return;
+
+    setActiveFilter((prev) =>
+      prev.includes(value)
+        ? prev.filter((f) => f !== value)   // remove if already selected
+        : [...prev, value]                 // add if not selected
+    );
+  };
+
+
+
+  const countryOptions = Country.getAllCountries().map(c => ({
+    value: c.name,
+    label: c.name,
+    isoCode: c.isoCode,
+  }));
+
+  const selectedCountryObj = countryOptions.find(c => c.value === selectedCountry);
+
+  const stateOptions = selectedCountryObj
+    ? State.getStatesOfCountry(selectedCountryObj.isoCode).map(s => ({
+      value: s.name,
+      label: s.name,
+      isoCode: s.isoCode,
+    }))
+    : [];
+
+  const selectedStateObj = stateOptions.find(s => s.value === selectedState);
+
+  const cityOptions =
+    selectedCountryObj && selectedStateObj
+      ? City.getCitiesOfState(selectedCountryObj.isoCode, selectedStateObj.isoCode).map(c => ({
+        value: c.name,
+        label: c.name,
+      }))
+      : [];
+
   const [statusUpdateData, setStatusUpdateData] = useState<{
     lead?: Lead;
     status?: string;
@@ -84,7 +141,9 @@ export default function LeadsPage() {
     description?: string;
   }>({});
 
+
   const [columnVisibility, setColumnVisibility] = useState({
+    leadId: true,
     instituteId: true,
     candidateName: true,
     program: true,
@@ -99,6 +158,7 @@ export default function LeadsPage() {
   // ------------------ OPTIONS ------------------
 
   const columnOptions = [
+    { key: "leadId", label: "Lead ID" },
     { key: "instituteId", label: "Institute" },
     { key: "candidateName", label: "Candidate" },
     { key: "program", label: "Program" },
@@ -253,6 +313,12 @@ export default function LeadsPage() {
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         userId: selectedUserId || undefined,
+        phoneNumber: phoneSearch || undefined, // ✅ added
+        leadSource: selectedLeadSource !== "all" ? selectedLeadSource : undefined,
+        leadId: leadIdSearch || undefined,
+        country: selectedCountry || undefined,   // ✅
+        state: selectedState || undefined,       // ✅
+        city: selectedCity || undefined,
       });
       setLeads(res.docs || []);
       setTotalPages(res.totalPages || 1);
@@ -261,7 +327,7 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, searchTerm, startDate, endDate, selectedUserId]);
+  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, selectedCountry, selectedState, selectedCity, searchTerm, selectedLeadSource, startDate, endDate, selectedUserId, phoneSearch, leadIdSearch]);
 
 
   useEffect(() => {
@@ -272,6 +338,10 @@ export default function LeadsPage() {
 
   const filteredLeads = (leads || []).map((lead: any) => {
     const obj: any = {};
+    if (columnVisibility.leadId) {
+      obj.LeadID = lead.leadId || "-"; // assuming _id is your lead ID
+    }
+
 
     if (columnVisibility.instituteId) {
       obj.Institute = lead.institute?.name || lead.instituteId || "-";
@@ -357,6 +427,11 @@ export default function LeadsPage() {
   // ------------------ COLUMNS ------------------
 
   const columns = [
+
+    columnVisibility.leadId && {
+      header: "Lead ID",
+      render: (lead: any) => lead.leadId || "—",
+    },
     columnVisibility.instituteId && {
       header: "Institute",
       render: (lead: any) =>
@@ -387,17 +462,22 @@ export default function LeadsPage() {
       header: "Follow Up",
       render: (lead: Lead) =>
         lead.followUpDate
-          ? new Date(lead.followUpDate).toLocaleString()
+          ? new Date(lead.followUpDate).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
           : "—",
     },
 
-    columnVisibility.createdBy && {
-      header: "Created By",
-      render: (lead: any) =>
-        lead.creator
-          ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
-          : "—",
-    },
+
+    // columnVisibility.createdBy && {
+    //   header: "Created By",
+    //   render: (lead: any) =>
+    //     lead.creator
+    //       ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
+    //       : "—",
+    // },
 
     columnVisibility.status && {
       header: "Status",
@@ -429,27 +509,50 @@ export default function LeadsPage() {
         );
       },
     },
+    {
+      header: "Lead Source",
+      render: (lead: Lead) => {
+        const source = lead.leadSource || "—";
+
+        const sourceColorMap: Record<string, string> = {
+          offline: "bg-blue-100 text-blue-700 border border-blue-400",
+          online: "bg-green-100 text-green-700 border border-green-400",
+          application: "bg-purple-100 text-purple-700 border border-purple-400",
+        };
+
+        const colorClass =
+          sourceColorMap[source.toLowerCase()] ||
+          "bg-gray-100 text-gray-700 border border-gray-400";
+
+        return (
+          <span
+            className={`px-2 py-1 rounded-lg text-xs font-medium inline-block min-w-[90px] text-center ${colorClass}`}
+          >
+            {source.charAt(0).toUpperCase() + source.slice(1)}
+          </span>
+        );
+      },
+    },
+
 
     columnVisibility.applicationStatus && {
       header: "Application Status",
       render: (lead: Lead) => {
-        if (lead) {
-          if (lead.applicationId) {
-            // ✅ View existing application
-            return (
+        const applicationMongoId = lead.application?._id;
+
+        return (
+          <div>
+            {applicationMongoId ? (
+              // View Application
               <div
-                onClick={() =>
-                  router.push(`/applications/${lead.applicationId}`)
-                }
+                onClick={() => router.push(`/applications/${applicationMongoId}`)}
                 className="flex items-center gap-2 text-emerald-600 cursor-pointer hover:text-emerald-700 transition-colors"
               >
                 <FileText className="w-4 h-4" />
                 <span className="font-medium">View</span>
               </div>
-            );
-          } else {
-            // 🟦 Apply new application
-            return (
+            ) : (
+              // Create Application
               <div
                 onClick={() => {
                   setSelectedLead(lead);
@@ -460,12 +563,44 @@ export default function LeadsPage() {
                 <FileText className="w-4 h-4" />
                 <span className="font-medium">Apply</span>
               </div>
-            );
-          }
-        }
-
+            )}
+          </div>
+        );
       },
     },
+
+
+    {
+      header: "Duplicate",
+      render: (lead: Lead) => {
+        const [showPopup, setShowPopup] = useState(false); // ✅ use imported hook
+
+        if (!lead.isduplicate) return null;
+
+        return (
+          <div className="relative flex items-center justify-center">
+            <button
+              onClick={() => setShowPopup(!showPopup)}
+              className="text-red-600 hover:text-red-700 cursor-pointer"
+              title="Duplicate Lead"
+            >
+              ⚠️
+            </button>
+
+            {showPopup && lead.duplicateReason && (
+              <div
+                className="absolute top-full mt-1 w-64 p-2 bg-white border border-red-400 text-sm text-red-700 rounded shadow-lg z-50"
+                onMouseLeave={() => setShowPopup(false)}
+              >
+                {lead.duplicateReason}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+
+
 
     // Always visible (actions etc.)
     {
@@ -564,81 +699,29 @@ export default function LeadsPage() {
               >
                 <Settings className="w-4 h-4" /> Customize Columns
               </button>
-              {/* 🔍 Candidate Search */}
-              <div className="relative w-full sm:w-48 md:w-60">
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                />
-              </div>
-
-              {/* 🏫 Institution Filter */}
-
-
-              {(userpermission === "superadmin" && <select
-                value={selectedInstitution}
-                onChange={(e) => setSelectedInstitution(e.target.value)}
-                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              >
-                <option value="all">All Institutions</option>
-                {institutions.map((inst) => (
-                  <option key={inst.value} value={inst.value}>
-                    {inst.label}
-                  </option>
-                ))}
-              </select>)}
-
-              {/* 👤 User Select Filter */}
-
-              {role !== "user" && (
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                >
-                  <option value="">Select User</option>
-
-                  {userList.map((user) => (
-                    <option key={user._id} value={user._id}>
-                      {user.firstname} {user.lastname}
-                    </option>
-                  ))}
-                </select>)}
-
-
-              {/* 📊 Status Filter */}
               <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                onChange={(e) => toggleFilter(e.target.value)}
+                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3"
               >
-                <option value="all">All Status</option>
-                {statusOptions.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
+                <option value="">Add Filter</option>
+                {(userpermission === "superadmin") && (<option value="institution">Institution</option>)}
+                {role !== "user" && (
+                  <option value="user">User</option>
+                )}
+                <option value="leadSource">Lead Source</option>
+                <option value="country">Country</option>
+                <option value="state">State</option>
+                <option value="city">City</option>
+                <option value="status">Status</option>
+                <option value="communication">Communication</option>
+                <option value="name">Candidate Name</option>
+                <option value="phone">Phone</option>
+                <option value="leadId">Lead ID</option>
+                <option value="date">Date Range</option>
               </select>
 
-              {/* 💬 Communication Filter */}
-              <select
-                value={selectedCommunication}
-                onChange={(e) => setSelectedCommunication(e.target.value)}
-                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              >
-                <option value="all">All Communication</option>
-                {communicationOptions.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
 
-              <div className="flex items-center gap-2">
+              {activeFilter.includes("date") && (<div className="flex items-center gap-2">
                 <input
                   type="date"
                   value={startDate}
@@ -666,7 +749,164 @@ export default function LeadsPage() {
                   onChange={(e) => setEndDate(e.target.value)}
                   className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
                 />
-              </div>
+              </div>)}
+
+
+
+              {/* 🏫 Institution Filter */}
+
+
+              {(activeFilter.includes("institution") && userpermission === "superadmin" && <select
+                value={selectedInstitution}
+                onChange={(e) => setSelectedInstitution(e.target.value)}
+                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+              >
+                <option value="all">All Institutions</option>
+                {institutions.map((inst) => (
+                  <option key={inst.value} value={inst.value}>
+                    {inst.label}
+                  </option>
+                ))}
+              </select>)}
+
+              {/* 👤 User Select Filter */}
+
+              {activeFilter.includes("user") && role !== "user" && (
+                <select
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                >
+                  <option value="">Select User</option>
+
+                  {userList.map((user) => (
+                    <option key={user._id} value={user._id}>
+                      {user.firstname} {user.lastname}
+                    </option>
+                  ))}
+                </select>)}
+
+              {/* 🔹 Lead Source Filter */}
+              {activeFilter.includes("leadSource") && (<select
+                value={selectedLeadSource}
+                onChange={(e) => setSelectedLeadSource(e.target.value)}
+                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+              >
+                <option value="all">All Lead Sources</option>
+                <option value="offline">Offline</option>
+                <option value="online">Online</option>
+                <option value="application">Application</option>
+              </select>)}
+
+
+              {/* 🌍 Country */}
+              {activeFilter.includes("country") && (<Select
+                placeholder="Select Country"
+                options={countryOptions}
+                value={countryOptions.find(c => c.value === selectedCountry) || null}
+                onChange={(opt) => {
+                  setSelectedCountry(opt?.value || "");
+                  setSelectedState("");
+                  setSelectedCity("");
+                }}
+                isClearable
+              />)}
+
+
+              {/* 🏞 State */}
+              {activeFilter.includes("state") && (<Select
+                placeholder="Select State"
+                options={stateOptions}
+                value={stateOptions.find(s => s.value === selectedState) || null}
+                onChange={(opt) => {
+                  setSelectedState(opt?.value || "");
+                  setSelectedCity("");
+                }}
+                isClearable
+                isDisabled={!selectedCountry}
+              />)}
+
+
+
+              {/* 🏙 City */}
+              {activeFilter.includes("city") && (<Select
+                placeholder="Select City"
+                options={cityOptions}
+                value={cityOptions.find(c => c.value === selectedCity) || null}
+                onChange={(opt) => setSelectedCity(opt?.value || "")}
+                isClearable
+                isDisabled={!selectedState}
+              />)}
+
+
+
+
+              {/* 📊 Status Filter */}
+              {activeFilter.includes("status") && (<select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+              >
+                <option value="all">All Status</option>
+                {statusOptions.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>)}
+
+              {/* 💬 Communication Filter */}
+              {activeFilter.includes("communication") && (
+                <select
+                  value={selectedCommunication}
+                  onChange={(e) => setSelectedCommunication(e.target.value)}
+                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                >
+                  <option value="all">All Communication</option>
+                  {communicationOptions.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>)}
+
+              {activeFilter.includes("name") && (<div className="relative w-full sm:w-48 md:w-60">
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                />
+              </div>)}
+
+              {/* 🔹 Phone Number Search */}
+              {activeFilter.includes("phone") && (
+                <div className="relative w-full sm:w-48 md:w-60">
+                  <input
+                    type="text"
+                    placeholder="Search by phone..."
+                    value={phoneSearch}
+                    onChange={(e) => setPhoneSearch(e.target.value)}
+                    className="w-full pl-3 pr-3 py-2 text-sm border rounded-md"
+                  />
+                </div>
+              )}
+
+
+              {/* 🔹 Lead ID Search */}
+              {activeFilter.includes("leadId") && (
+                <div className="relative w-full sm:w-48 md:w-60">
+                  <input
+                    type="text"
+                    placeholder="Search by Lead ID..."
+                    value={leadIdSearch}
+                    onChange={(e) => setLeadIdSearch(e.target.value)}
+                    className="w-full pl-3 pr-3 py-2 text-sm border rounded-md"
+                  />
+                </div>
+              )}
             </>
           )}
 
@@ -755,8 +995,8 @@ export default function LeadsPage() {
               </button>
 
               <div className="overflow-y-auto p-6 flex-1">
-                {/* ✅ Pass the lead ID safely */}
-                <AddapplicationForm refetch={fetchLeads} instituteId={selectedLead.instituteId} LeadId={selectedLead.leadId} onSuccess={() => setIsOpen(false)} />
+
+                <AddapplicationForm refetch={fetchLeads} instituteId={selectedLead.instituteId} applicationSource="lead" selectedLead={selectedLead} LeadId={selectedLead.leadId} onSuccess={() => setIsOpen(false)} />
               </div>
             </motion.div>
           </motion.div>
@@ -815,7 +1055,7 @@ export default function LeadsPage() {
               <input
                 type="datetime-local"
                 value={statusUpdateData.followUpDate}
-                min={new Date().toISOString().slice(0, 16)} 
+                min={new Date().toISOString().slice(0, 16)}
                 onChange={(e) =>
                   setStatusUpdateData(prev => ({
                     ...prev,

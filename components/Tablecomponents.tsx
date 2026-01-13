@@ -2,7 +2,7 @@
 import React from "react";
 import Spinner from "@/components/Spinner";
 
-export  interface Column<T> {
+export interface Column<T> {
     header: string;
     accessor?: keyof T | string;
     render?: (row: T, index: number) => React.ReactNode;
@@ -45,7 +45,7 @@ export function DataTable<T extends { _id?: string }>({
                                     colSpan={columns.length}
                                     className="text-center py-6 text-gray-500 dark:text-gray-400"
                                 >
-                                     <Spinner />
+                                    <Spinner />
                                 </td>
                             </tr>
                         ) : data.length === 0 ? (
@@ -61,7 +61,13 @@ export function DataTable<T extends { _id?: string }>({
                             data.map((row, idx) => (
                                 <tr
                                     key={row._id || idx}
-                                    className="border-b border-gray-200 dark:border-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-800"
+                                    className={`
+  border-b border-gray-200 dark:border-neutral-800
+  hover:bg-gray-50 dark:hover:bg-neutral-800
+  ${(row as any).isduplicate ? "bg-red-50 border-red-400 hover:bg-red-100" : ""}
+`}
+
+
                                 >
                                     {columns.map((col, colIdx) => (
                                         <td key={colIdx} className="px-4 py-2">

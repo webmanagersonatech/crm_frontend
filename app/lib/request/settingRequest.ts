@@ -38,6 +38,7 @@ export interface Settings {
   createdAt?: string;
   updatedAt?: string;
   applicationFee: number
+  academicYear: string
   applicantAge: number
 }
 

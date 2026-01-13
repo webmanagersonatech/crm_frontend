@@ -47,11 +47,14 @@ interface Lead {
   description?: string;
   createdAt?: string;
   updatedAt?: string;
+  isduplicate?: boolean;
+  duplicateReason?: string;
   createdBy?: {
     firstname?: string;
     lastname?: string;
     email?: string;
   };
+
 }
 
 
@@ -81,6 +84,11 @@ export default function ReportsPage() {
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [selectedFormStatus, setSelectedFormStatus] = useState("all");
   const [hasPermission, setHasPermission] = useState<boolean>(true);
+  const [startYear, setStartYear] = useState<string>("")
+  const [searchProgram, setSearchProgram] = useState("");
+  const [phoneSearch, setPhoneSearch] = useState("");
+  const [leadIdSearch, setLeadIdSearch] = useState("");
+  const [endYear, setEndYear] = useState<string>("")
   const [institutions, setInstitutions] = useState<
     { value: string; label: string }[]
   >([]);
@@ -95,6 +103,7 @@ export default function ReportsPage() {
     createdAt: true,
   });
   const [columnVisibilityreport, setColumnVisibilityreport] = useState({
+    leadId: true,
     instituteId: true,
     candidateName: true,
     program: true,
@@ -205,6 +214,7 @@ export default function ReportsPage() {
   }, []);
 
   const columnOptions = [
+
     { key: "applicationId", label: "Application ID" },
     { key: "institute", label: "Institute" },
     { key: "applicantName", label: "Applicant Name" },
@@ -216,6 +226,7 @@ export default function ReportsPage() {
   ];
 
   const columnOptionsreport = [
+    { key: "leadId", label: "Lead ID" },
     { key: "instituteId", label: "Institute" },
     { key: "candidateName", label: "Candidate" },
     { key: "program", label: "Program" },
@@ -264,6 +275,7 @@ export default function ReportsPage() {
         formStatus:
           selectedFormStatus !== "all" ? selectedFormStatus : undefined,
         applicationId: searchApplicationId.trim() || undefined,
+        program: searchProgram.trim() || undefined,
         applicantName: searchApplicantName.trim() || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
@@ -277,12 +289,18 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName]);
+  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName, searchProgram]);
 
   useEffect(() => {
     fetchApplications();
   }, [fetchApplications]);
 
+  useEffect(() => {
+    if (startYear && endYear) {
+      setSelectedYear(`${startYear}-${endYear}`)
+      setCurrentPage(1)
+    }
+  }, [startYear, endYear])
 
   const filteredApplications = (applications || []).map((app: any) => {
     const obj: any = {};
@@ -339,6 +357,8 @@ export default function ReportsPage() {
         candidateName: searchTerm || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        phoneNumber: phoneSearch || undefined, // ✅ added
+        leadId: leadIdSearch || undefined,
       });
       setLeads(res.docs || []);
       setleadTotalPages(res.totalPages || 1);
@@ -347,7 +367,7 @@ export default function ReportsPage() {
     } finally {
       setleadLoading(false);
     }
-  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, searchTerm, startDate, endDate]);
+  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, searchTerm, startDate, endDate, phoneSearch, leadIdSearch]);
 
   useEffect(() => {
     if (activeTab === "lead") {
@@ -357,6 +377,10 @@ export default function ReportsPage() {
 
   const filteredLeads = (leads || []).map((lead: any) => {
     const obj: any = {};
+
+    if (columnVisibilityreport.leadId) {
+      obj.LeadID = lead.leadId || "-"; // assuming _id is your lead ID
+    }
 
     if (columnVisibilityreport.instituteId) {
       obj.Institute = lead.institute?.name || lead.instituteId || "-";
@@ -474,6 +498,10 @@ export default function ReportsPage() {
 
 
   const leadcolumns = [
+    columnVisibilityreport.leadId && {
+      header: "Lead ID",
+      render: (lead: any) => lead.leadId || "—",
+    },
     columnVisibilityreport.instituteId && {
       header: "Institute",
       render: (lead: any) =>
@@ -514,6 +542,35 @@ export default function ReportsPage() {
         lead.creator
           ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
           : "—",
+    },
+    {
+      header: "Duplicate",
+      render: (lead: Lead) => {
+        const [showPopup, setShowPopup] = useState(false); // ✅ use imported hook
+
+        if (!lead.isduplicate) return null;
+
+        return (
+          <div className="relative flex items-center justify-center">
+            <button
+              onClick={() => setShowPopup(!showPopup)}
+              className="text-red-600 hover:text-red-700 cursor-pointer"
+              title="Duplicate Lead"
+            >
+              ⚠️
+            </button>
+
+            {showPopup && lead.duplicateReason && (
+              <div
+                className="absolute top-full mt-1 w-64 p-2 bg-white border border-red-400 text-sm text-red-700 rounded shadow-lg z-50"
+                onMouseLeave={() => setShowPopup(false)}
+              >
+                {lead.duplicateReason}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
 
     columnVisibilityreport.status && {
@@ -613,6 +670,61 @@ export default function ReportsPage() {
             >
               <Settings className="w-4 h-4" /> Customize Columns
             </button>
+            {/* 🎓 Academic Year */}
+            {activeTab !== "lead" && (
+              <div className="rounded-md w-fit border  p-[3px] flex items-center gap-4">
+                {/* Label on left */}
+                <label className="text-sm font-semibold text-gray-700">
+                  Academic Year:
+                </label>
+
+                {/* Start + End Year */}
+                <div className="flex gap-2">
+                  {/* Start Year */}
+                  <select
+                    value={startYear}
+                    onChange={(e) => {
+                      setStartYear(e.target.value);
+                      setEndYear("");
+                      setSelectedYear("all");
+                      setCurrentPage(1);
+                    }}
+                    className="border text-sm rounded-md py-2 px-2 w-28 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                  >
+                    <option value="">Start</option>
+                    {Array.from({ length: 2060 - 2015 + 1 }, (_, i) => 2015 + i).map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+
+                  {/* End Year */}
+                  <select
+                    value={endYear}
+                    onChange={(e) => {
+                      setEndYear(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    disabled={!startYear}
+                    className="border text-sm rounded-md py-2 px-2 w-28 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                  >
+                    <option value="">End</option>
+                    {Array.from({ length: 2060 - Number(startYear) }, (_, i) => Number(startYear) + 1 + i).map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Output */}
+                {startYear && endYear && (
+                  <div className="ml-4 text-xs text-gray-600">
+                    Selected Year:{" "}
+                    <span className="font-semibold text-gray-800">
+                      {startYear}-{endYear}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
             {/* 📅 Date Range */}
             <div className="flex flex-wrap items-center gap-2">
               <input
@@ -635,47 +747,6 @@ export default function ReportsPage() {
                 className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
               />
             </div>
-
-            {/* 🔢 Application ID */}
-            {activeTab !== "lead" && (
-              <input
-                type="text"
-                placeholder="Search by Application ID"
-                value={searchApplicationId}
-                onChange={(e) => {
-                  setSearchApplicationId(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              />
-            )}
-
-            {/* 🧍 Applicant / Lead Name */}
-            {activeTab === "lead" ? (
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                />
-              </div>
-            ) : (
-              <input
-                type="text"
-                placeholder="Search by Applicant"
-                value={searchApplicantName}
-                onChange={(e) => {
-                  setSearchApplicantName(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              />
-            )}
-
-            {/* 🏫 Institution Dropdown */}
             {userpermission === "superadmin" && (
               <select
                 value={selectedInstitution}
@@ -723,6 +794,37 @@ export default function ReportsPage() {
                 </select>
               </>
             )}
+            {/* 🔢 Application ID */}
+            {activeTab !== "lead" && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Search by Application ID"
+                  value={searchApplicationId}
+                  onChange={(e) => {
+                    setSearchApplicationId(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                />
+                <input
+                  type="text"
+                  placeholder="Search by Program"
+                  value={searchProgram}
+                  onChange={(e) => {
+                    setSearchProgram(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                />
+              </>
+            )}
+
+
+
+
+
+
 
             {/* 📈 Lead Filters */}
             {activeTab === "lead" && (
@@ -755,21 +857,56 @@ export default function ReportsPage() {
               </>
             )}
 
-            {/* 🎓 Academic Year */}
-            {activeTab !== "lead" && (
-              <select
-                value={selectedYear}
+            {/* 🧍 Applicant / Lead Name */}
+            {activeTab === "lead" ? (
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                />
+              </div>
+            ) : (
+              <input
+                type="text"
+                placeholder="Search by Applicant"
+                value={searchApplicantName}
                 onChange={(e) => {
-                  setSelectedYear(e.target.value);
+                  setSearchApplicantName(e.target.value);
                   setCurrentPage(1);
                 }}
                 className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              >
-                <option value="all">All Years</option>
-                <option value="2025-2026">2025-2026</option>
-                <option value="2024-2025">2024-2025</option>
-              </select>
+              />
             )}
+
+            {/* 🔹 Phone Number Search */}
+            {activeTab === "lead" && (
+              <>
+                <div className="relative w-full sm:w-48 md:w-60">
+                  <input
+                    type="text"
+                    placeholder="Search by phone..."
+                    value={phoneSearch}
+                    onChange={(e) => setPhoneSearch(e.target.value)}
+                    className="w-full pl-3 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                  />
+                </div>
+
+
+                <div className="relative w-full sm:w-48 md:w-60">
+                  <input
+                    type="text"
+                    placeholder="Search by Lead ID..."
+                    value={leadIdSearch}
+                    onChange={(e) => setLeadIdSearch(e.target.value)}
+                    className="w-full pl-3 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                  />
+                </div>
+              </>)}
+
           </div>
 
           {/* 📤 Export Button */}

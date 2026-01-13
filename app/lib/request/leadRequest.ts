@@ -27,6 +27,8 @@ api.interceptors.request.use(
 export interface Lead {
   _id?: string;
   instituteId: string;
+  applicationId: string;
+  leadSource: string;
   program: string;
   candidateName: string;
   ugDegree?: string;
@@ -72,6 +74,12 @@ export async function getLeads({
   startDate,
   endDate,
   userId,
+  phoneNumber, // ✅ added
+  leadId,
+  leadSource,
+  country,
+  state,
+  city,
 }: {
   page?: number;
   limit?: number;
@@ -81,7 +89,13 @@ export async function getLeads({
   communication?: string;
   startDate?: string;
   endDate?: string;
-   userId?: string;
+  userId?: string;
+  phoneNumber?: string; // ✅ added
+  leadId?: string;
+  leadSource?: string;
+  country?: string;
+  state?: string;
+  city?: string;
 }) {
   try {
     const params = new URLSearchParams({
@@ -95,7 +109,14 @@ export async function getLeads({
     if (communication) params.append("communication", communication);
     if (startDate) params.append("startDate", startDate);
     if (endDate) params.append("endDate", endDate);
-     if (userId) params.append("userId", userId);
+    if (userId) params.append("userId", userId);
+    if (phoneNumber) params.append("phoneNumber", phoneNumber);
+    if (leadId) params.append("leadId", leadId);
+    if (country) params.append("country", country);
+    if (state) params.append("state", state);
+    if (city) params.append("city", city);
+
+    if (leadSource) params.append("leadSource", leadSource);
 
     const response = await api.get(`/leads?${params.toString()}`);
     return response.data;
