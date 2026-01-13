@@ -787,7 +787,9 @@ export default function LeadsPage() {
                 </select>)}
 
               {/* 🔹 Lead Source Filter */}
-              {activeFilter.includes("leadSource") && (<select
+              {activeFilter.includes("leadSource") && (
+                
+                <select
                 value={selectedLeadSource}
                 onChange={(e) => setSelectedLeadSource(e.target.value)}
                 className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
@@ -796,7 +798,9 @@ export default function LeadsPage() {
                 <option value="offline">Offline</option>
                 <option value="online">Online</option>
                 <option value="application">Application</option>
-              </select>)}
+              </select>
+            
+            )}
 
 
               {/* 🌍 Country */}

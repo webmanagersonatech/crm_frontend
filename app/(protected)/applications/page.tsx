@@ -89,11 +89,7 @@ export default function ApplicationsPage() {
     createdAt: true,
   });
 
-  const countryOptions = Country.getAllCountries().map(c => ({
-    value: c.name,
-    label: c.name,
-    isoCode: c.isoCode,
-  }));
+  
 
   const filterOptions = [
     { value: "academicYear", label: "Academic Year" },
@@ -110,7 +106,11 @@ export default function ApplicationsPage() {
     { value: "program", label: "Program" },
   ];
 
-
+const countryOptions = Country.getAllCountries().map(c => ({
+    value: c.name,
+    label: c.name,
+    isoCode: c.isoCode,
+  }));
   const selectedCountryObj = countryOptions.find(c => c.value === selectedCountry);
 
   const stateOptions = selectedCountryObj

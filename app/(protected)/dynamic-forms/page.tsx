@@ -38,7 +38,8 @@ export default function DynamicFormsPage() {
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [unpublishOpen, setUnpublishOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [startYear, setStartYear] = useState<string>("")
+  const [endYear, setEndYear] = useState<string>("")
 
   const [academicYear, setAcademicYear] = useState("");
 
@@ -59,6 +60,12 @@ export default function DynamicFormsPage() {
     { key: "createdAt", label: "Created At" },
     { key: "published", label: "Published" },
   ];
+
+  useEffect(() => {
+    if (startYear && endYear) {
+      setAcademicYear(`${startYear}-${endYear}`)
+    }
+  }, [startYear, endYear])
 
   /** 🔹 Fetch Permissions */
   useEffect(() => {
@@ -390,31 +397,70 @@ export default function DynamicFormsPage() {
         onClose={() => setCustomizeOpen(false)}
 
       />
-
       <Modal open={publishOpen} title="Publish Form" onClose={() => setPublishOpen(false)}>
-        <div >
+        <div className="space-y-6">
 
-          <h2 className="text-xl font-semibold mb-2">Publish Form</h2>
-          <p className="text-gray-600 mb-4">
+          {/* Description */}
+          <p className="text-gray-600">
             Please enter the academic year to publish{" "}
-            <b>{selectedForm?.title}</b>
+            <b className="text-gray-800">{selectedForm?.title}</b>
           </p>
 
-          <label className="block text-sm font-medium mb-1">
-            Academic Year
-          </label>
-          <input
-            type="text"
-            placeholder="2019 - 2023"
-            value={academicYear}
-            onChange={(e) => setAcademicYear(e.target.value)}
-            className="w-full border rounded-md px-3 py-2 mb-6"
-          />
+          {/* Academic Year Selector */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            {/* Label */}
+            <label className="text-sm font-semibold text-gray-700 w-full sm:w-auto">
+              Academic Year:
+            </label>
 
-          <div className="flex justify-end gap-3">
+            {/* Start + End */}
+            <div className="flex gap-2 items-center">
+              {/* Start Year */}
+              <select
+                value={startYear}
+                onChange={(e) => {
+                  setStartYear(e.target.value);
+                  setEndYear("");
+                }}
+                className="border text-sm rounded-md py-2 px-3 w-28 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+              >
+                <option value="">Start</option>
+                {Array.from({ length: 2060 - 2015 + 1 }, (_, i) => 2015 + i).map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+
+              {/* End Year */}
+              <select
+                value={endYear}
+                onChange={(e) => {
+                  setEndYear(e.target.value);
+                  setCurrentPage(1);
+                }}
+                disabled={!startYear}
+                className="border text-sm rounded-md py-2 px-3 w-28 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+              >
+                <option value="">End</option>
+                {Array.from({ length: 2060 - Number(startYear) }, (_, i) => Number(startYear) + 1 + i).map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Output */}
+            {startYear && endYear && (
+              <div className="text-sm text-gray-600 mt-2 sm:mt-0">
+                Selected Year:{" "}
+                <span className="font-semibold text-gray-800">{startYear}-{endYear}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-end gap-3 mt-4">
             <button
               onClick={() => setPublishOpen(false)}
-              className="px-4 py-2 border rounded-md"
+              className="px-4 py-2 border rounded-md hover:bg-gray-100 transition"
             >
               Cancel
             </button>
@@ -423,12 +469,7 @@ export default function DynamicFormsPage() {
               disabled={!academicYear.trim()}
               onClick={async () => {
                 try {
-                  await publishDynamicForm(
-                    selectedForm!._id!,
-                    true,
-                    academicYear
-                  );
-
+                  await publishDynamicForm(selectedForm!._id!, true, academicYear);
                   toast.success("Form published successfully");
                   fetchForms();
                 } catch {
@@ -439,13 +480,14 @@ export default function DynamicFormsPage() {
                   setAcademicYear("");
                 }
               }}
-              className="px-4 py-2 bg-green-600 text-white rounded-md disabled:opacity-50"
+              className="px-4 py-2 bg-green-600 text-white rounded-md disabled:opacity-50 hover:bg-green-700 transition"
             >
               Publish
             </button>
           </div>
         </div>
       </Modal>
+
 
 
       <Modal
@@ -455,7 +497,7 @@ export default function DynamicFormsPage() {
       >
         <div >
 
-          <h2 className="text-xl font-semibold mb-2">Unpublish Form</h2>
+
           <p className="text-gray-600 mb-6">
             Are you sure you want to unpublish{" "}
             <b>{selectedForm?.title}</b>?

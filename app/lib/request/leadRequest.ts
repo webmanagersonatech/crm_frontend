@@ -30,6 +30,7 @@ export interface Lead {
   applicationId: string;
   leadSource: string;
   program: string;
+  counsellorName: string;
   candidateName: string;
   ugDegree?: string;
   phoneNumber?: string;

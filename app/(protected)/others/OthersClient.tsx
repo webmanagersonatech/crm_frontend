@@ -12,6 +12,7 @@ import ViewDialog from "@/components/ViewDialog";
 import { Column } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ExportModal from "@/components/ExportModal";
+import Link from "next/link";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 type ImportErrors = {
     missingFields: any[];
@@ -225,15 +226,13 @@ export default function Otherspages() {
 
                         {/* View Other */}
                         {(userpermission === "superadmin" || userpermission?.view) && (
-                            <button
-                                onClick={() => {
-                                    setSelected(o);
-                                    setViewOpen(true);
-                                }}
-                                className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md"
+                            <Link
+                                href={`/others/${o._id}` as any}
+                                className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md
+                                         flex items-center justify-center"
                             >
                                 <Eye className="w-4 h-4" />
-                            </button>
+                            </Link>
                         )}
 
 

@@ -71,7 +71,8 @@ export default function CommunicationsPage() {
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [isBulkMail, setIsBulkMail] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-
+  const [startYear, setStartYear] = useState<string>("")
+  const [endYear, setEndYear] = useState<string>("")
   const [modalType, setModalType] = useState<"mail" | "whatsapp" | "sms" | null>(
     null
   );
@@ -134,6 +135,14 @@ export default function CommunicationsPage() {
 
     fetchPermissions();
   }, []);
+
+
+  useEffect(() => {
+    if (startYear && endYear) {
+      setSelectedYear(`${startYear}-${endYear}`)
+      setCurrentPage(1)
+    }
+  }, [startYear, endYear])
 
   // 🔹 Fetch unpaid applications
   const fetchApplications = useCallback(async () => {
@@ -553,18 +562,58 @@ export default function CommunicationsPage() {
 
 
               {/* Academic Year Filter */}
-              <select
-                value={selectedYear}
-                onChange={(e) => {
-                  setSelectedYear(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-              >
-                <option value="all">All Years</option>
-                <option value="2025-2026">2025-2026</option>
-                <option value="2024-2025">2024-2025</option>
-              </select>
+              <div className="rounded-md w-fit  flex items-center gap-4">
+                {/* Label on left */}
+                <label className="text-sm font-semibold text-gray-700">
+                  Academic Year:
+                </label>
+
+                {/* Start + End Year */}
+                <div className="flex gap-2">
+                  {/* Start Year */}
+                  <select
+                    value={startYear}
+                    onChange={(e) => {
+                      setStartYear(e.target.value);
+                      setEndYear("");
+                      setSelectedYear("all");
+                      setCurrentPage(1);
+                    }}
+                    className="border text-sm rounded-md py-2 px-2 w-28 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                  >
+                    <option value="">Start</option>
+                    {Array.from({ length: 2060 - 2015 + 1 }, (_, i) => 2015 + i).map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+
+                  {/* End Year */}
+                  <select
+                    value={endYear}
+                    onChange={(e) => {
+                      setEndYear(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    disabled={!startYear}
+                    className="border text-sm rounded-md py-2 px-2 w-28 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                  >
+                    <option value="">End</option>
+                    {Array.from({ length: 2060 - Number(startYear) }, (_, i) => Number(startYear) + 1 + i).map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Output */}
+                {startYear && endYear && (
+                  <div className="ml-4 text-xs text-gray-600">
+                    Selected Year:{" "}
+                    <span className="font-semibold text-gray-800">
+                      {startYear}-{endYear}
+                    </span>
+                  </div>
+                )}
+              </div>
             </>
           )}
 

@@ -362,7 +362,7 @@ export default function SettingsPage() {
         { fieldName: "City", fieldType: "text", required: true, maxLength: 50 },
         { fieldName: "State", fieldType: "text", required: true, maxLength: 50 },
         { fieldName: "Country", fieldType: "text", required: true, maxLength: 50 },
-        { fieldName: "Pincode", fieldType: "text", required: true, maxLength: 10 },
+        { fieldName: "Pincode", fieldType: "number", required: true, maxLength: 6 },
       ],
 
 
@@ -638,12 +638,12 @@ export default function SettingsPage() {
     if (!selectedInstitute)
       return toast.error('Select institute')
 
-     if (!validatePersonalMandatoryFields()) {
-    toast.error(
-      'Personal Details must include required Email Address and Contact Number'
-    )
-    return
-  }
+    if (!validatePersonalMandatoryFields()) {
+      toast.error(
+        'Personal Details must include required Email Address and Contact Number'
+      )
+      return
+    }
 
     const payload = {
       instituteId: selectedInstitute.id,

@@ -11,7 +11,8 @@ import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import ExportModal from "@/components/ExportModal";
 import { Column } from "@/components/Tablecomponents";
-
+import { Country, State, City } from "country-state-city";
+import Select from "react-select";
 interface Application {
   _id?: string;
   instituteId: any;
@@ -88,7 +89,13 @@ export default function ReportsPage() {
   const [searchProgram, setSearchProgram] = useState("");
   const [phoneSearch, setPhoneSearch] = useState("");
   const [leadIdSearch, setLeadIdSearch] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedApplicationSource, setSelectedApplicationSource] = useState("");
+  const [selectedInteraction, setSelectedInteraction] = useState("");
   const [endYear, setEndYear] = useState<string>("")
+  const [selectedLeadSource, setSelectedLeadSource] = useState("all");
   const [institutions, setInstitutions] = useState<
     { value: string; label: string }[]
   >([]);
@@ -115,7 +122,30 @@ export default function ReportsPage() {
     applicationStatus: true,
   });
 
+  const countryOptions = Country.getAllCountries().map(c => ({
+    value: c.name,
+    label: c.name,
+    isoCode: c.isoCode,
+  }));
+  const selectedCountryObj = countryOptions.find(c => c.value === selectedCountry);
 
+  const stateOptions = selectedCountryObj
+    ? State.getStatesOfCountry(selectedCountryObj.isoCode).map(s => ({
+      value: s.name,
+      label: s.name,
+      isoCode: s.isoCode,
+    }))
+    : [];
+
+  const selectedStateObj = stateOptions.find(s => s.value === selectedState);
+
+  const cityOptions =
+    selectedCountryObj && selectedStateObj
+      ? City.getCitiesOfState(selectedCountryObj.isoCode, selectedStateObj.isoCode).map(c => ({
+        value: c.name,
+        label: c.name,
+      }))
+      : [];
   useEffect(() => {
     const fetchPermissions = async () => {
       const token = localStorage.getItem("token");
@@ -279,6 +309,11 @@ export default function ReportsPage() {
         applicantName: searchApplicantName.trim() || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        country: selectedCountry || undefined,
+        state: selectedState || undefined,
+        city: selectedCity || undefined,
+        applicationSource: selectedApplicationSource || undefined,
+        interactions: selectedInteraction || undefined,
       });
 
       setApplications((res.data as Application[]) || []);
@@ -289,10 +324,13 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName, searchProgram]);
+  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCity, selectedApplicationSource, selectedInteraction, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName, searchProgram]);
 
   useEffect(() => {
-    fetchApplications();
+
+    if (activeTab === "application") {
+      fetchApplications();
+    }
   }, [fetchApplications]);
 
   useEffect(() => {
@@ -359,6 +397,10 @@ export default function ReportsPage() {
         endDate: endDate || undefined,
         phoneNumber: phoneSearch || undefined, // ✅ added
         leadId: leadIdSearch || undefined,
+        leadSource: selectedLeadSource !== "all" ? selectedLeadSource : undefined,
+        country: selectedCountry || undefined,   // ✅
+        state: selectedState || undefined,       // ✅
+        city: selectedCity || undefined,
       });
       setLeads(res.docs || []);
       setleadTotalPages(res.totalPages || 1);
@@ -367,7 +409,7 @@ export default function ReportsPage() {
     } finally {
       setleadLoading(false);
     }
-  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, searchTerm, startDate, endDate, phoneSearch, leadIdSearch]);
+  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, selectedLeadSource, selectedCountry, selectedState, selectedCity, searchTerm, startDate, endDate, phoneSearch, leadIdSearch]);
 
   useEffect(() => {
     if (activeTab === "lead") {
@@ -484,6 +526,52 @@ export default function ReportsPage() {
         </span>
       ),
     },
+    {
+      header: "Application Source",
+      render: (a: any) => {
+        const source = a.applicationSource || "—";
+        const colorMap: Record<string, string> = {
+          online: "bg-green-100 text-green-800 border-green-500",
+          offline: "bg-blue-100 text-blue-800 border-blue-500",
+          lead: "bg-yellow-100 text-yellow-800 border-yellow-500",
+        };
+        const colorClass = colorMap[source.toLowerCase()] || "bg-gray-100 text-gray-800 border-gray-400";
+
+        return (
+          <span className={`px-3 py-1 rounded-lg text-sm font-medium border ${colorClass}`}>
+            {source.charAt(0).toUpperCase() + source.slice(1)}
+          </span>
+        );
+      },
+    },
+
+    {
+      header: "Follow-up Interactions",
+      render: (a: any) => {
+        const status = a.interactions || "—";
+        const colorMap: Record<string, string> = {
+          "New": "text-gray-600",
+          "Followup": "text-blue-600",
+          "Not Reachable": "text-red-600",
+          "Switched Off": "text-yellow-600",
+          "Not Picked": "text-purple-600",
+          "Irrelevant": "text-pink-600",
+          "Interested": "text-green-600",
+          "Not Interested": "text-orange-600",
+          "Cut the call": "text-indigo-600",
+          "Admitted": "text-teal-600",
+          "Closed": "text-gray-800",
+        };
+
+        const colorClass = colorMap[status] || "text-gray-600";
+
+        return (
+          <span className={`font-medium ${colorClass}`}>
+            {status}
+          </span>
+        );
+      },
+    },
 
     columnVisibility.createdAt && {
       header: "Created At",
@@ -534,6 +622,30 @@ export default function ReportsPage() {
         lead.followUpDate
           ? new Date(lead.followUpDate).toLocaleString()
           : "—",
+    },
+    {
+      header: "Lead Source",
+      render: (lead: any) => {
+        const source = lead.leadSource || "—";
+
+        const sourceColorMap: Record<string, string> = {
+          offline: "bg-blue-100 text-blue-700 border border-blue-400",
+          online: "bg-green-100 text-green-700 border border-green-400",
+          application: "bg-purple-100 text-purple-700 border border-purple-400",
+        };
+
+        const colorClass =
+          sourceColorMap[source.toLowerCase()] ||
+          "bg-gray-100 text-gray-700 border border-gray-400";
+
+        return (
+          <span
+            className={`px-2 py-1 rounded-lg text-xs font-medium inline-block min-w-[90px] text-center ${colorClass}`}
+          >
+            {source.charAt(0).toUpperCase() + source.slice(1)}
+          </span>
+        );
+      },
     },
 
     columnVisibilityreport.createdBy && {
@@ -747,6 +859,7 @@ export default function ReportsPage() {
                 className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
               />
             </div>
+
             {userpermission === "superadmin" && (
               <select
                 value={selectedInstitution}
@@ -765,6 +878,45 @@ export default function ReportsPage() {
               </select>
             )}
 
+
+
+            {/* Country → State → City */}
+
+
+            <div className="flex gap-2">
+              <Select
+                placeholder="Select Country"
+                options={countryOptions}
+                value={countryOptions.find(c => c.value === selectedCountry) || null}
+                onChange={(opt) => {
+                  setSelectedCountry(opt?.value || "");
+                  setSelectedState("");
+                  setSelectedCity("");
+                  setCurrentPage(1);
+                }}
+                isClearable
+              />
+              <Select
+                placeholder="Select State"
+                options={stateOptions}
+                value={stateOptions.find(s => s.value === selectedState) || null}
+                onChange={(opt) => {
+                  setSelectedState(opt?.value || "");
+                  setSelectedCity("");
+                  setCurrentPage(1);
+                }}
+                isClearable
+                isDisabled={!selectedCountry}
+              />
+              <Select
+                placeholder="Select City"
+                options={cityOptions}
+                value={cityOptions.find(c => c.value === selectedCity) || null}
+                onChange={(opt) => setSelectedCity(opt?.value || "")}
+                isClearable
+                isDisabled={!selectedState}
+              />
+            </div>
             {/* 💳 Payment Filter */}
             {activeTab !== "lead" && (
               <>
@@ -792,7 +944,51 @@ export default function ReportsPage() {
                   <option value="Complete">Complete</option>
                   <option value="Incomplete">Incomplete</option>
                 </select>
+
+
+
+                {/* Application Source Filter */}
+                <Select
+                  placeholder="Select Application Source"
+                  options={[
+                    { value: "online", label: "Online" },
+                    { value: "offline", label: "Offline" },
+                    { value: "lead", label: "Lead" },
+                  ]}
+                  value={selectedApplicationSource ? { value: selectedApplicationSource, label: selectedApplicationSource } : null}
+                  onChange={(opt) => {
+                    setSelectedApplicationSource(opt?.value || "");
+                    setCurrentPage(1);
+                  }}
+                  isClearable
+                />
+
+                {/* Applicant Interaction Filter */}
+                <Select
+                  placeholder="Select Interaction"
+                  options={[
+                    { value: "New", label: "New" },
+                    { value: "Followup", label: "Followup" },
+                    { value: "Not Reachable", label: "Not Reachable" },
+                    { value: "Switched Off", label: "Switched Off" },
+                    { value: "Not Picked", label: "Not Picked" },
+                    { value: "Irrelevant", label: "Irrelevant" },
+                    { value: "Interested", label: "Interested" },
+                    { value: "Not Interested", label: "Not Interested" },
+                    { value: "Cut the call", label: "Cut the call" },
+                    { value: "Admitted", label: "Admitted" },
+                    { value: "Closed", label: "Closed" },
+                  ]}
+                  value={selectedInteraction ? { value: selectedInteraction, label: selectedInteraction } : null}
+                  onChange={(opt) => {
+                    setSelectedInteraction(opt?.value || "");
+                    setCurrentPage(1);
+                  }}
+                  isClearable
+                />
               </>
+
+
             )}
             {/* 🔢 Application ID */}
             {activeTab !== "lead" && (
@@ -819,6 +1015,9 @@ export default function ReportsPage() {
                 />
               </>
             )}
+
+
+
 
 
 
@@ -853,6 +1052,17 @@ export default function ReportsPage() {
                       {c.label}
                     </option>
                   ))}
+                </select>
+
+                <select
+                  value={selectedLeadSource}
+                  onChange={(e) => setSelectedLeadSource(e.target.value)}
+                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                >
+                  <option value="all">All Lead Sources</option>
+                  <option value="offline">Offline</option>
+                  <option value="online">Online</option>
+                  <option value="application">Application</option>
                 </select>
               </>
             )}

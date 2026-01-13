@@ -44,6 +44,7 @@ export default function CreateLeadForm({
     const [form, setForm] = useState<Partial<Lead>>({
         instituteId: "",
         program: "",
+        counsellorName: "",
         candidateName: "",
         ugDegree: "",
         phoneNumber: "",
@@ -96,12 +97,18 @@ export default function CreateLeadForm({
             });
 
             const personal = sections.find((s: any) => s.sectionName === "Personal Details")?.fields || {};
+            const firstName = personal["First Name"] || "";
+            const lastName = personal["Last Name"] || "";
 
+            const candidateName =
+                personal["Full Name"]?.trim() ||
+                `${firstName} ${lastName}`.trim();
             setForm((prev) => ({
                 ...prev,
                 instituteId: selectedApplication.instituteId || prev.instituteId,
                 program: selectedApplication.program || "",
-                candidateName: personal["Full Name"] || personal["First Name"] || "",
+                candidateName,
+
                 ugDegree: "", // optional
                 phoneNumber: personal["Contact Number"] || "",
                 dateOfBirth: personal["Date of Birth"] || "",
@@ -339,6 +346,13 @@ export default function CreateLeadForm({
             setLoading(false);
             return;
         }
+
+        if (!form.counsellorName) {
+            toast.error("Counsellor Name is required.");
+            setLoading(false);
+            return;
+        }
+
         if (!form.phoneNumber) {
             toast.error("Phone number is required.");
             setLoading(false);
@@ -490,6 +504,21 @@ export default function CreateLeadForm({
                         className={inputClass}
                     />
                 </div>
+                {/* Counsellor Name */}
+                <div className="flex flex-col">
+                    <label className="text-sm font-semibold mb-1">Counsellor Name <span className="text-red-500">* </span></label>
+                    <input
+                        type="text"
+                        name="counsellorName"
+                        value={form.counsellorName || ""}
+                        onChange={(e) =>
+                            setForm((prev) => ({ ...prev, counsellorName: e.target.value }))
+                        }
+                        className={inputClass}
+                        placeholder="Enter counsellor name"
+                    />
+                </div>
+
 
                 {/* UG Degree */}
                 <div className="flex flex-col">

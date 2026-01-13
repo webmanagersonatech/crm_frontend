@@ -194,10 +194,8 @@ export default function DashboardPage() {
   }, []);
 
 
-
   const generateCSV = () => {
-    const TOTAL = 7000;
-
+    const TOTAL = 10;
     const headers = ["Name", "Phone", "Date", "City", "Course", "Source"];
     const rows: string[] = [];
 
@@ -568,14 +566,14 @@ export default function DashboardPage() {
         </h1>
       </div>
 
-      <a href="http://localhost:4000/api/institutions/apply/INS-5AY9A4L6"
+      <a href="http://localhost:4000/api/institutions/apply/INS-UC25AJOH"
         target="blank"
         className="apply-btn">
         Apply Online
       </a>
 
 
-      <a href="http://localhost:4000/api/institutions/apply/INS-SGOPHIS9"
+      <a href="http://localhost:4000/api/institutions/enquiry/INS-UC25AJOH"
         target="blank"
         className="apply-btn border border-black">
         Enquiry
@@ -585,7 +583,7 @@ export default function DashboardPage() {
 
 
       <button
-        onClick={generateCSV1}
+        onClick={generateCSV}
         className="px-4 py-2 bg-blue-600 text-white rounded"
       >
         Generate  CSV

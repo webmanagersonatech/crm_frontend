@@ -41,6 +41,7 @@ export default function EditLeadPage() {
     communication: "",
     followUpDate: "",
     description: "",
+    counsellorName: "",
   });
 
   const statusOptions: OptionType[] = [
@@ -206,6 +207,23 @@ export default function EditLeadPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    const requiredFields: { field: keyof Lead; label: string }[] = [
+      { field: "program", label: "Program" },
+      { field: "candidateName", label: "Candidate Name" },
+      { field: "status", label: "Status" },
+      { field: "communication", label: "Communication" },
+      { field: "followUpDate", label: "Follow Up Date" },
+      { field: "counsellorName", label: "Counsellor Name" },
+    ];
+
+    for (let { field, label } of requiredFields) {
+      if (!form[field] || (typeof form[field] === "string" && !form[field]?.trim())) {
+        toast.error(`${label} is required.`);
+        setLoading(false);
+        return;
+      }
+    }
+
     if (form.dateOfBirth && !isAtLeast18YearsOld(form.dateOfBirth)) {
       toast.error("You are under 18, you are not eligible for this lead.");
       setLoading(false);
@@ -224,6 +242,7 @@ export default function EditLeadPage() {
         status: form.status,
         communication: form.communication,
         followUpDate: form.followUpDate,
+        counsellorName: form.counsellorName,
         description: form.description,
       };
 
@@ -252,7 +271,7 @@ export default function EditLeadPage() {
     menu: (provided: any) => ({ ...provided, zIndex: 9999 }),
   };
 
-  if (!form.candidateName && !loading)
+  if (loading)
     return <p className="p-6 text-gray-600">Loading lead details...</p>;
 
   return (
@@ -271,7 +290,7 @@ export default function EditLeadPage() {
       >
         {/* Program */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">Program *</label>
+          <label className="text-sm font-semibold mb-1">Program <span className="text-red-500">* </span></label>
           <Select
             options={programOptions}
             value={programOptions.find(opt => opt.value === form.program) || null}
@@ -283,7 +302,7 @@ export default function EditLeadPage() {
 
         {/* Candidate Name */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">Candidate Name *</label>
+          <label className="text-sm font-semibold mb-1">Candidate Name <span className="text-red-500">* </span></label>
           <input
             type="text"
             name="candidateName"
@@ -292,6 +311,20 @@ export default function EditLeadPage() {
             className={inputClass}
           />
         </div>
+
+        {/* Counsellor Name */}
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold mb-1">Counsellor Name <span className="text-red-500">* </span></label>
+          <input
+            type="text"
+            name="counsellorName"
+            value={form.counsellorName || ""}
+            onChange={handleChange}
+            placeholder="Enter counsellor name (or leave blank to use your name)"
+            className={inputClass}
+          />
+        </div>
+
 
         {/* UG Degree */}
         <div className="flex flex-col">
@@ -307,7 +340,7 @@ export default function EditLeadPage() {
 
         {/* Phone */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">Phone Number</label>
+          <label className="text-sm font-semibold mb-1">Phone Number <span className="text-red-500">* </span></label>
           <input
             type="text"
             name="phoneNumber"
@@ -319,7 +352,7 @@ export default function EditLeadPage() {
 
         {/* DOB */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">Date of Birth</label>
+          <label className="text-sm font-semibold mb-1">Date of Birth <span className="text-red-500">* </span></label>
           <input
             type="date"
             name="dateOfBirth"
@@ -331,7 +364,7 @@ export default function EditLeadPage() {
 
         {/* Country */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">Country</label>
+          <label className="text-sm font-semibold mb-1">Country <span className="text-red-500">* </span></label>
           <Select
             options={countryOptions}
             value={countryOptions.find(opt => opt.label === form.country) || null}
@@ -343,7 +376,7 @@ export default function EditLeadPage() {
 
         {/* State */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">State</label>
+          <label className="text-sm font-semibold mb-1">State <span className="text-red-500">* </span></label>
           <Select
             options={stateOptions}
             value={stateOptions.find(opt => opt.label === form.state) || null}
@@ -355,7 +388,7 @@ export default function EditLeadPage() {
 
         {/* City */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">City</label>
+          <label className="text-sm font-semibold mb-1">City <span className="text-red-500">* </span></label>
           <Select
             options={cityOptions}
             value={cityOptions.find(opt => opt.label === form.city) || null}
@@ -367,7 +400,7 @@ export default function EditLeadPage() {
 
         {/* Status */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">Status</label>
+          <label className="text-sm font-semibold mb-1">Status <span className="text-red-500">* </span></label>
           <Select
             options={statusOptions}
             value={statusOptions.find(opt => opt.value === form.status)}
@@ -378,7 +411,7 @@ export default function EditLeadPage() {
 
         {/* Communication */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">Communication</label>
+          <label className="text-sm font-semibold mb-1">Communication <span className="text-red-500">* </span></label>
           <Select
             options={communicationOptions}
             value={communicationOptions.find(opt => opt.value === form.communication)}
@@ -389,7 +422,7 @@ export default function EditLeadPage() {
 
         {/* Follow Up Date */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">Follow Up Date</label>
+          <label className="text-sm font-semibold mb-1">Follow Up Date <span className="text-red-500">* </span></label>
 
           <input
             type="date"
