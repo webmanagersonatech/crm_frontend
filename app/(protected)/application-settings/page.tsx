@@ -286,7 +286,10 @@ export default function SettingsPage() {
         { fieldName: 'Last Name', fieldType: 'text', required: true, maxLength: 50 },
         { fieldName: 'Full Name', fieldType: 'text', required: true, maxLength: 100 },
 
+
         { fieldName: 'Date of Birth', fieldType: 'date', required: true },
+
+        { fieldName: 'Place of Birth', fieldType: 'text', required: false, maxLength: 100 },
 
         {
           fieldName: 'Gender',
@@ -302,6 +305,15 @@ export default function SettingsPage() {
           options: ['OC', 'BC', 'BCM', 'MBC', 'DNC', 'SC', 'ST', 'SCA', 'Other'],
         },
 
+        {
+          fieldName: 'Religion',
+          fieldType: 'select',
+          required: false,
+          options: ['Hindu', 'Christian', 'Muslim', 'Other'],
+        },
+
+        { fieldName: 'Caste', fieldType: 'text', required: false, maxLength: 50 },
+        { fieldName: 'Community Certificate Number', fieldType: 'text', required: false, maxLength: 30 },
         { fieldName: 'Nationality', fieldType: 'text', required: true, maxLength: 50 },
         { fieldName: 'Contact Number', fieldType: 'number', required: true },
         { fieldName: 'Alternate Contact Number', fieldType: 'number', required: false },
@@ -332,6 +344,13 @@ export default function SettingsPage() {
           fieldType: 'select',
           required: false,
           options: ['College Bus', 'Own Vehicle', 'Public Transport']
+        },
+        {
+          fieldName: 'Any relatives studied/studying in Sona Group of Institutions',
+          fieldType: 'select',
+          required: false,
+          options: ['Yes', 'No'],
+          defaultValue: 'No',
         },
       ],
 
