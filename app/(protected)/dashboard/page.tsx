@@ -515,12 +515,6 @@ export default function DashboardPage() {
 
 
 
-
-
-
-
-
-
     // Always visible (actions etc.)
 
   ].filter(Boolean) as any;
@@ -568,7 +562,7 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-3 sm:space-y-0 mt-4">
         {/* Apply Online Button */}
         <a
-          href="http://localhost:4000/api/institutions/apply/INS-UC25AJOH"
+          href="http://160.187.54.80:5000/api/institutions/apply/INS-ESTKLHCB"
           target="_blank"
           className="px-6 py-2 bg-green-600 text-white font-semibold rounded shadow hover:bg-green-700 transition"
         >
@@ -577,7 +571,7 @@ export default function DashboardPage() {
 
         {/* Enquiry Button */}
         <a
-          href="http://localhost:4000/api/institutions/enquiry/INS-UC25AJOH"
+          href="http://160.187.54.80:5000/api/institutions/enquiry/INS-ESTKLHCB"
           target="_blank"
           className="px-6 py-2 border-2 border-gray-800 text-gray-800 font-semibold rounded shadow hover:bg-gray-100 transition"
         >
