@@ -120,7 +120,7 @@ export default function InstitutionsPage() {
 
         if ((decoded.role === "admin" || decoded.role === "user") && decoded.instituteId) {
           const data = await getaccesscontrol({
-            role: decoded.role,
+            userId: decoded.id,
             instituteId: decoded.instituteId
           });
 

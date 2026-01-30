@@ -79,7 +79,7 @@ export default function DashboardPage() {
 
   const [hasPermission, setHasPermission] = useState<boolean>(false);
   const [userpermission, setUserpermisssion] = useState<any | null>(null);
-  console.log(userpermission, "userpermission")
+
 
   const COLORS = ["#3b82f6", "#ef4444"];
 
@@ -565,29 +565,34 @@ export default function DashboardPage() {
           Dashboard
         </h1>
       </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-3 sm:space-y-0 mt-4">
+        {/* Apply Online Button */}
+        <a
+          href="http://localhost:4000/api/institutions/apply/INS-UC25AJOH"
+          target="_blank"
+          className="px-6 py-2 bg-green-600 text-white font-semibold rounded shadow hover:bg-green-700 transition"
+        >
+          Apply Online
+        </a>
 
-      <a href="http://localhost:4000/api/institutions/apply/INS-UC25AJOH"
-        target="blank"
-        className="apply-btn">
-        Apply Online
-      </a>
+        {/* Enquiry Button */}
+        <a
+          href="http://localhost:4000/api/institutions/enquiry/INS-UC25AJOH"
+          target="_blank"
+          className="px-6 py-2 border-2 border-gray-800 text-gray-800 font-semibold rounded shadow hover:bg-gray-100 transition"
+        >
+          Enquiry
+        </a>
 
+        {/* Generate CSV Button */}
+        <button
+          onClick={generateCSV}
+          className="px-6 py-2 bg-blue-600 text-white font-semibold rounded shadow hover:bg-blue-700 transition"
+        >
+          Generate CSV
+        </button>
+      </div>
 
-      <a href="http://localhost:4000/api/institutions/enquiry/INS-UC25AJOH"
-        target="blank"
-        className="apply-btn border border-black">
-        Enquiry
-      </a>
-
-
-
-
-      <button
-        onClick={generateCSV}
-        className="px-4 py-2 bg-blue-600 text-white rounded"
-      >
-        Generate  CSV
-      </button>
       {/* 🔹 Filters Section */}
       <div className="bg-white dark:bg-neutral-900 shadow-md rounded-2xl p-4 sm:p-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
