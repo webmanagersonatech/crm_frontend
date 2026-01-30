@@ -98,15 +98,19 @@ export default function AddApplicationForm({
     const inputClass =
         "border border-gray-300 p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#5667a8]"
 
-    const currentYear = new Date().getFullYear()
+
+
+    const fromYear = 2018
+    const toYear = 2060
 
     const startYearOptions: OptionType[] = Array.from(
-        { length: 2060 - currentYear + 1 },
+        { length: toYear - fromYear + 1 },
         (_, i) => {
-            const year = currentYear + i
+            const year = fromYear + i
             return { value: year.toString(), label: year.toString() }
         }
     )
+
     const mapLeadToFormData = (lead: any) => {
         const fullName = lead.candidateName || "";
 
@@ -852,7 +856,7 @@ export default function AddApplicationForm({
                 );
 
 
-      
+
             /* DEFAULT INPUT */
             default:
                 if (field.type === "text") {
