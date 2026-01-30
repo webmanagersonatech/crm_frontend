@@ -93,7 +93,8 @@ export default function AddApplicationForm({
         required: false,
     })
     const IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
-    const BASE_URL = "http://localhost:4000/uploads/";
+    // const BASE_URL = "http://localhost:4000/uploads/";
+    const BASE_URL = "http://160.187.54.80:5000/uploads/";
     const inputClass =
         "border border-gray-300 p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#5667a8]"
 

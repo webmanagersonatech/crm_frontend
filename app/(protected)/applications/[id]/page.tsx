@@ -41,7 +41,8 @@ export default function ApplicationDetailsPage() {
 
     if (isLoading) return <Spinner />;
 
-    const BASE_URL = "http://localhost:4000/uploads/";
+    // const BASE_URL = "http://localhost:4000/uploads/";
+    const BASE_URL = "http://160.187.54.80:5000/uploads/";
 
     const renderSubSections = (sections: any[]) =>
         sections.map((section: any) => (
@@ -136,7 +137,7 @@ export default function ApplicationDetailsPage() {
                     />
 
                     <h1 className="text-xl font-bold text-center flex-1">
-                        HIKA – APPLICATION FORM
+                        APPLICATION FORM
                     </h1>
 
                     <div className="text-right text-sm text-gray-600">

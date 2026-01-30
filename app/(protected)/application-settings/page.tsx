@@ -357,7 +357,7 @@ export default function SettingsPage() {
       'Parent Details': [
         { fieldName: "Father Name", fieldType: "text", required: true, maxLength: 50 },
         { fieldName: "Father Age", fieldType: "number", required: false },
-        { fieldName: "Father Mobile No", fieldType: "text", required: false, maxLength: 15 },
+        { fieldName: "Father Mobile No", fieldType: "number", required: false, maxLength: 15 },
         { fieldName: "Father Occupation", fieldType: "text", required: false, maxLength: 50 },
         { fieldName: "Father Organization", fieldType: "text", required: false, maxLength: 50 },
         { fieldName: "Father Designation", fieldType: "text", required: false, maxLength: 50 },
@@ -366,7 +366,7 @@ export default function SettingsPage() {
 
         { fieldName: "Mother Name", fieldType: "text", required: true, maxLength: 50 },
         { fieldName: "Mother Age", fieldType: "number", required: false },
-        { fieldName: "Mother Mobile No", fieldType: "text", required: false, maxLength: 15 },
+        { fieldName: "Mother Mobile No", fieldType: "number", required: false, maxLength: 15 },
         { fieldName: "Mother Occupation", fieldType: "text", required: false, maxLength: 50 },
         { fieldName: "Mother Organization", fieldType: "text", required: false, maxLength: 50 },
         { fieldName: "Mother Designation", fieldType: "text", required: false, maxLength: 50 },
