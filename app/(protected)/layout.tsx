@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { Toaster } from "react-hot-toast";
 
 export default function DashboardLayout({
   children,
@@ -22,6 +23,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen w-full bg-gray-100 dark:bg-neutral-950">
       {/* Mobile overlay */}
+       <Toaster position="top-right" />
       <div
         className={`fixed inset-0 bg-black/40 z-30 lg:hidden transition ${
           sidebarOpen

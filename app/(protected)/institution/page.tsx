@@ -23,6 +23,7 @@ import ViewDialog from "@/components/ViewDialog";
 import ExportModal from "@/components/ExportModal";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import { Column } from "@/components/Tablecomponents";
+import toast from "react-hot-toast";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 
 export default function InstitutionsPage() {
@@ -180,15 +181,37 @@ export default function InstitutionsPage() {
 
   const confirmAction = async () => {
     if (!selected) return;
+
+    const loadingId = toast.loading(
+      confirmType === "delete"
+        ? "Deleting institution..."
+        : "Updating status..."
+    );
+
     try {
       if (confirmType === "delete") {
         await deleteInstitution(selected._id);
+        toast.success("Institution deleted successfully ✅");
       } else if (confirmType === "toggle") {
-        const newStatus = selected.status === "active" ? "inactive" : "active";
+        const newStatus =
+          selected.status === "active" ? "inactive" : "active";
+
         await updateInstitution(selected._id, { status: newStatus });
+
+        toast.success(
+          `Institution ${newStatus === "active" ? "activated" : "deactivated"
+          } successfully ✅`
+        );
       }
+
       await fetchInstitutions();
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again ❌"
+      );
     } finally {
+      toast.dismiss(loadingId);
       setConfirmOpen(false);
       setSelected(null);
       setConfirmType(null);
