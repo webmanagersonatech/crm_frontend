@@ -865,14 +865,20 @@ export default function AddApplicationForm({
                             type="text"
                             name={field.fieldName}
                             value={value}
-                            onChange={(e) => {
-                                // Allow only letters and spaces
-                                const textOnly = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+                            // onChange={(e) => {
+                            //     // Allow only letters and spaces
+                            //     const textOnly = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+                            //     setFormData(p => ({
+                            //         ...p,
+                            //         [field.fieldName]: textOnly,
+                            //     }));
+                            // }}
+                            onChange={(e) =>
                                 setFormData(p => ({
                                     ...p,
-                                    [field.fieldName]: textOnly,
-                                }));
-                            }}
+                                    [field.fieldName]: e.target.value,
+                                }))
+                            }
                             className={inputClass}
                             maxLength={field.maxLength || undefined}
                         />
