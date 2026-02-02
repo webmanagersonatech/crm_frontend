@@ -67,6 +67,7 @@ export default function ApplicationsPage() {
   const [searchProgram, setSearchProgram] = useState("");
   const [selectedFormStatus, setSelectedFormStatus] = useState("all");
   const [startYear, setStartYear] = useState<string>("")
+  const [academicYears, setAcademicYears] = useState<string[]>([]);
   const [endYear, setEndYear] = useState<string>("")
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [selectedCountry, setSelectedCountry] = useState("");
@@ -89,7 +90,7 @@ export default function ApplicationsPage() {
     createdAt: true,
   });
 
-  
+
 
   const filterOptions = [
     { value: "academicYear", label: "Academic Year" },
@@ -106,7 +107,7 @@ export default function ApplicationsPage() {
     { value: "program", label: "Program" },
   ];
 
-const countryOptions = Country.getAllCountries().map(c => ({
+  const countryOptions = Country.getAllCountries().map(c => ({
     value: c.name,
     label: c.name,
     isoCode: c.isoCode,
@@ -250,6 +251,9 @@ const countryOptions = Country.getAllCountries().map(c => ({
 
       setApplications((res.data as Application[]) || []);
       setTotalPages(res.pagination?.totalPages || 1);
+      if (res.academicYears) {
+        setAcademicYears(res.academicYears);
+      }
     } catch (err: any) {
       toast.error("Failed to load applications");
       console.error("Error fetching applications:", err);
@@ -642,58 +646,31 @@ const countryOptions = Country.getAllCountries().map(c => ({
 
 
               {/* Academic Year Filter (Manual) */}
-              {activeFilters.includes("academicYear") && (<div className="rounded-md w-fit border p-[3px] flex items-center gap-4">
-                {/* Label on left */}
-                <label className="text-sm font-semibold text-gray-700">
-                  Academic Year:
-                </label>
+              {activeFilters.includes("academicYear") && (
+                <div className="rounded-md w-fit border p-[3px] flex items-center gap-3">
+                  <label className="text-sm font-semibold text-gray-700">
+                    Academic Year:
+                  </label>
 
-                {/* Start + End Year */}
-                <div className="flex gap-2">
-                  {/* Start Year */}
                   <select
-                    value={startYear}
+                    value={selectedYear}
                     onChange={(e) => {
-                      setStartYear(e.target.value);
-                      setEndYear("");
-                      setSelectedYear("all");
+                      setSelectedYear(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="border text-sm rounded-md py-2 px-2 w-28 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                    className="border text-sm rounded-md py-2 px-3 w-40 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
                   >
-                    <option value="">Start</option>
-                    {Array.from({ length: 2060 - 2015 + 1 }, (_, i) => 2015 + i).map((y) => (
-                      <option key={y} value={y}>{y}</option>
-                    ))}
-                  </select>
+                    <option value="all">All</option>
 
-                  {/* End Year */}
-                  <select
-                    value={endYear}
-                    onChange={(e) => {
-                      setEndYear(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    disabled={!startYear}
-                    className="border text-sm rounded-md py-2 px-2 w-28 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                  >
-                    <option value="">End</option>
-                    {Array.from({ length: 2060 - Number(startYear) }, (_, i) => Number(startYear) + 1 + i).map((y) => (
-                      <option key={y} value={y}>{y}</option>
+                    {academicYears.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
                     ))}
                   </select>
                 </div>
+              )}
 
-                {/* Output */}
-                {startYear && endYear && (
-                  <div className="ml-4 text-xs text-gray-600">
-                    Selected Year:{" "}
-                    <span className="font-semibold text-gray-800">
-                      {startYear}-{endYear}
-                    </span>
-                  </div>
-                )}
-              </div>)}
 
               {activeFilters.includes("instituteId") && (
                 <select

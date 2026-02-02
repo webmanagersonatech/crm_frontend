@@ -122,7 +122,7 @@ export async function getApplications(params?: {
     if (params?.applicationSource) queryParams.append("applicationSource", params.applicationSource);
     if (params?.interactions) queryParams.append("interactions", params.interactions);
 
-    const response = await api.get<PaginatedResponse<Application>>(
+    const response = await api.get<PaginatedResponse<Application> & { academicYears: string[] }>(
       `/application?${queryParams.toString()}`
     );
 
