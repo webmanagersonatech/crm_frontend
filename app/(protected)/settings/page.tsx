@@ -138,20 +138,20 @@ export default function SettingsPage() {
     setCustomCourses((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const currentYear = new Date().getFullYear()
+  const START_YEAR = 2019
+  const END_YEAR = 2060
 
   const startYearOptions: OptionType[] = Array.from(
-    { length: 2060 - currentYear + 1 },
+    { length: END_YEAR - START_YEAR + 1 },
     (_, i) => {
-      const year = currentYear + i
+      const year = START_YEAR + i
       return { value: year.toString(), label: year.toString() }
     }
   )
 
-
   const endYearOptions: OptionType[] = startYear
     ? Array.from(
-      { length: 2060 - Number(startYear.value) },
+      { length: END_YEAR - Number(startYear.value) },
       (_, i) => {
         const year = Number(startYear.value) + i + 1
         return { value: year.toString(), label: year.toString() }
