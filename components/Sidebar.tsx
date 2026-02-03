@@ -20,7 +20,8 @@ import {
   Settings2,
   Layers,
   CalendarDays,
-  Grid
+  Grid,
+  GraduationCap
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -29,6 +30,8 @@ const allItems = [
   { href: "/institution", label: "Institution", icon: Building },
   { href: "/users", label: "Users", icon: Users },
   { href: "/permissions", label: "Permissions", icon: Key },
+
+  { href: "/students", label: "Students", icon: GraduationCap },
   { href: "/applications", label: "Applications", icon: FileText },
   { href: "/leads", label: "Leads", icon: UserPlus },
   { href: "/communications", label: "Communications", icon: MessageCircle },
@@ -46,6 +49,7 @@ const roleMenus = {
   admin: allItems.filter(item =>
     [
       "/dashboard",
+      "/students",
       "/applications",
       "/leads",
       "/reports",
@@ -58,7 +62,7 @@ const roleMenus = {
     ].includes(item.href)
   ),
   user: allItems.filter(item =>
-    ["/dashboard", "/applications", "/leads", "/communications", "/templates", "/dynamic-forms", "/events","/others"].includes(item.href)
+    ["/dashboard", "/applications", "/leads", "/communications", "/templates", "/dynamic-forms", "/events", "/others"].includes(item.href)
   ),
 };
 

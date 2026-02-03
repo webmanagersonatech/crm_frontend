@@ -1,0 +1,669 @@
+"use client";
+
+import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  Eye,
+  FileDown,
+  Settings,
+  Search,
+  Pencil,
+  X,
+  GraduationCap,
+  Trash2,
+} from "lucide-react";
+import toast from "react-hot-toast";
+
+import { DataTable, Column } from "@/components/Tablecomponents";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import ViewDialog from "@/components/ViewDialog";
+import ExportModal from "@/components/ExportModal";
+import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
+import StudentCleanupForm from "@/components/Forms/Studentdatacleanform";
+import { listStudentsRequest } from "@/app/lib/request/studentRequest";
+import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
+import { deleteStudentRequest, toggleStudentStatusRequest } from "@/app/lib/request/studentRequest";
+import { motion, AnimatePresence } from "framer-motion";
+import { Country, State, City } from "country-state-city";
+
+interface Student {
+  _id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  mobileNo: string;
+  instituteId: string;
+  studentId: string;
+  status: "active" | "inactive";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export default function StudentsPage() {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedInstitution, setSelectedInstitution] = useState("all");
+
+  const [institutions, setInstitutions] = useState<
+    { value: string; label: string }[]
+  >([]);
+
+  const [selected, setSelected] = useState<Student | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+
+  const [confirmType, setConfirmType] = useState<"delete" | "toggle" | null>(
+    null
+  );
+
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [bloodGroupFilter, setBloodGroupFilter] = useState("all");
+  const [bloodDonateFilter, setBloodDonateFilter] = useState("all");
+  const [hostelWillingFilter, setHostelWillingFilter] = useState("all");
+  const [quotaFilter, setQuotaFilter] = useState("all");
+  const [selectedCountry, setSelectedCountry] = useState("all");
+  const [selectedState, setSelectedState] = useState("all");
+  const [selectedCity, setSelectedCity] = useState("all");
+  const [feedbackFilter, setFeedbackFilter] = useState("all");
+  const [familyOccupationFilter, setFamilyOccupationFilter] = useState("all");
+
+  // Country options
+  const countryOptions = useMemo(() => {
+    return Country.getAllCountries().map(c => ({
+      value: c.name,
+      label: c.name,
+      isoCode: c.isoCode,
+    }));
+  }, []);
+
+  // Selected country object
+  const selectedCountryObj = countryOptions.find(c => c.value === selectedCountry);
+
+  // State options (based on selected country)
+  const stateOptions = useMemo(() => {
+    if (!selectedCountryObj) return [];
+    return State.getStatesOfCountry(selectedCountryObj.isoCode).map(s => ({
+      value: s.name,
+      label: s.name,
+      isoCode: s.isoCode,
+    }));
+  }, [selectedCountryObj]);
+
+  // Selected state object
+  const selectedStateObj = stateOptions.find(s => s.value === selectedState);
+
+  // City options (based on selected state)
+  const cityOptions = useMemo(() => {
+    if (!selectedCountryObj || !selectedStateObj) return [];
+    return City.getCitiesOfState(selectedCountryObj.isoCode, selectedStateObj.isoCode).map(c => ({
+      value: c.name,
+      label: c.name,
+    }));
+  }, [selectedCountryObj, selectedStateObj]);
+
+
+
+  const [columnVisibility, setColumnVisibility] = useState({
+    name: true,
+    studentId: true,
+    applicationId: true,
+    email: true,
+    mobile: true,
+    instituteName: true,
+    status: true,
+  });
+
+
+  const columnOptions = [
+    { key: "name", label: "Name" },
+    { key: "studentId", label: "Student ID" },
+    { key: "applicationId", label: "Application ID" },
+    { key: "email", label: "Email" },
+    { key: "mobile", label: "Mobile" },
+    { key: "instituteName", label: "Institute" },
+    { key: "status", label: "Status" },
+  ];
+
+  const quotaOptions = [
+    { value: "government", label: "Government Quota" },
+    { value: "management", label: "Management Quota" },
+    { value: "minority", label: "Minority Quota" },
+    { value: "sports", label: "Sports Quota" },
+    { value: "nri", label: "NRI Quota" },
+    { value: "lateral", label: "Lateral Entry" },
+    { value: "transfer", label: "Transfer Admission" },
+    { value: "other", label: "Other" },
+  ];
+
+  const bloodOptions = [
+    "A+", "A-",
+    "B+", "B-",
+    "O+", "O-",
+    "AB+", "AB-",
+    "Unknown"
+  ];
+
+
+  const occupationOptions = [
+    { value: "farmer", label: "Farmer / Agriculture" },
+    { value: "business", label: "Business" },
+    { value: "private", label: "Private Employee" },
+    { value: "government", label: "Government Employee" },
+    { value: "self", label: "Self Employed" },
+    { value: "daily_wage", label: "Daily Wage Worker" },
+    { value: "homemaker", label: "Homemaker" },
+    { value: "retired", label: "Retired" },
+    { value: "unemployed", label: "Unemployed" },
+    { value: "other", label: "Other" },
+  ];
+
+  const feedbackOptions = [
+    { value: "good", label: "Good" },
+    { value: "bad", label: "Bad" },
+    { value: "worst", label: "Worst" },
+  ];
+
+
+  /* ======================
+     Fetch Students
+  ====================== */
+  const fetchStudents = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await listStudentsRequest({
+        page: currentPage,
+        search: searchTerm,
+        status: statusFilter,
+        instituteId: selectedInstitution,
+        bloodGroup: bloodGroupFilter,
+        bloodDonate: bloodDonateFilter,
+        hostelWilling: hostelWillingFilter,
+        quota: quotaFilter,
+        country: selectedCountry,
+        state: selectedState,
+        city: selectedCity,
+        feedbackRating: feedbackFilter,
+        familyOccupation: familyOccupationFilter,
+      });
+
+      setStudents(res.students.docs || []);
+      setTotalPages(res.students.totalPages || 1);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to load students");
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    currentPage,
+    searchTerm,
+    statusFilter,
+    selectedInstitution,
+    bloodGroupFilter,
+    bloodDonateFilter,
+    hostelWillingFilter,
+    quotaFilter,
+    selectedCountry,
+    selectedState,
+    selectedCity,
+    feedbackFilter,
+    familyOccupationFilter
+  ]);
+
+
+
+  useEffect(() => {
+    fetchStudents();
+  }, [fetchStudents]);
+
+  useEffect(() => {
+    const loadInstitutions = async () => {
+      try {
+        const res = await getActiveInstitutions();
+        setInstitutions(
+          res.map((i: any) => ({
+            value: i.instituteId,
+            label: i.name,
+          }))
+        );
+      } catch {
+        toast.error("Failed to load institutions");
+      }
+    };
+    loadInstitutions();
+  }, []);
+
+  /* ======================
+     Confirm Action
+  ====================== */
+  const confirmAction = async () => {
+    if (!selected || !confirmType) return;
+
+    try {
+      if (confirmType === "delete") {
+        await deleteStudentRequest(selected._id);
+        toast.success("Student deleted successfully!");
+      }
+
+      if (confirmType === "toggle") {
+        const newStatus =
+          selected.status === "active" ? "inactive" : "active";
+
+        await toggleStudentStatusRequest(selected._id, newStatus);
+        toast.success(`Student status changed to ${newStatus}!`);
+      }
+
+      await fetchStudents(); // refresh list
+    } catch (err: any) {
+      toast.error(err?.message || "Action failed");
+    } finally {
+      setConfirmOpen(false);
+      setSelected(null);
+      setConfirmType(null);
+    }
+  };
+
+
+  /* ======================
+     Table Columns
+  ====================== */
+  const columns: Column<Student>[] = [
+    columnVisibility.instituteName && {
+      header: "Institute",
+      render: (s: any) => s.institute?.name || "-",
+    },
+
+    columnVisibility.name && {
+      header: "Name",
+      render: (s: any) => `${s.firstname} ${s.lastname}`,
+    },
+
+
+    columnVisibility.studentId && {
+      header: "Student ID",
+      accessor: "studentId",
+    },
+
+    columnVisibility.applicationId && {
+      header: "Application ID",
+      accessor: "applicationId",
+    },
+
+    columnVisibility.email && {
+      header: "Email",
+      accessor: "email",
+    },
+
+    columnVisibility.mobile && {
+      header: "Mobile",
+      accessor: "mobileNo",
+    },
+
+
+
+    columnVisibility.status && {
+      header: "Status",
+      render: (s: any) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${s.status === "active"
+            ? "bg-green-100 text-green-700"
+            : "bg-red-100 text-red-700"
+            }`}
+        >
+          {s.status}
+        </span>
+      ),
+    },
+
+    {
+      header: "Actions",
+      render: (s: any) => (
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setSelected(s);
+              setConfirmType("toggle");
+              setConfirmOpen(true);
+            }}
+            className={`px-3 py-1 rounded-md text-sm ${s.status === "active"
+              ? "bg-red-100 text-red-700"
+              : "bg-green-100 text-green-700"
+              }`}
+          >
+            {s.status === "active" ? "Deactivate" : "Activate"}
+          </button>
+
+          <button
+            onClick={() => {
+              setSelected(s);
+              setViewOpen(true);
+            }}
+            className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => {
+              setSelected(s);
+              setIsOpen(true);
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+
+
+          <button
+            onClick={() => {
+              setSelected(s);
+              setConfirmType("delete");
+              setConfirmOpen(true);
+            }}
+            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      ),
+    },
+  ].filter(Boolean) as Column<Student>[];
+
+
+  /* ======================
+     Export Data
+  ====================== */
+  const exportData = students.map((s) => ({
+    Name: `${s.firstname} ${s.lastname}`,
+    StudentID: s.studentId,
+    Email: s.email,
+    Mobile: s.mobileNo,
+    Institute: s.instituteId,
+    Status: s.status,
+  }));
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <GraduationCap className="w-6 h-6 text-blue-700" />
+          <h1 className="text-2xl font-semibold">Students</h1>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+
+          <button
+            onClick={() => setCustomizeOpen(true)}
+            className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
+          >
+            <Settings className="w-4 h-4" /> Customize Columns
+          </button>
+
+
+          {/* Institution Filter */}
+          <select
+            value={selectedInstitution}
+            onChange={(e) => {
+              setSelectedInstitution(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+          >
+            <option value="all">All Institutions</option>
+            {institutions.map((inst) => (
+              <option key={inst.value} value={inst.value}>
+                {inst.label}
+              </option>
+            ))}
+          </select>
+
+          {/* Search */}
+          <div className="relative w-full sm:w-auto">
+            <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="name, email, std ID,univ NO"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full sm:w-56 pl-8 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+            />
+          </div>
+
+
+
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+
+          <select
+            value={bloodGroupFilter}
+            onChange={(e) => { setBloodGroupFilter(e.target.value); setCurrentPage(1); }}
+            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+          >
+            <option value="all">All Blood Groups</option>
+            {bloodOptions.map((b) => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+
+          {/* Blood Donate */}
+          <select
+            value={bloodDonateFilter}
+            onChange={(e) => { setBloodDonateFilter(e.target.value); setCurrentPage(1); }}
+            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+          >
+            <option value="all">Blood Donate: All</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+
+          {/* Hostel Willing */}
+          <select
+            value={hostelWillingFilter}
+            onChange={(e) => { setHostelWillingFilter(e.target.value); setCurrentPage(1); }}
+            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+          >
+            <option value="all">Hostel: All</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+
+          {/* Quota */}
+          <select
+            value={quotaFilter}
+            onChange={(e) => {
+              setQuotaFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+          >
+            <option value="all">Quota: All</option>
+            {quotaOptions.map((q) => (
+              <option key={q.value} value={q.value}>{q.label}</option>
+            ))}
+          </select>
+
+          <select
+            value={feedbackFilter}
+            onChange={(e) => { setFeedbackFilter(e.target.value); setCurrentPage(1); }}
+            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+          >
+            <option value="all">All Feedback</option>
+            {feedbackOptions.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+          </select>
+
+          <select
+            value={familyOccupationFilter}
+            onChange={(e) => { setFamilyOccupationFilter(e.target.value); setCurrentPage(1); }}
+            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+          >
+            <option value="all">All Occupations</option>
+            {occupationOptions.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+
+
+          {/* Country */}
+          <select
+            value={selectedCountry}
+            onChange={(e) => {
+              setSelectedCountry(e.target.value);
+              setSelectedState("all"); // Reset state
+              setSelectedCity("all");  // Reset city
+              setCurrentPage(1);
+            }}
+            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+          >
+            <option value="all">All Countries</option>
+            {countryOptions.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+
+          {/* State */}
+          <select
+            value={selectedState}
+            onChange={(e) => {
+              setSelectedState(e.target.value);
+              setSelectedCity("all"); // Reset city
+              setCurrentPage(1);
+            }}
+            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+            disabled={stateOptions.length === 0}
+          >
+            <option value="all">All States</option>
+            {stateOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+
+          {/* City */}
+          <select
+            value={selectedCity}
+            onChange={(e) => {
+              setSelectedCity(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+            disabled={cityOptions.length === 0}
+          >
+            <option value="all">All Cities</option>
+            {cityOptions.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+
+
+          {/* Export */}
+          <button
+            onClick={() => setExportOpen(true)}
+            className="flex items-center gap-1 bg-green-700 hover:bg-green-800 text-white px-3 py-2 text-sm rounded-md"
+          >
+            <FileDown className="w-4 h-4" /> Export
+          </button>
+
+
+        </div>
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={students}
+        loading={loading}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
+
+      <AnimatePresence>
+        {isOpen && selected && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          >
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -50, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-4xl h-[80vh] relative flex flex-col"
+            >
+              <button
+                onClick={() => setIsOpen(false)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <div className="overflow-y-auto p-6 flex-1">
+                <StudentCleanupForm studentid={selected._id} />
+
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <ViewDialog
+        open={viewOpen}
+        title="Student Details"
+        data={selected}
+        onClose={() => setViewOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title={
+          confirmType === "delete"
+            ? "Delete Student"
+            : "Change Student Status"
+        }
+        message={
+          confirmType === "delete"
+            ? `Are you sure you want to delete student "${selected?.firstname} ${selected?.lastname}"?`
+            : `Are you sure you want to ${selected?.status === "active" ? "deactivate" : "activate"
+            } student "${selected?.firstname} ${selected?.lastname}"?`
+        }
+        onConfirm={confirmAction}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setSelected(null);
+          setConfirmType(null);
+        }}
+      />
+
+      <ExportModal
+        open={exportOpen}
+        title="students"
+        data={exportData}
+        onClose={() => setExportOpen(false)}
+      />
+
+      <ColumnCustomizeDialog
+        open={customizeOpen}
+        title="Customize Columns"
+        columns={columnOptions}
+        selected={columnVisibility}
+        onChange={(v) => setColumnVisibility((p) => ({ ...p, ...v }))}
+        onClose={() => setCustomizeOpen(false)}
+      />
+    </div>
+  );
+}

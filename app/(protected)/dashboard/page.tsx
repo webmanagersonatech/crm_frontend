@@ -60,7 +60,6 @@ export interface Lead {
   updatedAt: string;
 }
 
-
 export default function DashboardPage() {
   const [dateRange, setDateRange] = useState("");
   const [dashboardData, setDashboardData] = useState<any>(null);
@@ -230,6 +229,7 @@ export default function DashboardPage() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
   const generateCSV1 = () => {
     const TOTAL = 20000;
 
@@ -288,9 +288,6 @@ export default function DashboardPage() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
-
-
-
 
 
   // 🏫 Load Institutions
