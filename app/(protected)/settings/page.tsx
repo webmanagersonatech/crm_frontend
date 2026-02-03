@@ -29,6 +29,8 @@ export default function SettingsPage() {
   const [applicantAge, setApplicantAge] = useState<number | ''>('')
   const [startYear, setStartYear] = useState<OptionType | null>(null)
   const [endYear, setEndYear] = useState<OptionType | null>(null)
+  const [batchName, setBatchName] = useState('')
+  const [isApplicationOpen, setIsApplicationOpen] = useState<boolean>(false)
 
 
 
@@ -75,6 +77,9 @@ export default function SettingsPage() {
 
         setFormData({ image: data.logo || '' })
         setCustomCourses(data.courses || [])
+        setBatchName(data.batchName || '')
+        setIsApplicationOpen(data.isApplicationOpen ?? false)
+
         setPaymentData({
           authToken: data.authToken || '',
           apiKey: data.apiKey || '',
@@ -191,7 +196,9 @@ export default function SettingsPage() {
       merchantId: paymentData.merchantId,
       applicationFee,
       applicantAge,
-      academicYear
+      academicYear,
+      batchName,
+      isApplicationOpen
     }
 
     try {
@@ -310,6 +317,46 @@ export default function SettingsPage() {
               isDisabled={!startYear}
             />
           </div>
+
+          {/* Batch Name */}
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Batch Name
+            </label>
+            <input
+              type="text"
+              className={inputClass}
+              placeholder="Batch Name"
+              value={batchName}
+              onChange={(e) => setBatchName(e.target.value)}
+            />
+          </div>
+
+          {/* Application Open / Close */}
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-semibold text-gray-700">
+              Application Status
+            </label>
+
+            <div className="flex items-center space-x-3">
+              <button
+                type="button"
+                onClick={() => setIsApplicationOpen((prev) => !prev)}
+                className={`w-12 h-6 flex items-center rounded-full p-1 transition
+        ${isApplicationOpen ? 'bg-green-500' : 'bg-gray-300'}`}
+              >
+                <div
+                  className={`bg-white w-4 h-4 rounded-full shadow transform transition
+          ${isApplicationOpen ? 'translate-x-6' : 'translate-x-0'}`}
+                />
+              </button>
+
+              <span className="text-sm font-medium">
+                {isApplicationOpen ? 'Open' : 'Closed'}
+              </span>
+            </div>
+          </div>
+
 
 
 

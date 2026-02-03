@@ -40,6 +40,7 @@ export default function InstitutionsPage() {
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [userpermission, setUserpermisssion] = useState<any | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean>(true);
+  const [totalEntries, setTotalEntries] = useState(0);
 
   const [columnVisibilityInstitute, setColumnVisibilityInstitute] = useState({
     instituteId: true,
@@ -100,6 +101,9 @@ export default function InstitutionsPage() {
       });
 
       setInstitutions(data?.institutions?.docs || []);
+      setTotalEntries(data?.institutions?.totalDocs || []);
+      console.log(data, "ll")
+
     } finally {
       setLoading(false);
     }
@@ -403,6 +407,7 @@ export default function InstitutionsPage() {
         columns={columns}
         data={institutions}
         loading={loading}
+        totalEntries={totalEntries}
         currentPage={currentPage}
         totalPages={1}
         onPageChange={setCurrentPage}

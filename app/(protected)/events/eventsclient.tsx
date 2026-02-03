@@ -643,6 +643,7 @@ John Doe,9876543210,john@example.com,Chennai,React Workshop,2025-01-05`;
                 columns={columns}
                 data={events}
                 loading={loading}
+                totalEntries={totalCount}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}

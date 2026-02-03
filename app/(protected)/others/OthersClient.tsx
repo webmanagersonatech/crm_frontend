@@ -751,6 +751,7 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
             <DataTable
                 columns={columns}
                 data={others}
+                totalEntries={totalCount}
                 loading={loading}
                 currentPage={currentPage}
                 totalPages={totalPages}

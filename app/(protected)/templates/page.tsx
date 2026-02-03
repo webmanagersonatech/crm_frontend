@@ -47,8 +47,7 @@ export default function EmailTemplatesPage() {
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [userpermission, setUserpermisssion] = useState<any | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean>(true);
-
-  console.log("User Permission:", userpermission);
+  const [totalEntries, setTotalEntries] = useState(0);
 
 
   const [columnVisibility, setColumnVisibility] = useState({
@@ -138,6 +137,7 @@ export default function EmailTemplatesPage() {
       });
       setTemplates(res.docs || []);
       setTotalPages(res.totalPages || 1);
+      setTotalEntries(res?.totalDocs || 0);
     } catch (err: any) {
       console.error("Error fetching templates:", err.message);
       toast.error("Failed to fetch email templates");
@@ -357,6 +357,7 @@ export default function EmailTemplatesPage() {
         columns={columns}
         data={templates}
         loading={loading}
+        totalEntries={totalEntries}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}

@@ -87,6 +87,7 @@ export default function LeadsPage() {
   const [statusUpdateOpen, setStatusUpdateOpen] = useState(false);
   const [phoneSearch, setPhoneSearch] = useState("");
   const [leadIdSearch, setLeadIdSearch] = useState("");
+  const [totalEntries, setTotalEntries] = useState(0);
   const [selectedLeadSource, setSelectedLeadSource] = useState("all");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
@@ -322,6 +323,7 @@ export default function LeadsPage() {
       });
       setLeads(res.docs || []);
       setTotalPages(res.totalPages || 1);
+      setTotalEntries(res?.totalDocs || 0);
     } catch {
       toast.error("Failed to load leads");
     } finally {
@@ -788,19 +790,19 @@ export default function LeadsPage() {
 
               {/* 🔹 Lead Source Filter */}
               {activeFilter.includes("leadSource") && (
-                
+
                 <select
-                value={selectedLeadSource}
-                onChange={(e) => setSelectedLeadSource(e.target.value)}
-                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              >
-                <option value="all">All Lead Sources</option>
-                <option value="offline">Offline</option>
-                <option value="online">Online</option>
-                <option value="application">Application</option>
-              </select>
-            
-            )}
+                  value={selectedLeadSource}
+                  onChange={(e) => setSelectedLeadSource(e.target.value)}
+                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                >
+                  <option value="all">All Lead Sources</option>
+                  <option value="offline">Offline</option>
+                  <option value="online">Online</option>
+                  <option value="application">Application</option>
+                </select>
+
+              )}
 
 
               {/* 🌍 Country */}
@@ -946,6 +948,7 @@ export default function LeadsPage() {
         columns={columns}
         data={leads}
         loading={loading}
+        totalEntries={totalEntries}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}

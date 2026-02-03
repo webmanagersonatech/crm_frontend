@@ -74,6 +74,8 @@ export default function CommunicationsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [startYear, setStartYear] = useState<string>("")
   const [endYear, setEndYear] = useState<string>("")
+
+  const [totalEntries, setTotalEntries] = useState(0);
   const [modalType, setModalType] = useState<"mail" | "whatsapp" | "sms" | null>(
     null
   );
@@ -166,6 +168,7 @@ export default function CommunicationsPage() {
       // ✅ Correct access
       setApplications(res.applications.docs);
       setTotalPages(res.applications.totalPages);
+      setTotalEntries(res.applications?.totalDocs || 0);
       if (res.academicYears) {
         setAcademicYears(res.academicYears);
       }
@@ -566,28 +569,28 @@ export default function CommunicationsPage() {
 
 
               {/* Academic Year Filter */}
-               <div className="rounded-md w-fit border p-[3px] flex items-center gap-3">
-                  <label className="text-sm font-semibold text-gray-700">
-                    Academic Year:
-                  </label>
+              <div className="rounded-md w-fit border p-[3px] flex items-center gap-3">
+                <label className="text-sm font-semibold text-gray-700">
+                  Academic Year:
+                </label>
 
-                  <select
-                    value={selectedYear}
-                    onChange={(e) => {
-                      setSelectedYear(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="border text-sm rounded-md py-2 px-3 w-40 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                  >
-                    <option value="all">All</option>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => {
+                    setSelectedYear(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="border text-sm rounded-md py-2 px-3 w-40 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                >
+                  <option value="all">All</option>
 
-                    {academicYears.map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  {academicYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </>
           )}
 
@@ -631,6 +634,7 @@ export default function CommunicationsPage() {
         columns={columns}
         data={applications}
         loading={loading}
+        totalEntries={totalEntries}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}

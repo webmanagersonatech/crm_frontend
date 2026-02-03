@@ -90,9 +90,11 @@ export default function ReportsPage() {
   const [searchProgram, setSearchProgram] = useState("");
   const [phoneSearch, setPhoneSearch] = useState("");
   const [leadIdSearch, setLeadIdSearch] = useState("");
+  const [leadTotalEntries, setLeadTotalEntries] = useState(0);
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
+  const [totalEntries, setTotalEntries] = useState(0);
   const [selectedApplicationSource, setSelectedApplicationSource] = useState("");
   const [selectedInteraction, setSelectedInteraction] = useState("");
   const [endYear, setEndYear] = useState<string>("")
@@ -319,6 +321,7 @@ export default function ReportsPage() {
 
       setApplications((res.data as Application[]) || []);
       setTotalPages(res.pagination?.totalPages || 1);
+      setTotalEntries(res.pagination?.totalDocs || 0);
       if (res.academicYears) {
         setAcademicYears(res.academicYears);
       }
@@ -408,6 +411,7 @@ export default function ReportsPage() {
       });
       setLeads(res.docs || []);
       setleadTotalPages(res.totalPages || 1);
+      setLeadTotalEntries(res.totalDocs || 0);
     } catch {
       toast.error("Failed to load leads");
     } finally {
@@ -749,7 +753,7 @@ export default function ReportsPage() {
         </h1>
       </div>
 
-    
+
       {/* Tabs */}
       <div className="flex space-x-2 border-b border-gray-200 dark:border-gray-700">
         <button
@@ -786,6 +790,25 @@ export default function ReportsPage() {
             >
               <Settings className="w-4 h-4" /> Customize Columns
             </button>
+
+            {userpermission === "superadmin" && (
+              <select
+                value={selectedInstitution}
+                onChange={(e) => {
+                  setSelectedInstitution(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+              >
+                <option value="all">All Institutions</option>
+                {institutions.map((inst) => (
+                  <option key={inst.value} value={inst.value}>
+                    {inst.label}
+                  </option>
+                ))}
+              </select>
+            )}
+
             {/* 🎓 Academic Year */}
             {activeTab !== "lead" && (
               <div className="rounded-md w-fit border p-[3px] flex items-center gap-3">
@@ -811,6 +834,7 @@ export default function ReportsPage() {
                 </select>
               </div>
             )}
+
             {/* 📅 Date Range */}
             <div className="flex flex-wrap items-center gap-2">
               <input
@@ -834,23 +858,9 @@ export default function ReportsPage() {
               />
             </div>
 
-            {userpermission === "superadmin" && (
-              <select
-                value={selectedInstitution}
-                onChange={(e) => {
-                  setSelectedInstitution(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              >
-                <option value="all">All Institutions</option>
-                {institutions.map((inst) => (
-                  <option key={inst.value} value={inst.value}>
-                    {inst.label}
-                  </option>
-                ))}
-              </select>
-            )}
+
+
+
 
 
 
@@ -1135,6 +1145,7 @@ export default function ReportsPage() {
           <DataTable
             columns={columns}
             data={applications}
+            totalEntries={totalEntries}
             loading={loading}
             currentPage={currentPage}
             totalPages={totalPages}
@@ -1145,6 +1156,7 @@ export default function ReportsPage() {
             columns={leadcolumns}
             data={leads}
             loading={leadloading}
+            totalEntries={leadTotalEntries}
             currentPage={leadcurrentPage}
             totalPages={totalleadPages}
             onPageChange={setleadCurrentPage}

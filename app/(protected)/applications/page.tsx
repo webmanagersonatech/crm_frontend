@@ -75,6 +75,7 @@ export default function ApplicationsPage() {
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedApplicationSource, setSelectedApplicationSource] = useState("");
   const [selectedInteraction, setSelectedInteraction] = useState("");
+  const [totalEntries, setTotalEntries] = useState(0);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   const [isOpen, setIsOpen] = useState(false);
@@ -251,6 +252,8 @@ export default function ApplicationsPage() {
 
       setApplications((res.data as Application[]) || []);
       setTotalPages(res.pagination?.totalPages || 1);
+      setTotalEntries(res.pagination?.totalDocs || 0);
+      
       if (res.academicYears) {
         setAcademicYears(res.academicYears);
       }
@@ -874,6 +877,7 @@ export default function ApplicationsPage() {
         columns={columns}
         data={applications}
         loading={loading}
+        totalEntries={totalEntries}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}

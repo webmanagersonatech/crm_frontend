@@ -14,6 +14,7 @@ interface DataTableProps<T> {
     loading?: boolean;
     currentPage?: number;
     totalPages?: number;
+    totalEntries?: number;
     onPageChange?: (page: number) => void;
 }
 
@@ -22,6 +23,7 @@ export function DataTable<T extends { _id?: string }>({
     data,
     loading = false,
     currentPage = 1,
+    totalEntries = 0,
     totalPages = 1,
     onPageChange,
 }: DataTableProps<T>) {
@@ -85,9 +87,22 @@ export function DataTable<T extends { _id?: string }>({
 
             {onPageChange && (
                 <div className="flex justify-between items-center p-4 text-sm text-gray-600 dark:text-gray-300">
-                    <span>
-                        Page {currentPage} of {totalPages}
+                    <span className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300">
+                            Page <b>{currentPage}</b> of <b>{totalPages}</b>
+                        </span>
+                        <span className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300">
+                            <span className="text-gray-500 dark:text-gray-400">
+                                Total Entries:
+                            </span>
+                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                {totalEntries}
+                            </span>
+                        </span>
+
                     </span>
+
+
                     <div className="flex gap-2">
                         <button
                             onClick={() => onPageChange(Math.max(currentPage - 1, 1))}

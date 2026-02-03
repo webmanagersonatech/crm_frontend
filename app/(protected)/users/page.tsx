@@ -54,6 +54,7 @@ export default function UsersPage() {
   const [selected, setSelected] = useState<User | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
+  const [totalEntries, setTotalEntries] = useState(0);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
     name: true,
@@ -135,6 +136,7 @@ export default function UsersPage() {
 
       setUsers(res.users.docs || []);
       setTotalPages(res.users.totalPages || 1);
+      setTotalEntries(res.users?.totalDocs || 0);
     } catch (err: any) {
       console.error("Error fetching users:", err.message);
     } finally {
@@ -411,6 +413,7 @@ export default function UsersPage() {
 
       <DataTable
         columns={columns}
+        totalEntries={totalEntries}
         data={users}
         loading={loading}
         currentPage={currentPage}

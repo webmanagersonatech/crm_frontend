@@ -34,6 +34,7 @@ export default function LoginHistoryPage() {
   const [histories, setHistories] = useState<LoginHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalEntries, setTotalEntries] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [institutions, setInstitutions] = useState<{ value: string; label: string }[]>([]);
   const [selectedInstitution, setSelectedInstitution] = useState("all");
@@ -55,6 +56,7 @@ export default function LoginHistoryPage() {
 
       setHistories(res.histories.docs || []);
       setTotalPages(res.histories.totalPages || 1);
+      setTotalEntries(res.histories?.totalDocs || 0);
     } catch (err: any) {
       console.error("Error fetching login histories:", err.message);
       toast.error("Failed to load login histories");
@@ -200,6 +202,7 @@ export default function LoginHistoryPage() {
         columns={columns}
         data={histories}
         loading={loading}
+        totalEntries={totalEntries}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}

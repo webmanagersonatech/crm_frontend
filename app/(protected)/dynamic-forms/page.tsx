@@ -40,6 +40,7 @@ export default function DynamicFormsPage() {
   const [unpublishOpen, setUnpublishOpen] = useState(false);
   const [startYear, setStartYear] = useState<string>("")
   const [endYear, setEndYear] = useState<string>("")
+   const [totalEntries, setTotalEntries] = useState(0);
 
   const [academicYear, setAcademicYear] = useState("");
 
@@ -123,6 +124,7 @@ export default function DynamicFormsPage() {
       });
       setForms(res.docs || []);
       setTotalPages(res.totalPages || 1);
+       setTotalEntries(res?.totalDocs || 0);
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to fetch dynamic forms");
@@ -360,6 +362,7 @@ export default function DynamicFormsPage() {
       <DataTable
         columns={columns}
         data={forms}
+        totalEntries={totalEntries}
         loading={loading}
         currentPage={currentPage}
         totalPages={totalPages}

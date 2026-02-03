@@ -32,6 +32,8 @@ export interface Settings {
   merchantId?: string;
   apiKey?: string;
   authToken?: string;
+  isApplicationOpen?:boolean;
+  batchName?: string;
   contactEmail?: string;
   contactNumber?: string;
   address?: string;
