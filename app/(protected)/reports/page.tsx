@@ -994,7 +994,14 @@ export default function ReportsPage() {
       <div className="flex items-center space-x-3">
         <ReportIcon className="w-6 h-6 text-blue-700" />
         <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
-          {activeTab === "application" ? "Application Reports" : "Lead Reports"}
+          {
+            activeTab === "application"
+              ? "Application Reports"
+              : activeTab === "studentreport"
+                ? "Student Reports"
+                : "Lead Reports"
+          }
+
         </h1>
       </div>
 
