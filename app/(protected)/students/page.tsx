@@ -94,6 +94,7 @@ export default function StudentsPage() {
   const [totalEntries, setTotalEntries] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedInstitution, setSelectedInstitution] = useState("all");
+  const [role, setRole] = useState<string>("")
 
   const [institutions, setInstitutions] = useState<
     { value: string; label: string }[]
@@ -129,6 +130,22 @@ export default function StudentsPage() {
       isoCode: c.isoCode,
     }));
   }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      console.log("❌ No token found")
+      return
+    }
+    try {
+      const payload: any = JSON.parse(atob(token.split(".")[1]));
+      setRole(payload.role)
+
+    } catch (error) {
+      console.error("❌ Failed to decode token", error)
+    }
+  }, [])
+
 
   // Selected country object
   const selectedCountryObj = countryOptions.find(c => c.value === selectedCountry);
@@ -501,7 +518,8 @@ export default function StudentsPage() {
 
 
           {/* Institution Filter */}
-          <select
+
+          {(role === "superadmin" && <select
             value={selectedInstitution}
             onChange={(e) => {
               setSelectedInstitution(e.target.value);
@@ -515,7 +533,8 @@ export default function StudentsPage() {
                 {inst.label}
               </option>
             ))}
-          </select>
+          </select>)}
+
           <div className="rounded-md w-fit border p-[3px] flex items-center gap-3">
             <label className="text-sm font-semibold text-gray-700">
               Academic Year:
