@@ -72,6 +72,7 @@ export async function listStudentsRequest({
   status = "all",
   instituteId = "all",
   bloodGroup = "all",
+  academicYear = "all",
   bloodDonate = "all",
   hostelWilling = "all",
   quota = "all",
@@ -86,6 +87,7 @@ export async function listStudentsRequest({
   search?: string;
   status?: string;
   instituteId?: string;
+  academicYear?: string;
   bloodGroup?: string;
   bloodDonate?: string;
   hostelWilling?: string;
@@ -108,6 +110,7 @@ export async function listStudentsRequest({
         bloodDonate,
         hostelWilling,
         quota,
+        academicYear,
         country,
         state,
         city,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { BarChart3, FileText, Users, FileDown, Search, Settings } from "lucide-react";
+import { BarChart3, FileText, Users, FileDown, Search, Settings, GraduationCap } from "lucide-react";
 import { DataTable } from "@/components/Tablecomponents";
 import { getApplications, } from "@/app/lib/request/application";
 import toast from "react-hot-toast";
@@ -12,6 +12,7 @@ import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import ExportModal from "@/components/ExportModal";
 import { Column } from "@/components/Tablecomponents";
 import { Country, State, City } from "country-state-city";
+import { listStudentsRequest } from "@/app/lib/request/studentRequest";
 import Select from "react-select";
 interface Application {
   _id?: string;
@@ -58,9 +59,25 @@ interface Lead {
 
 }
 
+interface Student {
+  _id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  mobileNo: string;
+  instituteId: string;
+  studentId: string;
+  status: "active" | "inactive";
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 export default function ReportsPage() {
-  const [activeTab, setActiveTab] = useState<"application" | "lead">("application");
+  const [activeTab, setActiveTab] = useState<
+    "application" | "lead" | "studentreport"
+  >("application");
+
   const [open, setOpen] = useState(false);
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,6 +108,7 @@ export default function ReportsPage() {
   const [phoneSearch, setPhoneSearch] = useState("");
   const [leadIdSearch, setLeadIdSearch] = useState("");
   const [leadTotalEntries, setLeadTotalEntries] = useState(0);
+  const [studentTotalEntries, setStudentTotalEntries] = useState(0);
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
@@ -99,6 +117,23 @@ export default function ReportsPage() {
   const [selectedInteraction, setSelectedInteraction] = useState("");
   const [endYear, setEndYear] = useState<string>("")
   const [selectedLeadSource, setSelectedLeadSource] = useState("all");
+
+
+  // student 
+
+  const [studentLoading, setStudentLoading] = useState(true);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [studentTotalPages, setStudentTotalPages] = useState(1);
+  const [quotaFilter, setQuotaFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [bloodGroupFilter, setBloodGroupFilter] = useState("all");
+  const [bloodDonateFilter, setBloodDonateFilter] = useState("all");
+  const [hostelWillingFilter, setHostelWillingFilter] = useState("all");
+  const [feedbackFilter, setFeedbackFilter] = useState("all");
+  const [familyOccupationFilter, setFamilyOccupationFilter] = useState("all");
+  const [studentCurrentPage, setStudentCurrentPage] = useState(1);
+
+
   const [institutions, setInstitutions] = useState<
     { value: string; label: string }[]
   >([]);
@@ -123,6 +158,15 @@ export default function ReportsPage() {
     createdBy: true,
     status: true,
     applicationStatus: true,
+  });
+  const [columnVisibilitystudent, setColumnVisibilitystudent] = useState({
+    name: true,
+    studentId: true,
+    applicationId: true,
+    email: true,
+    mobile: true,
+    instituteName: true,
+    status: true,
   });
 
   const countryOptions = Country.getAllCountries().map(c => ({
@@ -270,6 +314,15 @@ export default function ReportsPage() {
     { key: "status", label: "Status" },
     { key: "applicationStatus", label: "Application Status" },
   ];
+  const columnOptionsstudent = [
+    { key: "name", label: "Name" },
+    { key: "studentId", label: "Student ID" },
+    { key: "applicationId", label: "Application ID" },
+    { key: "email", label: "Email" },
+    { key: "mobile", label: "Mobile" },
+    { key: "instituteName", label: "Institute" },
+    { key: "status", label: "Status" },
+  ];
 
 
   const statusOptions: OptionType[] = [
@@ -292,6 +345,46 @@ export default function ReportsPage() {
     { value: "Online", label: "Online" },
     { value: "Phone", label: "Phone" },
     { value: "Social Media", label: "Social Media" },
+  ];
+
+
+  const quotaOptions = [
+    { value: "government", label: "Government Quota" },
+    { value: "management", label: "Management Quota" },
+    { value: "minority", label: "Minority Quota" },
+    { value: "sports", label: "Sports Quota" },
+    { value: "nri", label: "NRI Quota" },
+    { value: "lateral", label: "Lateral Entry" },
+    { value: "transfer", label: "Transfer Admission" },
+    { value: "other", label: "Other" },
+  ];
+
+  const bloodOptions = [
+    "A+", "A-",
+    "B+", "B-",
+    "O+", "O-",
+    "AB+", "AB-",
+    "Unknown"
+  ];
+
+
+  const occupationOptions = [
+    { value: "farmer", label: "Farmer / Agriculture" },
+    { value: "business", label: "Business" },
+    { value: "private", label: "Private Employee" },
+    { value: "government", label: "Government Employee" },
+    { value: "self", label: "Self Employed" },
+    { value: "daily_wage", label: "Daily Wage Worker" },
+    { value: "homemaker", label: "Homemaker" },
+    { value: "retired", label: "Retired" },
+    { value: "unemployed", label: "Unemployed" },
+    { value: "other", label: "Other" },
+  ];
+
+  const feedbackOptions = [
+    { value: "good", label: "Good" },
+    { value: "bad", label: "Bad" },
+    { value: "worst", label: "Worst" },
   ];
 
   const fetchApplications = useCallback(async () => {
@@ -334,11 +427,10 @@ export default function ReportsPage() {
   }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCity, selectedApplicationSource, selectedInteraction, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName, searchProgram]);
 
   useEffect(() => {
-
     if (activeTab === "application") {
       fetchApplications();
     }
-  }, [fetchApplications]);
+  }, [fetchApplications, activeTab]);
 
   useEffect(() => {
     if (startYear && endYear) {
@@ -425,6 +517,64 @@ export default function ReportsPage() {
     }
   }, [activeTab, fetchLeads]);
 
+
+
+  const fetchStudents = useCallback(async () => {
+    setStudentLoading(true);
+    try {
+      const res = await listStudentsRequest({
+        page: currentPage,
+        search: searchTerm,
+        status: statusFilter,
+        academicYear: selectedYear !== "all" ? selectedYear : undefined,
+        instituteId: selectedInstitution,
+        bloodGroup: bloodGroupFilter,
+        bloodDonate: bloodDonateFilter,
+        hostelWilling: hostelWillingFilter,
+        quota: quotaFilter,
+        country: selectedCountry,
+        state: selectedState,
+        city: selectedCity,
+        feedbackRating: feedbackFilter,
+        familyOccupation: familyOccupationFilter,
+      });
+
+      setStudents(res.students.docs || []);
+      setStudentTotalPages(res.students.totalPages || 1);
+      setStudentTotalEntries(res.students.totalDocs || 0);
+      if (res.academicYears) {
+        setAcademicYears(res.academicYears);
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to load students");
+    } finally {
+      setStudentLoading(false);
+    }
+  }, [
+    selectedYear,
+    currentPage,
+    searchTerm,
+    statusFilter,
+    selectedInstitution,
+    bloodGroupFilter,
+    bloodDonateFilter,
+    hostelWillingFilter,
+    quotaFilter,
+    selectedCountry,
+    selectedState,
+    selectedCity,
+    feedbackFilter,
+    familyOccupationFilter
+  ]);
+
+  useEffect(() => {
+    if (activeTab === "studentreport") {
+      fetchStudents();
+    }
+  }, [activeTab, fetchStudents]);
+
+
   const filteredLeads = (leads || []).map((lead: any) => {
     const obj: any = {};
 
@@ -470,6 +620,45 @@ export default function ReportsPage() {
 
     return obj;
   });
+
+
+  const filteredStudents = (students || []).map((student: any) => {
+    const obj: any = {};
+
+    if (columnVisibilitystudent.name) {
+      obj.Name = `${student.firstname || ""} ${student.lastname || ""}`.trim() || "-";
+    }
+
+    if (columnVisibilitystudent.studentId) {
+      obj.StudentID = student.studentId || "-";
+    }
+
+    if (columnVisibilitystudent.applicationId) {
+      obj.ApplicationID = student.applicationId || "-";
+    }
+
+    if (columnVisibilitystudent.email) {
+      obj.Email = student.email || "-";
+    }
+
+    if (columnVisibilitystudent.mobile) {
+      obj.Mobile = student.mobileNo || "-";
+    }
+
+    if (columnVisibilitystudent.instituteName) {
+      obj.Institute =
+        student.institute?.name ||
+        student.instituteId ||
+        "-";
+    }
+
+    if (columnVisibilitystudent.status) {
+      obj.Status = student.status || "-";
+    }
+
+    return obj;
+  });
+
 
 
 
@@ -729,11 +918,67 @@ export default function ReportsPage() {
 
   ].filter(Boolean) as any;
 
+  const studentColumns: Column<Student>[] = [
 
+    columnVisibilitystudent.instituteName && {
+      header: "Institute",
+      render: (s: any) => s.institute?.name || "-",
+    },
+
+    columnVisibilitystudent.name && {
+      header: "Name",
+      render: (s: any) => `${s.firstname} ${s.lastname}`,
+    },
+
+
+    columnVisibilitystudent.studentId && {
+      header: "Student ID",
+      accessor: "studentId",
+    },
+
+    columnVisibilitystudent.applicationId && {
+      header: "Application ID",
+      accessor: "applicationId",
+    },
+
+    columnVisibilitystudent.email && {
+      header: "Email",
+      accessor: "email",
+    },
+
+    columnVisibilitystudent.mobile && {
+      header: "Mobile",
+      accessor: "mobileNo",
+    },
+
+
+
+    columnVisibilitystudent.status && {
+      header: "Status",
+      render: (s: any) => (
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${s.status === "active"
+            ? "bg-green-100 text-green-700"
+            : "bg-red-100 text-red-700"
+            }`}
+        >
+          {s.status}
+        </span>
+      ),
+    },
+
+
+  ].filter(Boolean) as Column<Student>[];
 
   // Dynamic header icon
   const ReportIcon =
-    activeTab === "application" ? FileText : activeTab === "lead" ? Users : BarChart3;
+    activeTab === "application"
+      ? FileText
+      : activeTab === "lead"
+        ? Users
+        : activeTab === "studentreport"
+          ? GraduationCap
+          : BarChart3;
 
   if (!hasPermission) {
     return (
@@ -774,6 +1019,16 @@ export default function ReportsPage() {
             }`}
         >
           <Users className="w-4 h-4 mr-2" /> Lead Report
+        </button>
+        <button
+          onClick={() => setActiveTab("studentreport")}
+          className={`flex items-center px-4 py-2 rounded-t-lg text-sm font-medium transition-all ${activeTab === "studentreport"
+            ? "bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+        >
+          <GraduationCap className="w-4 h-4 mr-2" />
+          Student Report
         </button>
       </div>
 
@@ -836,7 +1091,8 @@ export default function ReportsPage() {
             )}
 
             {/* 📅 Date Range */}
-            <div className="flex flex-wrap items-center gap-2">
+
+            {activeTab !== "studentreport" && (<div className="flex flex-wrap items-center gap-2">
               <input
                 type="date"
                 value={startDate}
@@ -856,12 +1112,7 @@ export default function ReportsPage() {
                 onChange={(e) => setEndDate(e.target.value)}
                 className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
               />
-            </div>
-
-
-
-
-
+            </div>)}
 
 
             {/* Country → State → City */}
@@ -902,7 +1153,7 @@ export default function ReportsPage() {
               />
             </div>
             {/* 💳 Payment Filter */}
-            {activeTab !== "lead" && (
+            {activeTab !== "lead" && activeTab !== "studentreport" && (
               <>
                 <select
                   value={selectedPayment}
@@ -975,7 +1226,7 @@ export default function ReportsPage() {
 
             )}
             {/* 🔢 Application ID */}
-            {activeTab !== "lead" && (
+            {activeTab !== "lead" && activeTab !== "studentreport" && (
               <>
                 <input
                   type="text"
@@ -999,11 +1250,6 @@ export default function ReportsPage() {
                 />
               </>
             )}
-
-
-
-
-
 
 
 
@@ -1052,7 +1298,7 @@ export default function ReportsPage() {
             )}
 
             {/* 🧍 Applicant / Lead Name */}
-            {activeTab === "lead" ? (
+            {activeTab === "lead" && (
               <div className="relative">
                 <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
                 <input
@@ -1063,7 +1309,9 @@ export default function ReportsPage() {
                   className="pl-9 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
                 />
               </div>
-            ) : (
+            )}
+
+            {activeTab === "application" && (
               <input
                 type="text"
                 placeholder="Search by Applicant"
@@ -1075,6 +1323,7 @@ export default function ReportsPage() {
                 className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
               />
             )}
+
 
             {/* 🔹 Phone Number Search */}
             {activeTab === "lead" && (
@@ -1101,6 +1350,115 @@ export default function ReportsPage() {
                 </div>
               </>)}
 
+
+
+            {activeTab === "studentreport" && (
+
+
+              <>
+
+
+
+
+
+                {/* Status Filter */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+
+                <select
+                  value={bloodGroupFilter}
+                  onChange={(e) => { setBloodGroupFilter(e.target.value); setCurrentPage(1); }}
+                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                >
+                  <option value="all">All Blood Groups</option>
+                  {bloodOptions.map((b) => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+
+                {/* Blood Donate */}
+                <select
+                  value={bloodDonateFilter}
+                  onChange={(e) => { setBloodDonateFilter(e.target.value); setCurrentPage(1); }}
+                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                >
+                  <option value="all">Blood Donate: All</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+
+                {/* Hostel Willing */}
+                <select
+                  value={hostelWillingFilter}
+                  onChange={(e) => { setHostelWillingFilter(e.target.value); setCurrentPage(1); }}
+                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                >
+                  <option value="all">Hostel: All</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+
+                {/* Quota */}
+                <select
+                  value={quotaFilter}
+                  onChange={(e) => {
+                    setQuotaFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                >
+                  <option value="all">Quota: All</option>
+                  {quotaOptions.map((q) => (
+                    <option key={q.value} value={q.value}>{q.label}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={feedbackFilter}
+                  onChange={(e) => { setFeedbackFilter(e.target.value); setCurrentPage(1); }}
+                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                >
+                  <option value="all">All Feedback</option>
+                  {feedbackOptions.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+                </select>
+
+                <select
+                  value={familyOccupationFilter}
+                  onChange={(e) => { setFamilyOccupationFilter(e.target.value); setCurrentPage(1); }}
+                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                >
+                  <option value="all">All Occupations</option>
+                  {occupationOptions.map(o => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+                {/* Search */}
+                <div className="relative w-full sm:w-auto">
+                  <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="name, email, std ID,univ NO"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full sm:w-56 pl-8 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                  />
+                </div>
+
+              </>)}
+
           </div>
 
           {/* 📤 Export Button */}
@@ -1116,19 +1474,45 @@ export default function ReportsPage() {
 
         <ExportModal
           open={open}
-          title={activeTab === "application" ? "APPLICATION REPORT" : "LEAD REPORT"}
+          title={
+            activeTab === "application"
+              ? "APPLICATION REPORT"
+              : activeTab === "studentreport"
+                ? "STUDENT REPORT"
+                : "LEAD REPORT"
+          }
           onClose={() => setOpen(false)}
-          data={activeTab === "application" ? filteredApplications : filteredLeads}
+          data={
+            activeTab === "application"
+              ? filteredApplications
+              : activeTab === "studentreport"
+                ? filteredStudents
+                : filteredLeads
+          }
         />
 
         <ColumnCustomizeDialog
           open={customizeOpen}
           title={`Customize ${activeTab} Report Columns`}
-          columns={activeTab === "application" ? columnOptions : columnOptionsreport}
-          selected={activeTab === "application" ? columnVisibility : columnVisibilityreport}
+          columns={
+            activeTab === "application"
+              ? columnOptions
+              : activeTab === "studentreport"
+                ? columnOptionsstudent
+                : columnOptionsreport
+          }
+          selected={
+            activeTab === "application"
+              ? columnVisibility
+              : activeTab === "studentreport"
+                ? columnVisibilitystudent
+                : columnVisibilityreport
+          }
           onChange={(updated) => {
             if (activeTab === "application") {
               setColumnVisibility(prev => ({ ...prev, ...updated }));
+            } else if (activeTab === "studentreport") {
+              setColumnVisibilitystudent(prev => ({ ...prev, ...updated }));
             } else {
               setColumnVisibilityreport(prev => ({ ...prev, ...updated }));
             }
@@ -1137,11 +1521,12 @@ export default function ReportsPage() {
         />
 
 
+
       </div>
 
 
       <div className="bg-white shadow rounded-lg p-4">
-        {activeTab === "application" ? (
+        {activeTab === "application" && (
           <DataTable
             columns={columns}
             data={applications}
@@ -1151,7 +1536,9 @@ export default function ReportsPage() {
             totalPages={totalPages}
             onPageChange={setCurrentPage}
           />
-        ) : (
+        )}
+
+        {activeTab === "lead" && (
           <DataTable
             columns={leadcolumns}
             data={leads}
@@ -1162,7 +1549,20 @@ export default function ReportsPage() {
             onPageChange={setleadCurrentPage}
           />
         )}
+
+        {activeTab === "studentreport" && (
+          <DataTable
+            columns={studentColumns}
+            data={students}
+            loading={studentLoading}
+            totalEntries={studentTotalEntries}
+            currentPage={studentCurrentPage}
+            totalPages={studentTotalPages}
+            onPageChange={setStudentCurrentPage}
+          />
+        )}
       </div>
+
 
 
     </div>

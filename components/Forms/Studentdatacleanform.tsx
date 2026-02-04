@@ -12,6 +12,11 @@ interface Sibling {
     age: number;
     status: "studying" | "working" | "both" | "none";
 }
+interface StudentCleanupFormProps {
+    studentid: string
+    refetch: () => void
+    onSuccess: () => void
+}
 
 
 interface FormState {
@@ -74,7 +79,11 @@ const occupationOptions = [
 ];
 
 
-export default function StudentCleanupForm({ studentid }: { studentid: string }) {
+export default function StudentCleanupForm({
+    studentid,
+    refetch,
+    onSuccess,
+}: StudentCleanupFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [student, setStudent] = useState<any>(null);
@@ -113,11 +122,67 @@ export default function StudentCleanupForm({ studentid }: { studentid: string })
         const fetchStudent = async () => {
             try {
                 const data = await getStudentRequest(studentid);
-            
-
                 setStudent(data);
 
-                // Map backend flat keys to frontend form state
+                // ---------------- APPLICATION DATA ----------------
+                const personalDetails = data?.application?.personalDetails || [];
+
+                const personalSection = personalDetails.find(
+                    (s: any) => s.sectionName === "Personal Details"
+                );
+
+                const siblingSection = personalDetails.find(
+                    (s: any) => s.sectionName === "Sibling Details"
+                );
+
+                // -------- hostel (from application) --------
+                const hostelFromApplication =
+                    personalSection?.fields?.["Hostel Required"]?.toLowerCase() === "yes"
+                        ? "yes"
+                        : "no";
+
+                // -------- blood group (from application) --------
+                const bloodGroupFromApplication =
+                    personalSection?.fields?.["Blood Group"] || "";
+
+                // -------- siblings (from application) --------
+                const siblingCountFromApplication = Number(
+                    siblingSection?.fields?.["Sibling Count"] || 0
+                );
+
+                const siblingsFromApplication: {
+                    name: string;
+                    age: number;
+                    status: "studying" | "none";
+                }[] = [];
+
+                if (siblingSection?.fields) {
+                    Object.keys(siblingSection.fields).forEach((key) => {
+                        if (key.startsWith("Sibling Name")) {
+                            const index = key.replace("Sibling Name", "").trim() || "1";
+
+                            siblingsFromApplication.push({
+                                name:
+                                    siblingSection.fields[
+                                    `Sibling Name${index === "1" ? "" : " " + index}`
+                                    ] || "",
+                                age: Number(
+                                    siblingSection.fields[
+                                    `Sibling Age${index === "1" ? "" : " " + index}`
+                                    ] || 0
+                                ),
+                                status:
+                                    siblingSection.fields[
+                                        `Sibling Studying${index === "1" ? "" : " " + index}`
+                                    ] === "Yes"
+                                        ? "studying"
+                                        : "none",
+                            });
+                        }
+                    });
+                }
+
+                // ---------------- FINAL FORM SET ----------------
                 setForm({
                     quota: data.admissionQuota ?? "",
                     universityRegNo: data.admissionUniversityRegNo ?? "",
@@ -127,17 +192,34 @@ export default function StudentCleanupForm({ studentid }: { studentid: string })
                     internshipDuration: data.internshipDuration ?? "",
                     internshipRemarks: data.internshipRemarks ?? "",
 
-                    hostelWilling: data.hostelWilling ? "yes" : "no",
+                    // ✅ hostel: student true → application → no
+                    hostelWilling:
+                        data.hostelWilling === true ? "yes" : hostelFromApplication,
+
                     hostelReason: data.hostelReason ?? "",
 
-                    bloodGroup: data.bloodGroup ?? "",
+                    // ✅ blood group: student → application
+                    bloodGroup:
+                        data.bloodGroup && data.bloodGroup !== ""
+                            ? data.bloodGroup
+                            : bloodGroupFromApplication,
+
                     bloodDonate: data.bloodWilling ?? false,
 
                     familyOccupation: data.familyOccupation ?? "",
                     otherOccupation: data.familyOtherOccupation ?? "",
 
-                    siblingsCount: data.siblingsCount ?? 0,
-                    siblings: data.siblingsDetails ?? [],
+                    // ✅ siblings count: student (>0) → application
+                    siblingsCount:
+                        data.siblingsCount && data.siblingsCount > 0
+                            ? data.siblingsCount
+                            : siblingCountFromApplication,
+
+                    // ✅ siblings list: student → application
+                    siblings:
+                        data.siblingsDetails && data.siblingsDetails.length > 0
+                            ? data.siblingsDetails
+                            : siblingsFromApplication,
 
                     feedbackRating: data.feedbackRating ?? "",
                     feedbackReason: data.feedbackReason ?? "",
@@ -149,6 +231,8 @@ export default function StudentCleanupForm({ studentid }: { studentid: string })
 
         fetchStudent();
     }, [studentid]);
+
+
 
 
 
@@ -197,6 +281,8 @@ export default function StudentCleanupForm({ studentid }: { studentid: string })
             await updateStudentIndividualRequest(studentid, payload);
 
             toast.success("Student details updated successfully ✅");
+            refetch()
+            onSuccess()
 
         } catch (error: any) {
             toast.error(error.message || "Update failed");

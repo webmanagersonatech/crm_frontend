@@ -25,18 +25,65 @@ import { deleteStudentRequest, toggleStudentStatusRequest } from "@/app/lib/requ
 import { motion, AnimatePresence } from "framer-motion";
 import { Country, State, City } from "country-state-city";
 
-interface Student {
-  _id: string;
-  firstname: string;
-  lastname: string;
-  email: string;
-  mobileNo: string;
-  instituteId: string;
-  studentId: string;
-  status: "active" | "inactive";
-  createdAt: string;
-  updatedAt: string;
+interface Sibling {
+  _id: string
+  name: string
+  age: number
+  status: string
 }
+
+interface Institute {
+  _id: string
+  name: string
+  instituteId: string
+}
+
+interface Student {
+  _id: string
+
+  firstname: string
+  lastname: string
+  email: string
+  mobileNo: string
+
+  instituteId: string
+  studentId: string
+  applicationId: string
+  admissionUniversityRegNo: string
+  admissionQuota: string
+
+  academicYear: string
+  interactions: string
+
+  country: string
+  state: string
+  city: string
+
+  status: string
+
+  bloodGroup: string
+  bloodWilling: boolean
+
+  familyOccupation: string
+  familyOtherOccupation: string
+
+  hostelWilling: boolean
+  hostelReason: string
+
+  internshipCompany: string
+  internshipDuration: string
+  internshipRemarks: string
+  internshipType: string
+
+  siblingsCount: number
+  siblingsDetails: Sibling[]
+
+  institute: Institute
+
+  createdAt: string
+  updatedAt: string
+}
+
 
 export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -44,7 +91,7 @@ export default function StudentsPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
+  const [totalEntries, setTotalEntries] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedInstitution, setSelectedInstitution] = useState("all");
 
@@ -66,13 +113,14 @@ export default function StudentsPage() {
   const [bloodGroupFilter, setBloodGroupFilter] = useState("all");
   const [bloodDonateFilter, setBloodDonateFilter] = useState("all");
   const [hostelWillingFilter, setHostelWillingFilter] = useState("all");
+  const [feedbackFilter, setFeedbackFilter] = useState("all");
+  const [familyOccupationFilter, setFamilyOccupationFilter] = useState("all");
   const [quotaFilter, setQuotaFilter] = useState("all");
   const [selectedCountry, setSelectedCountry] = useState("all");
   const [selectedState, setSelectedState] = useState("all");
   const [selectedCity, setSelectedCity] = useState("all");
-  const [feedbackFilter, setFeedbackFilter] = useState("all");
-  const [familyOccupationFilter, setFamilyOccupationFilter] = useState("all");
-
+  const [academicYears, setAcademicYears] = useState<string[]>([]);
+  const [selectedYear, setSelectedYear] = useState("all");
   // Country options
   const countryOptions = useMemo(() => {
     return Country.getAllCountries().map(c => ({
@@ -106,6 +154,21 @@ export default function StudentsPage() {
       label: c.name,
     }));
   }, [selectedCountryObj, selectedStateObj]);
+
+  const viewData = selected && {
+    studentId: selected.studentId,
+    firstname: selected.firstname,
+    lastname: selected.lastname,
+    email: selected.email,
+    mobileNo: selected.mobileNo,
+    instituteId: selected.institute?.instituteId,
+    instituteName: selected.institute?.name,
+    academicYear: selected.academicYear,
+    status: selected.status,
+    country: selected.country,
+    state: selected.state,
+    city: selected.city,
+  }
 
 
 
@@ -180,6 +243,7 @@ export default function StudentsPage() {
         page: currentPage,
         search: searchTerm,
         status: statusFilter,
+        academicYear: selectedYear !== "all" ? selectedYear : undefined,
         instituteId: selectedInstitution,
         bloodGroup: bloodGroupFilter,
         bloodDonate: bloodDonateFilter,
@@ -194,6 +258,10 @@ export default function StudentsPage() {
 
       setStudents(res.students.docs || []);
       setTotalPages(res.students.totalPages || 1);
+      setTotalEntries(res.students?.totalDocs || 0);
+      if (res.academicYears) {
+        setAcademicYears(res.academicYears);
+      }
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to load students");
@@ -213,6 +281,7 @@ export default function StudentsPage() {
     selectedState,
     selectedCity,
     feedbackFilter,
+    selectedYear,
     familyOccupationFilter
   ]);
 
@@ -375,18 +444,42 @@ export default function StudentsPage() {
     },
   ].filter(Boolean) as Column<Student>[];
 
+  const filteredStudents = (students || []).map((student: any) => {
+    const obj: any = {};
 
-  /* ======================
-     Export Data
-  ====================== */
-  const exportData = students.map((s) => ({
-    Name: `${s.firstname} ${s.lastname}`,
-    StudentID: s.studentId,
-    Email: s.email,
-    Mobile: s.mobileNo,
-    Institute: s.instituteId,
-    Status: s.status,
-  }));
+    if (columnVisibility.name) {
+      obj.Name = `${student.firstname || ""} ${student.lastname || ""}`.trim() || "-";
+    }
+
+    if (columnVisibility.studentId) {
+      obj.StudentID = student.studentId || "-";
+    }
+
+    if (columnVisibility.applicationId) {
+      obj.ApplicationID = student.applicationId || "-";
+    }
+
+    if (columnVisibility.email) {
+      obj.Email = student.email || "-";
+    }
+
+    if (columnVisibility.mobile) {
+      obj.Mobile = student.mobileNo || "-";
+    }
+
+    if (columnVisibility.instituteName) {
+      obj.Institute =
+        student.institute?.name ||
+        student.instituteId ||
+        "-";
+    }
+
+    if (columnVisibility.status) {
+      obj.Status = student.status || "-";
+    }
+
+    return obj;
+  });
 
   return (
     <div className="p-6 space-y-6">
@@ -423,6 +516,28 @@ export default function StudentsPage() {
               </option>
             ))}
           </select>
+          <div className="rounded-md w-fit border p-[3px] flex items-center gap-3">
+            <label className="text-sm font-semibold text-gray-700">
+              Academic Year:
+            </label>
+
+            <select
+              value={selectedYear}
+              onChange={(e) => {
+                setSelectedYear(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="border text-sm rounded-md py-2 px-3 w-40 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+            >
+              <option value="all">All</option>
+
+              {academicYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Search */}
           <div className="relative w-full sm:w-auto">
@@ -585,6 +700,7 @@ export default function StudentsPage() {
         columns={columns}
         data={students}
         loading={loading}
+        totalEntries={totalEntries}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
@@ -613,7 +729,11 @@ export default function StudentsPage() {
               </button>
 
               <div className="overflow-y-auto p-6 flex-1">
-                <StudentCleanupForm studentid={selected._id} />
+                <StudentCleanupForm
+                  studentid={selected._id}
+                  refetch={fetchStudents}
+                  onSuccess={() => setIsOpen(false)}
+                />
 
               </div>
             </motion.div>
@@ -624,7 +744,7 @@ export default function StudentsPage() {
       <ViewDialog
         open={viewOpen}
         title="Student Details"
-        data={selected}
+        data={viewData}
         onClose={() => setViewOpen(false)}
       />
 
@@ -652,7 +772,7 @@ export default function StudentsPage() {
       <ExportModal
         open={exportOpen}
         title="students"
-        data={exportData}
+        data={filteredStudents}
         onClose={() => setExportOpen(false)}
       />
 

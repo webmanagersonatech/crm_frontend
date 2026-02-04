@@ -1003,7 +1003,7 @@ export default function LeadsPage() {
 
               <div className="overflow-y-auto p-6 flex-1">
 
-                <AddapplicationForm refetch={fetchLeads} instituteId={selectedLead.instituteId} applicationSource="lead" selectedLead={selectedLead} LeadId={selectedLead.leadId} onSuccess={() => setIsOpen(false)} />
+                <AddapplicationForm refetch={fetchLeads}  instituteId={selectedLead.instituteId} applicationSource="lead" selectedLead={selectedLead} LeadId={selectedLead.leadId} onSuccess={() => setIsOpen(false)} />
               </div>
             </motion.div>
           </motion.div>
