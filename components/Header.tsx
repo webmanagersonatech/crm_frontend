@@ -22,11 +22,11 @@ export default function Header({ onMenuOpen }: { onMenuOpen: () => void }) {
 
   const handleLogout = () => {
     try {
-
       localStorage.removeItem("token");
       localStorage.clear();
-      toast.success("Logged out successfully");
+      const toastId = toast.success("Logged out successfully");
       setTimeout(() => {
+        toast.dismiss(toastId);
         router.replace("/");
       }, 800);
     } catch (error) {
