@@ -64,7 +64,9 @@ export default function EmailTemplatesPage() {
   const columnOptions = [
     { key: "title", label: "Title" },
     { key: "description", label: "Description" },
-    { key: "institute", label: "Institute" },
+    ...(userpermission === "superadmin"
+      ? [{ key: "institute", label: "Institute" }]
+      : []),
     { key: "createdBy", label: "Created By" },
     { key: "createdAt", label: "Created At" },
 
@@ -208,10 +210,13 @@ export default function EmailTemplatesPage() {
         />
       ),
     },
-    columnVisibility.institute && {
-      header: "Institute",
-      render: (t: Template) => t.institute?.name || "-",
-    },
+    ...(userpermission === "superadmin" && columnVisibility.institute
+      ? [{
+        header: "Institute",
+        render: (t: Template) => t.institute?.name || "-",
+      }]
+      : []),
+
     columnVisibility.createdBy && {
       header: "Created By",
       render: (t: Template) =>
@@ -251,7 +256,9 @@ export default function EmailTemplatesPage() {
     const obj: any = {};
     if (columnVisibility.title) obj.Title = t.title || "-";
     if (columnVisibility.description) obj.Description = t.description || "-";
-    if (columnVisibility.institute) obj.Institute = t.institute?.name || "-";
+    if (userpermission === "superadmin" && columnVisibility.institute) {
+      obj.Institute = t.institute?.name || "-";
+    }
     if (columnVisibility.createdBy)
       obj.CreatedBy = t.creator
         ? `${t.creator.firstname} ${t.creator.lastname}`

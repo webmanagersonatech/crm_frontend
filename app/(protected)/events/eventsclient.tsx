@@ -101,7 +101,10 @@ export default function EventsPageClient() {
     });
 
     const columnOptions = [
-        { key: "institute", label: "Institute" },
+        ...(userpermission === "superadmin"
+            ? [{ key: "institute", label: "Institute" }]
+            : []),
+
         { key: "name", label: "Name" },
         { key: "mobile", label: "Mobile" },
         { key: "email", label: "Email" },
@@ -113,10 +116,14 @@ export default function EventsPageClient() {
     ];
 
     const columns = [
-        columnVisibility.institute && {
-            header: "Institute",
-            render: (o: any) => o.institute?.name || o.instituteId || "—",
-        },
+        ...(userpermission === "superadmin" && columnVisibility.institute
+            ? [{
+                header: "Institute",
+                render: (o: any) =>
+                    o.institute?.name || o.instituteId || "—",
+            }]
+            : []),
+
 
         columnVisibility.name && {
             header: "Name",
@@ -298,9 +305,13 @@ export default function EventsPageClient() {
     const filteredOthers = (events || []).map((o: any) => {
         const obj: any = {};
 
-        if (columnVisibility.institute) {
+        if (
+            userpermission === "superadmin" &&
+            columnVisibility.institute
+        ) {
             obj.Institute = o.institute?.name || o.instituteId || "-";
         }
+
 
         if (columnVisibility.name) {
             obj.Name = o.name || "-";

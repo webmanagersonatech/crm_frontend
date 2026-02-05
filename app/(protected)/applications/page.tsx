@@ -84,8 +84,10 @@ export default function ApplicationsPage() {
     applicationId: true,
     institute: true,
     applicantName: true,
-    program: true,
+
+    // program: true,
     academicYear: true,
+    city: true,
     paymentStatus: true,
     formStatus: true,
     createdAt: true,
@@ -132,11 +134,16 @@ export default function ApplicationsPage() {
         label: c.name,
       }))
       : [];
+
+
   const columnOptions = [
     { key: "applicationId", label: "Application ID" },
-    { key: "institute", label: "Institute" },
+    ...(userpermission === "superadmin"
+      ? [{ key: "institute", label: "Institute" }]
+      : []),
     { key: "applicantName", label: "Applicant Name" },
-    { key: "program", label: "Program" },
+    // { key: "program", label: "Program" },
+    { key: "city", label: "City" },
     { key: "academicYear", label: "Academic Year" },
     { key: "formStatus", label: "Form Status" },
     { key: "paymentStatus", label: "Payment Status" },
@@ -253,7 +260,7 @@ export default function ApplicationsPage() {
       setApplications((res.data as Application[]) || []);
       setTotalPages(res.pagination?.totalPages || 1);
       setTotalEntries(res.pagination?.totalDocs || 0);
-      
+
       if (res.academicYears) {
         setAcademicYears(res.academicYears);
       }
@@ -274,7 +281,7 @@ export default function ApplicationsPage() {
       obj.ApplicationId = app.applicationId || "-";
     }
 
-    if (columnVisibility.institute) {
+    if (userpermission === "superadmin" && columnVisibility.institute) {
       obj.Institute = app.institute?.name || app.instituteId || "-";
     }
 
@@ -285,12 +292,18 @@ export default function ApplicationsPage() {
         "-";
     }
 
-    if (columnVisibility.program) {
-      obj.Program = app.program || "-";
-    }
+    // if (columnVisibility.program) {
+    //   obj.Program = app.program || "-";
+    // }
 
     if (columnVisibility.academicYear) {
       obj.AcademicYear = app.academicYear || "-";
+    }
+    if (columnVisibility.city) {
+      obj.City =
+        app.city ||
+        app?.City ||
+        "-";
     }
 
     if (columnVisibility.paymentStatus) {
@@ -355,21 +368,23 @@ export default function ApplicationsPage() {
         a.applicationId ? a.applicationId.toUpperCase() : "—",
     },
 
-    columnVisibility.institute && {
-      header: "Institute",
-      render: (a: any) =>
-        a.institute?.name || a.instituteId || "—",
-    },
+    ...(userpermission === "superadmin" && columnVisibility.institute
+      ? [{
+        header: "Institute",
+        render: (a: any) =>
+          a.institute?.name || a.instituteId || "—",
+      }]
+      : []),
 
     columnVisibility.applicantName && {
       header: "Applicant Name",
       render: (a: any) => a.applicantName || "—",
     },
 
-    columnVisibility.program && {
-      header: "Program",
-      render: (a: any) => a.program || "—",
-    },
+    // columnVisibility.program && {
+    //   header: "Program",
+    //   render: (a: any) => a.program || "—",
+    // },
 
     columnVisibility.academicYear && {
       header: "Academic Year",
@@ -380,58 +395,6 @@ export default function ApplicationsPage() {
       header: "Created At",
       render: (a: Application) =>
         new Date(a.createdAt).toLocaleDateString(),
-    },
-    columnVisibility.paymentStatus && {
-      header: "Payment Status",
-      render: (a: Application) => (
-        <span
-          className={`px-2 py-1 rounded-lg text-xs font-medium border
-          ${a.paymentStatus === "Paid"
-              ? "bg-green-50 text-green-700 border-green-300"
-              : a.paymentStatus === "Partially"
-                ? "bg-yellow-50 text-yellow-700 border-yellow-300"
-                : "bg-red-50 text-red-700 border-red-300"
-            }`}
-        >
-          {a.paymentStatus}
-        </span>
-      ),
-    },
-
-    columnVisibility.formStatus && {
-      header: "Form Status",
-      render: (a: Application) => (
-        <span
-          className={`px-2 py-1 rounded-lg text-xs font-medium border
-        ${a.formStatus === "Complete"
-              ? "bg-green-50 text-green-700 border-green-300"
-              : "bg-orange-50 text-orange-700 border-orange-300"
-            }`}
-        >
-          {a.formStatus}
-        </span>
-      ),
-    },
-
-
-
-    {
-      header: "Application Source",
-      render: (a: any) => {
-        const source = a.applicationSource || "—";
-        const colorMap: Record<string, string> = {
-          online: "bg-green-100 text-green-800 border-green-500",
-          offline: "bg-blue-100 text-blue-800 border-blue-500",
-          lead: "bg-yellow-100 text-yellow-800 border-yellow-500",
-        };
-        const colorClass = colorMap[source.toLowerCase()] || "bg-gray-100 text-gray-800 border-gray-400";
-
-        return (
-          <span className={`px-3 py-1 rounded-lg text-sm font-medium border ${colorClass}`}>
-            {source.charAt(0).toUpperCase() + source.slice(1)}
-          </span>
-        );
-      },
     },
 
     {
@@ -461,6 +424,106 @@ export default function ApplicationsPage() {
         );
       },
     },
+    columnVisibility.city && {
+      header: "City",
+      render: (a: any) =>
+        a.city || a?.City || "—",
+    },
+
+
+    {
+      header: "Application Source",
+      render: (a: any) => {
+        const source = a.applicationSource || "—";
+        const colorMap: Record<string, string> = {
+          online: "bg-green-100 text-green-800 border-green-500",
+          offline: "bg-blue-100 text-blue-800 border-blue-500",
+          lead: "bg-yellow-100 text-yellow-800 border-yellow-500",
+        };
+        const colorClass = colorMap[source.toLowerCase()] || "bg-gray-100 text-gray-800 border-gray-400";
+
+        return (
+          <span className={`px-3 py-1 rounded-lg text-sm font-medium border ${colorClass}`}>
+            {source.charAt(0).toUpperCase() + source.slice(1)}
+          </span>
+        );
+      },
+    },
+
+    columnVisibility.formStatus && {
+      header: "Form Status",
+      render: (a: Application) => (
+        <span
+          className={`px-2 py-1 rounded-lg text-xs font-medium border
+        ${a.formStatus === "Complete"
+              ? "bg-green-50 text-green-700 border-green-300"
+              : "bg-orange-50 text-orange-700 border-orange-300"
+            }`}
+        >
+          {a.formStatus === "Complete" ? "Completed" : a.formStatus}
+        </span>
+      ),
+    },
+    columnVisibility.paymentStatus && {
+      header: "Payment Status",
+      render: (a: Application) => {
+        const isSuperAdmin = userpermission === "superadmin";
+        const canEdit = userpermission?.edit === true;
+        const isPaid = a.paymentStatus === "Paid";
+
+        const disableSelect = isPaid || (!isSuperAdmin && !canEdit);
+
+        return (
+          <>
+            {(isSuperAdmin || canEdit) ? (
+              <select
+                value={a.paymentStatus}
+                disabled={disableSelect}
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  if (!newStatus) return;
+
+                  if (newStatus === a.paymentStatus) {
+                    toast.error(`Already marked as ${newStatus}`);
+                    return;
+                  }
+
+                  setSelectedPaymentApp(a);
+                  setSelectedNewStatus(newStatus);
+                  setConfirmPaymentOpen(true);
+                }}
+                className={`border text-xs rounded-md py-1 px-2 cursor-pointer focus:outline-none
+              ${a.paymentStatus === "Paid"
+                    ? "bg-green-50 text-green-700 border-green-300"
+                    : a.paymentStatus === "Partially"
+                      ? "bg-yellow-50 text-yellow-700 border-yellow-300"
+                      : "bg-red-50 text-red-700 border-red-300"
+                  }
+              ${disableSelect ? "opacity-70 cursor-not-allowed" : ""}
+            `}
+              >
+                <option value="Paid">Paid</option>
+                <option value="Unpaid">Unpaid</option>
+              </select>
+            ) : (
+              <span
+                className={`px-2 py-1 rounded-lg text-xs font-medium border
+              ${a.paymentStatus === "Paid"
+                    ? "bg-green-50 text-green-700 border-green-300"
+                    : a.paymentStatus === "Partially"
+                      ? "bg-yellow-50 text-yellow-700 border-yellow-300"
+                      : "bg-red-50 text-red-700 border-red-300"
+                  }
+            `}
+              >
+                {a.paymentStatus}
+              </span>
+            )}
+          </>
+        );
+      },
+    },
+
 
 
 
@@ -469,13 +532,26 @@ export default function ApplicationsPage() {
       render: (a: Application) => {
         const leadId = a.lead?._id;
 
+        const isSuperAdmin = userpermission === "superadmin";
+        const canEdit = userpermission?.edit === true;
+        const isDisabled = !isSuperAdmin && !canEdit;
+
         return (
           <div className="flex gap-2">
             {leadId ? (
               // Update Followup
               <button
-                onClick={() => router.push(`/leads/editlead/${leadId}`)}
-                className="flex items-center gap-1 bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-900 border border-emerald-300 px-2 py-1 rounded-lg text-sm font-medium hover:from-emerald-200 hover:to-emerald-300 hover:shadow-md transition-all duration-200"
+                disabled={isDisabled}
+                onClick={() => {
+                  if (isDisabled) return;
+                  router.push(`/leads/editlead/${leadId}`);
+                }}
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-medium transition-all duration-200
+              ${isDisabled
+                    ? "bg-gray-100 text-gray-400 border border-gray-300 cursor-not-allowed"
+                    : "bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-900 border border-emerald-300 hover:from-emerald-200 hover:to-emerald-300 hover:shadow-md"
+                  }
+            `}
               >
                 <Edit2 className="w-4 h-4" />
                 Followup
@@ -483,11 +559,18 @@ export default function ApplicationsPage() {
             ) : (
               // Create Followup
               <button
+                disabled={isDisabled}
                 onClick={() => {
+                  if (isDisabled) return;
                   setSelectedApplication(a);
                   setIsOpen(true);
                 }}
-                className="flex items-center gap-1 bg-gradient-to-r from-indigo-100 to-indigo-200 text-indigo-900 border border-indigo-300 px-2 py-1 rounded-lg text-sm font-medium hover:from-indigo-200 hover:to-indigo-300 hover:shadow-md transition-all duration-200"
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-medium transition-all duration-200
+              ${isDisabled
+                    ? "bg-gray-100 text-gray-400 border border-gray-300 cursor-not-allowed"
+                    : "bg-gradient-to-r from-indigo-100 to-indigo-200 text-indigo-900 border border-indigo-300 hover:from-indigo-200 hover:to-indigo-300 hover:shadow-md"
+                  }
+            `}
               >
                 <PlusCircle className="w-4 h-4" />
                 Followup
@@ -500,42 +583,13 @@ export default function ApplicationsPage() {
 
 
 
+
     {
       header: "Actions",
       render: (a: Application) => (
         <div className="flex gap-2">
           {/* 👁 View */}
-          {(userpermission === "superadmin" || userpermission?.edit) && (
-            <>
 
-              <select
-                value=""
-                disabled={a.paymentStatus === "Paid"}
-                onChange={(e) => {
-                  const newStatus = e.target.value;
-                  if (!newStatus) return;
-
-                  // 🧠 Only open confirmation if different from current status
-                  if (newStatus === a.paymentStatus) {
-                    toast.error(`Already marked as ${newStatus}`);
-                    return;
-                  }
-
-                  // ✅ Set selected application and new status for confirmation
-                  setSelectedPaymentApp(a);
-                  setSelectedNewStatus(newStatus);
-                  setConfirmPaymentOpen(true);
-                }}
-                className="border text-xs rounded-md py-1 px-2 bg-white cursor-pointer hover:bg-gray-50 focus:outline-none"
-              >
-                <option value="">Select Payment Status</option>
-                <option value="Paid">Paid</option>
-                <option value="Unpaid">Unpaid</option>
-              </select>
-
-            </>
-
-          )}
 
           {(userpermission === "superadmin" || userpermission?.view) && (
 

@@ -40,7 +40,7 @@ export default function DynamicFormsPage() {
   const [unpublishOpen, setUnpublishOpen] = useState(false);
   const [startYear, setStartYear] = useState<string>("")
   const [endYear, setEndYear] = useState<string>("")
-   const [totalEntries, setTotalEntries] = useState(0);
+  const [totalEntries, setTotalEntries] = useState(0);
 
   const [academicYear, setAcademicYear] = useState("");
 
@@ -56,7 +56,9 @@ export default function DynamicFormsPage() {
   const columnOptions = [
     { key: "title", label: "Title" },
     { key: "description", label: "Description" },
-    { key: "institute", label: "Institute" },
+    ...(userPermission === "superadmin"
+      ? [{ key: "institute", label: "Institute" }]
+      : []),
     { key: "createdBy", label: "Created By" },
     { key: "createdAt", label: "Created At" },
     { key: "published", label: "Published" },
@@ -124,7 +126,7 @@ export default function DynamicFormsPage() {
       });
       setForms(res.docs || []);
       setTotalPages(res.totalPages || 1);
-       setTotalEntries(res?.totalDocs || 0);
+      setTotalEntries(res?.totalDocs || 0);
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to fetch dynamic forms");
@@ -203,10 +205,12 @@ export default function DynamicFormsPage() {
       header: "Description",
       render: (f: DynamicForm) => <div dangerouslySetInnerHTML={{ __html: f.description || "-" }} />
     },
+    userPermission === "superadmin" &&
     columnVisibility.institute && {
       header: "Institute",
-      render: (f: any) => f.institute?.name || "-"
+      render: (f: any) => f.institute?.name || "-",
     },
+
     columnVisibility.createdBy && {
       header: "Created By",
       render: (f: DynamicForm) => f.creator ? `${f.creator.firstname} ${f.creator.lastname}` : "-"
@@ -273,7 +277,13 @@ export default function DynamicFormsPage() {
     const obj: any = {};
     if (columnVisibility.title) obj.Title = t.title || "-";
     if (columnVisibility.description) obj.Description = t.description || "-";
-    if (columnVisibility.institute) obj.Institute = t.institute?.name || "-";
+    if (
+      userPermission === "superadmin" &&
+      columnVisibility.institute
+    ) {
+      obj.Institute = t.institute?.name || "-";
+    }
+
     if (columnVisibility.createdBy)
       obj.CreatedBy = t.creator
         ? `${t.creator.firstname} ${t.creator.lastname}`

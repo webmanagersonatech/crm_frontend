@@ -260,7 +260,12 @@ export default function CommunicationsPage() {
 
   const filteredApplications = (applications || []).map((app: any) => ({
     ApplicationId: app.applicationId || "-",
-    Institute: app.institute?.name || app.instituteId || "-",
+
+    ...(userpermission === "superadmin" && {
+      Institute: app.institute?.name || app.instituteId || "-",
+    }),
+
+
     ApplicantName: app.applicantName || app.personalData?.["Full Name"] || "-",
     Program: app.program || "-",
     AcademicYear: app.academicYear || "-",
@@ -416,10 +421,14 @@ export default function CommunicationsPage() {
     },
 
     { header: "Application ID", accessor: "applicationId" },
-    {
-      header: "Institute",
-      render: (a: Application) => a.institute?.name || a.instituteId,
-    },
+
+    ...(userpermission === "superadmin"
+      ? [{
+        header: "Institute",
+        render: (a: any) =>
+          a.institute?.name || a.instituteId || "—",
+      }]
+      : []),
     { header: "Applicant Name", accessor: "applicantName" },
     { header: "Academic Year", accessor: "academicYear" },
     {

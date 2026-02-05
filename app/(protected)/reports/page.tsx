@@ -75,7 +75,7 @@ interface Student {
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState<
-    "application" | "lead" | "studentreport"
+    "application" | "lead" | "student"
   >("application");
 
   const [open, setOpen] = useState(false);
@@ -141,7 +141,8 @@ export default function ReportsPage() {
     applicationId: true,
     institute: true,
     applicantName: true,
-    program: true,
+    // program: true,
+    city: true,
     academicYear: true,
     formStatus: true,
     paymentStatus: true,
@@ -162,9 +163,10 @@ export default function ReportsPage() {
   const [columnVisibilitystudent, setColumnVisibilitystudent] = useState({
     name: true,
     studentId: true,
-    applicationId: true,
+    UniversityRegNo: true,
     email: true,
     mobile: true,
+    academicYear: true,
     instituteName: true,
     status: true,
   });
@@ -293,10 +295,14 @@ export default function ReportsPage() {
   const columnOptions = [
 
     { key: "applicationId", label: "Application ID" },
-    { key: "institute", label: "Institute" },
+    ...(userpermission === "superadmin"
+      ? [{ key: "institute", label: "Institute" }]
+      : []),
     { key: "applicantName", label: "Applicant Name" },
-    { key: "program", label: "Program" },
+    // { key: "program", label: "Program" },
+
     { key: "academicYear", label: "Academic Year" },
+    { key: "city", label: "City" },
     { key: "formStatus", label: "Form Status" },
     { key: "paymentStatus", label: "Payment Status" },
     { key: "createdAt", label: "Created At" },
@@ -304,7 +310,9 @@ export default function ReportsPage() {
 
   const columnOptionsreport = [
     { key: "leadId", label: "Lead ID" },
-    { key: "instituteId", label: "Institute" },
+    ...(userpermission === "superadmin"
+      ? [{ key: "instituteId", label: "Institute" }]
+      : []),
     { key: "candidateName", label: "Candidate" },
     { key: "program", label: "Program" },
     { key: "phoneNumber", label: "Phone" },
@@ -317,10 +325,13 @@ export default function ReportsPage() {
   const columnOptionsstudent = [
     { key: "name", label: "Name" },
     { key: "studentId", label: "Student ID" },
-    { key: "applicationId", label: "Application ID" },
+    { key: "UniversityRegNo", label: "University Reg No" },
+    { key: "academicYear", label: "Academic Year" },
     { key: "email", label: "Email" },
     { key: "mobile", label: "Mobile" },
-    { key: "instituteName", label: "Institute" },
+    ...(userpermission === "superadmin"
+      ? [{ key: "instituteName", label: "Institute" }]
+      : []),
     { key: "status", label: "Status" },
   ];
 
@@ -439,47 +450,6 @@ export default function ReportsPage() {
     }
   }, [startYear, endYear])
 
-  const filteredApplications = (applications || []).map((app: any) => {
-    const obj: any = {};
-
-    if (columnVisibility.applicationId) {
-      obj.ApplicationId = app.applicationId || "-";
-    }
-
-    if (columnVisibility.institute) {
-      obj.Institute = app.institute?.name || app.instituteId || "-";
-    }
-
-    if (columnVisibility.applicantName) {
-      obj.ApplicantName =
-        app.applicantName ||
-        app.personalData?.["Full Name"] ||
-        "-";
-    }
-
-    if (columnVisibility.program) {
-      obj.Program = app.program || "-";
-    }
-
-    if (columnVisibility.academicYear) {
-      obj.AcademicYear = app.academicYear || "-";
-    }
-
-    if (columnVisibility.paymentStatus) {
-      obj.PaymentStatus = app.paymentStatus || "-";
-    }
-    if (columnVisibility.formStatus) {
-      obj.FormStatus = app.formStatus || "-";
-    }
-
-    if (columnVisibility.createdAt) {
-      obj.CreatedAt = app.createdAt
-        ? new Date(app.createdAt).toLocaleDateString()
-        : "-";
-    }
-
-    return obj;
-  });
 
 
   const fetchLeads = useCallback(async () => {
@@ -569,11 +539,60 @@ export default function ReportsPage() {
   ]);
 
   useEffect(() => {
-    if (activeTab === "studentreport") {
+    if (activeTab === "student") {
       fetchStudents();
     }
   }, [activeTab, fetchStudents]);
 
+  const filteredApplications = (applications || []).map((app: any) => {
+    const obj: any = {};
+
+    if (columnVisibility.applicationId) {
+      obj.ApplicationId = app.applicationId || "-";
+    }
+
+    if (
+      userpermission === "superadmin" &&
+      columnVisibility.institute
+    ) {
+      obj.Institute = app.institute?.name || app.instituteId || "-";
+    }
+
+    if (columnVisibility.applicantName) {
+      obj.ApplicantName =
+        app.applicantName ||
+        app.personalData?.["Full Name"] ||
+        "-";
+    }
+
+
+
+
+    if (columnVisibility.academicYear) {
+      obj.AcademicYear = app.academicYear || "-";
+      if (columnVisibility.city) {
+        obj.City =
+          app.city ||
+          app.personalData?.City ||
+          "-";
+      }
+    }
+
+    if (columnVisibility.paymentStatus) {
+      obj.PaymentStatus = app.paymentStatus || "-";
+    }
+    if (columnVisibility.formStatus) {
+      obj.FormStatus = app.formStatus || "-";
+    }
+
+    if (columnVisibility.createdAt) {
+      obj.CreatedAt = app.createdAt
+        ? new Date(app.createdAt).toLocaleDateString()
+        : "-";
+    }
+
+    return obj;
+  });
 
   const filteredLeads = (leads || []).map((lead: any) => {
     const obj: any = {};
@@ -582,7 +601,10 @@ export default function ReportsPage() {
       obj.LeadID = lead.leadId || "-"; // assuming _id is your lead ID
     }
 
-    if (columnVisibilityreport.instituteId) {
+    if (
+      userpermission === "superadmin" &&
+      columnVisibilityreport.instituteId
+    ) {
       obj.Institute = lead.institute?.name || lead.instituteId || "-";
     }
 
@@ -632,9 +654,11 @@ export default function ReportsPage() {
     if (columnVisibilitystudent.studentId) {
       obj.StudentID = student.studentId || "-";
     }
-
-    if (columnVisibilitystudent.applicationId) {
-      obj.ApplicationID = student.applicationId || "-";
+    if (columnVisibilitystudent.UniversityRegNo) {
+      obj.UniversityRegNo = student.admissionUniversityRegNo || "-";
+    }
+    if (columnVisibility.academicYear) {
+      obj.AcademicYear = student.academicYear || "-";
     }
 
     if (columnVisibilitystudent.email) {
@@ -645,7 +669,10 @@ export default function ReportsPage() {
       obj.Mobile = student.mobileNo || "-";
     }
 
-    if (columnVisibilitystudent.instituteName) {
+    if (
+      userpermission === "superadmin" &&
+      columnVisibilitystudent.instituteName
+    ) {
       obj.Institute =
         student.institute?.name ||
         student.instituteId ||
@@ -672,25 +699,33 @@ export default function ReportsPage() {
         a.applicationId ? a.applicationId.toUpperCase() : "—",
     },
 
-    columnVisibility.institute && {
-      header: "Institute",
-      render: (a: any) =>
-        a.institute?.name || a.instituteId || "—",
-    },
+    ...(userpermission === "superadmin" && columnVisibility.institute
+      ? [{
+        header: "Institute",
+        render: (a: any) =>
+          a.institute?.name || a.instituteId || "—",
+      }]
+      : []),
+
 
     columnVisibility.applicantName && {
       header: "Applicant Name",
       render: (a: any) => a.applicantName || "—",
     },
 
-    columnVisibility.program && {
-      header: "Program",
-      render: (a: any) => a.program || "—",
-    },
+    // columnVisibility.program && {
+    //   header: "Program",
+    //   render: (a: any) => a.program || "—",
+    // },
 
     columnVisibility.academicYear && {
       header: "Academic Year",
       accessor: "academicYear",
+    },
+    columnVisibility.city && {
+      header: "City",
+      render: (a: any) =>
+        a.city || a?.City || "—",
     },
 
     columnVisibility.paymentStatus && {
@@ -787,11 +822,14 @@ export default function ReportsPage() {
       header: "Lead ID",
       render: (lead: any) => lead.leadId || "—",
     },
-    columnVisibilityreport.instituteId && {
-      header: "Institute",
-      render: (lead: any) =>
-        lead.institute?.name || lead.instituteId || "—",
-    },
+    ...(userpermission === "superadmin" && columnVisibilityreport.instituteId
+      ? [{
+        header: "Institute",
+        render: (lead: any) =>
+          lead.institute?.name || lead.instituteId || "—",
+      }]
+      : []),
+
 
     columnVisibilityreport.candidateName && {
       header: "Candidate",
@@ -920,10 +958,14 @@ export default function ReportsPage() {
 
   const studentColumns: Column<Student>[] = [
 
-    columnVisibilitystudent.instituteName && {
-      header: "Institute",
-      render: (s: any) => s.institute?.name || "-",
-    },
+    ...(userpermission === "superadmin" && columnVisibilitystudent.instituteName
+      ? [{
+        header: "Institute",
+        render: (s: any) =>
+          s.institute?.name || "-",
+      }]
+      : []),
+
 
     columnVisibilitystudent.name && {
       header: "Name",
@@ -935,10 +977,14 @@ export default function ReportsPage() {
       header: "Student ID",
       accessor: "studentId",
     },
+    columnVisibilitystudent.UniversityRegNo && {
+      header: "University Reg No",
+      accessor: "admissionUniversityRegNo",
+    },
 
-    columnVisibilitystudent.applicationId && {
-      header: "Application ID",
-      accessor: "applicationId",
+    columnVisibilitystudent.academicYear && {
+      header: "Academic Year",
+      accessor: "academicYear",
     },
 
     columnVisibilitystudent.email && {
@@ -976,7 +1022,7 @@ export default function ReportsPage() {
       ? FileText
       : activeTab === "lead"
         ? Users
-        : activeTab === "studentreport"
+        : activeTab === "student"
           ? GraduationCap
           : BarChart3;
 
@@ -997,7 +1043,7 @@ export default function ReportsPage() {
           {
             activeTab === "application"
               ? "Application Reports"
-              : activeTab === "studentreport"
+              : activeTab === "student"
                 ? "Student Reports"
                 : "Lead Reports"
           }
@@ -1028,8 +1074,8 @@ export default function ReportsPage() {
           <Users className="w-4 h-4 mr-2" /> Lead Report
         </button>
         <button
-          onClick={() => setActiveTab("studentreport")}
-          className={`flex items-center px-4 py-2 rounded-t-lg text-sm font-medium transition-all ${activeTab === "studentreport"
+          onClick={() => setActiveTab("student")}
+          className={`flex items-center px-4 py-2 rounded-t-lg text-sm font-medium transition-all ${activeTab === "student"
             ? "bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white"
             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
@@ -1099,7 +1145,7 @@ export default function ReportsPage() {
 
             {/* 📅 Date Range */}
 
-            {activeTab !== "studentreport" && (<div className="flex flex-wrap items-center gap-2">
+            {activeTab !== "student" && (<div className="flex flex-wrap items-center gap-2">
               <input
                 type="date"
                 value={startDate}
@@ -1160,7 +1206,7 @@ export default function ReportsPage() {
               />
             </div>
             {/* 💳 Payment Filter */}
-            {activeTab !== "lead" && activeTab !== "studentreport" && (
+            {activeTab !== "lead" && activeTab !== "student" && (
               <>
                 <select
                   value={selectedPayment}
@@ -1233,7 +1279,7 @@ export default function ReportsPage() {
 
             )}
             {/* 🔢 Application ID */}
-            {activeTab !== "lead" && activeTab !== "studentreport" && (
+            {activeTab !== "lead" && activeTab !== "student" && (
               <>
                 <input
                   type="text"
@@ -1359,7 +1405,7 @@ export default function ReportsPage() {
 
 
 
-            {activeTab === "studentreport" && (
+            {activeTab === "student" && (
 
 
               <>
@@ -1484,7 +1530,7 @@ export default function ReportsPage() {
           title={
             activeTab === "application"
               ? "APPLICATION REPORT"
-              : activeTab === "studentreport"
+              : activeTab === "student"
                 ? "STUDENT REPORT"
                 : "LEAD REPORT"
           }
@@ -1492,7 +1538,7 @@ export default function ReportsPage() {
           data={
             activeTab === "application"
               ? filteredApplications
-              : activeTab === "studentreport"
+              : activeTab === "student"
                 ? filteredStudents
                 : filteredLeads
           }
@@ -1504,21 +1550,21 @@ export default function ReportsPage() {
           columns={
             activeTab === "application"
               ? columnOptions
-              : activeTab === "studentreport"
+              : activeTab === "student"
                 ? columnOptionsstudent
                 : columnOptionsreport
           }
           selected={
             activeTab === "application"
               ? columnVisibility
-              : activeTab === "studentreport"
+              : activeTab === "student"
                 ? columnVisibilitystudent
                 : columnVisibilityreport
           }
           onChange={(updated) => {
             if (activeTab === "application") {
               setColumnVisibility(prev => ({ ...prev, ...updated }));
-            } else if (activeTab === "studentreport") {
+            } else if (activeTab === "student") {
               setColumnVisibilitystudent(prev => ({ ...prev, ...updated }));
             } else {
               setColumnVisibilityreport(prev => ({ ...prev, ...updated }));
@@ -1557,7 +1603,7 @@ export default function ReportsPage() {
           />
         )}
 
-        {activeTab === "studentreport" && (
+        {activeTab === "student" && (
           <DataTable
             columns={studentColumns}
             data={students}

@@ -7,9 +7,8 @@ import {
   HistoryIcon,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { DataTable } from "@/components/Tablecomponents";
+import { DataTable,Column } from "@/components/Tablecomponents";
 import ViewDialog from "@/components/ViewDialog";
-import ExportModal from "@/components/ExportModal";
 
 import { getLoginHistories } from "@/app/lib/request/login-histroy";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
@@ -42,7 +41,23 @@ export default function LoginHistoryPage() {
   const [selected, setSelected] = useState<any | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [role, setRole] = useState<string>("")
 
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      console.log("❌ No token found")
+      return
+    }
+    try {
+      const payload: any = JSON.parse(atob(token.split(".")[1]));
+      setRole(payload.role)
+
+    } catch (error) {
+      console.error("❌ Failed to decode token", error)
+    }
+  }, [])
   /** 🔹 Fetch Login Histories */
   const fetchHistories = useCallback(async () => {
     setLoading(true);
@@ -89,29 +104,35 @@ export default function LoginHistoryPage() {
 
   /** 🔹 Table Columns */
   const columns = [
-    {
+    role === "superadmin" && {
       header: "Institute",
       render: (h: LoginHistory) => {
-        const inst = institutions.find(inst => inst.value === h.instituteId);
-        return inst ? inst.label : h.instituteId; // fallback to ID if not found
-      }
-    },
-    {
-      header: "Name",
-      render: (h: LoginHistory) => h.user ? `${h.user.firstname} ${h.user.lastname}` : "-"
-    },
-    {
-      header: "Email",
-      render: (h: LoginHistory) => h.user?.email || "-"
-    },
-    {
-      header: "Role",
-      accessor: "role"
+        const inst = institutions.find(
+          inst => inst.value === h.instituteId
+        );
+        return inst ? inst.label : h.instituteId; // fallback
+      },
     },
 
     {
+      header: "Name",
+      render: (h: LoginHistory) =>
+        h.user ? `${h.user.firstname} ${h.user.lastname}` : "-",
+    },
+    {
+      header: "Email",
+      render: (h: LoginHistory) => h.user?.email || "-",
+    },
+    {
+      header: "Role",
+      accessor: "role",
+    },
+    {
       header: "Last Login",
-      render: (h: LoginHistory) => h.lastLoginTime ? new Date(h.lastLoginTime).toLocaleString() : "Never"
+      render: (h: LoginHistory) =>
+        h.lastLoginTime
+          ? new Date(h.lastLoginTime).toLocaleString()
+          : "Never",
     },
     {
       header: "Actions",
@@ -120,13 +141,19 @@ export default function LoginHistoryPage() {
           onClick={() => {
             if (!h) return;
 
-            // Map instituteId to name
-            const institute = institutions.find(inst => inst.value === h.instituteId);
+            const institute = institutions.find(
+              inst => inst.value === h.instituteId
+            );
 
             const viewData = {
-              instituteName: institute ? institute.label : h.instituteId,
-              lastLoginTimeFormatted: h.lastLoginTime ? new Date(h.lastLoginTime).toLocaleString() : "Never",
-              userFullName: h.user ? `${h.user.firstname} ${h.user.lastname}` : "-",
+              instituteName:
+                institute ? institute.label : h.instituteId,
+              lastLoginTimeFormatted: h.lastLoginTime
+                ? new Date(h.lastLoginTime).toLocaleString()
+                : "Never",
+              userFullName: h.user
+                ? `${h.user.firstname} ${h.user.lastname}`
+                : "-",
               userEmail: h.user?.email || "-",
               userRole: h.role || "-",
             };
@@ -138,11 +165,10 @@ export default function LoginHistoryPage() {
         >
           <Eye className="w-4 h-4" />
         </button>
-
-
-      )
+      ),
     },
-  ];
+  ].filter(Boolean) as Column<any>[];
+
 
 
   return (
@@ -157,35 +183,39 @@ export default function LoginHistoryPage() {
         {/* Filters & Export */}
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {/* Institution Filter */}
-          <select
-            value={selectedInstitution}
-            onChange={(e) => {
-              setSelectedInstitution(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">All Institutions</option>
-            {institutions.map((inst) => (
-              <option key={inst.value} value={inst.value}>
-                {inst.label}
-              </option>
-            ))}
-          </select>
+          {(role === "superadmin" &&
+            <>
 
-          {/* Role Filter */}
-          <select
-            value={selectedRole}
-            onChange={(e) => {
-              setSelectedRole(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
-          </select>
+              <select
+                value={selectedInstitution}
+                onChange={(e) => {
+                  setSelectedInstitution(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+              >
+                <option value="all">All Institutions</option>
+                {institutions.map((inst) => (
+                  <option key={inst.value} value={inst.value}>
+                    {inst.label}
+                  </option>
+                ))}
+              </select>
+
+
+              <select
+                value={selectedRole}
+                onChange={(e) => {
+                  setSelectedRole(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+              >
+                <option value="all">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="user">User</option>
+              </select>
+            </>)}
 
           {/* Export */}
           <button

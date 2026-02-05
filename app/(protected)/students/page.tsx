@@ -178,8 +178,6 @@ export default function StudentsPage() {
     lastname: selected.lastname,
     email: selected.email,
     mobileNo: selected.mobileNo,
-    instituteId: selected.institute?.instituteId,
-    instituteName: selected.institute?.name,
     academicYear: selected.academicYear,
     status: selected.status,
     country: selected.country,
@@ -192,21 +190,26 @@ export default function StudentsPage() {
   const [columnVisibility, setColumnVisibility] = useState({
     name: true,
     studentId: true,
-    applicationId: true,
+    UniversityRegNo: true,
+    academicYear: true,
     email: true,
     mobile: true,
     instituteName: true,
     status: true,
+
   });
 
 
   const columnOptions = [
     { key: "name", label: "Name" },
     { key: "studentId", label: "Student ID" },
-    { key: "applicationId", label: "Application ID" },
+    { key: "UniversityRegNo", label: "University Reg No" },
+    { key: "academicYear", label: "Academic Year" },
     { key: "email", label: "Email" },
     { key: "mobile", label: "Mobile" },
-    { key: "instituteName", label: "Institute" },
+    ...(role === "superadmin"
+      ? [{ key: "instituteName", label: "Institute" }]
+      : []),
     { key: "status", label: "Status" },
   ];
 
@@ -360,10 +363,12 @@ export default function StudentsPage() {
      Table Columns
   ====================== */
   const columns: Column<Student>[] = [
+    role === "superadmin" &&
     columnVisibility.instituteName && {
       header: "Institute",
       render: (s: any) => s.institute?.name || "-",
     },
+
 
     columnVisibility.name && {
       header: "Name",
@@ -376,9 +381,14 @@ export default function StudentsPage() {
       accessor: "studentId",
     },
 
-    columnVisibility.applicationId && {
-      header: "Application ID",
-      accessor: "applicationId",
+    columnVisibility.UniversityRegNo && {
+      header: "University Reg No",
+      accessor: "admissionUniversityRegNo",
+    },
+
+    columnVisibility.academicYear && {
+      header: "Academic Year",
+      accessor: "academicYear",
     },
 
     columnVisibility.email && {
@@ -472,8 +482,11 @@ export default function StudentsPage() {
       obj.StudentID = student.studentId || "-";
     }
 
-    if (columnVisibility.applicationId) {
-      obj.ApplicationID = student.applicationId || "-";
+    if (columnVisibility.UniversityRegNo) {
+      obj.UniversityRegNo = student.admissionUniversityRegNo || "-";
+    }
+    if (columnVisibility.academicYear) {
+      obj.AcademicYear = student.academicYear || "-";
     }
 
     if (columnVisibility.email) {
@@ -484,12 +497,16 @@ export default function StudentsPage() {
       obj.Mobile = student.mobileNo || "-";
     }
 
-    if (columnVisibility.instituteName) {
+    if (
+      role === "superadmin" &&
+      columnVisibility.instituteName
+    ) {
       obj.Institute =
         student.institute?.name ||
         student.instituteId ||
         "-";
     }
+
 
     if (columnVisibility.status) {
       obj.Status = student.status || "-";

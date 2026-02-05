@@ -160,7 +160,9 @@ export default function LeadsPage() {
 
   const columnOptions = [
     { key: "leadId", label: "Lead ID" },
-    { key: "instituteId", label: "Institute" },
+    ...(userpermission === "superadmin"
+      ? [{ key: "instituteId", label: "Institute" }]
+      : []),
     { key: "candidateName", label: "Candidate" },
     { key: "program", label: "Program" },
     { key: "phoneNumber", label: "Phone" },
@@ -345,7 +347,9 @@ export default function LeadsPage() {
     }
 
 
-    if (columnVisibility.instituteId) {
+
+
+    if (userpermission === "superadmin" && columnVisibility.instituteId) {
       obj.Institute = lead.institute?.name || lead.instituteId || "-";
     }
 
@@ -434,11 +438,16 @@ export default function LeadsPage() {
       header: "Lead ID",
       render: (lead: any) => lead.leadId || "—",
     },
-    columnVisibility.instituteId && {
-      header: "Institute",
-      render: (lead: any) =>
-        lead.institute?.name || lead.instituteId || "—",
-    },
+
+
+
+    ...(userpermission === "superadmin" && columnVisibility.instituteId
+      ? [{
+        header: "Institute",
+        render: (a: any) =>
+          a.institute?.name || a.instituteId || "—",
+      }]
+      : []),
 
     columnVisibility.candidateName && {
       header: "Candidate",
@@ -1003,7 +1012,7 @@ export default function LeadsPage() {
 
               <div className="overflow-y-auto p-6 flex-1">
 
-                <AddapplicationForm refetch={fetchLeads}  instituteId={selectedLead.instituteId} applicationSource="lead" selectedLead={selectedLead} LeadId={selectedLead.leadId} onSuccess={() => setIsOpen(false)} />
+                <AddapplicationForm refetch={fetchLeads} instituteId={selectedLead.instituteId} applicationSource="lead" selectedLead={selectedLead} LeadId={selectedLead.leadId} onSuccess={() => setIsOpen(false)} />
               </div>
             </motion.div>
           </motion.div>

@@ -98,11 +98,12 @@ export default function Otherspages() {
     ];
     const columns = [
 
-
+        userpermission === "superadmin" &&
         columnVisibility.institute && {
             header: "Institute",
             render: (o: any) => o.institute?.name || o.instituteId || "—",
         },
+
         columnVisibility.dataSource && {
             header: "Data Source",
             render: (o: any) => o.dataSource || "—",
@@ -350,10 +351,13 @@ export default function Otherspages() {
 
     const filteredOthers = (others || []).map((o: any) => {
         const obj: any = {};
-
-        if (columnVisibility.institute) {
+        if (
+            userpermission === "superadmin" &&
+            columnVisibility.institute
+        ) {
             obj.Institute = o.institute?.name || o.instituteId || "-";
         }
+
 
         if (columnVisibility.dataSource) {
             obj["Data Source"] = o.dataSource || "-";
