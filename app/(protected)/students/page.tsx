@@ -16,6 +16,7 @@ import toast from "react-hot-toast";
 import { DataTable, Column } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ViewDialog from "@/components/ViewDialog";
+import StudentViewDialog from "@/components/StudentViewDialog";
 import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import StudentCleanupForm from "@/components/Forms/Studentdatacleanform";
@@ -24,6 +25,7 @@ import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { deleteStudentRequest, toggleStudentStatusRequest } from "@/app/lib/request/studentRequest";
 import { motion, AnimatePresence } from "framer-motion";
 import { Country, State, City } from "country-state-city";
+import Select from "react-select";
 
 interface Sibling {
   _id: string
@@ -109,7 +111,6 @@ export default function StudentsPage() {
   const [confirmType, setConfirmType] = useState<"delete" | "toggle" | null>(
     null
   );
-
   const [statusFilter, setStatusFilter] = useState("all");
   const [bloodGroupFilter, setBloodGroupFilter] = useState("all");
   const [bloodDonateFilter, setBloodDonateFilter] = useState("all");
@@ -119,17 +120,9 @@ export default function StudentsPage() {
   const [quotaFilter, setQuotaFilter] = useState("all");
   const [selectedCountry, setSelectedCountry] = useState("all");
   const [selectedState, setSelectedState] = useState("all");
-  const [selectedCity, setSelectedCity] = useState("all");
   const [academicYears, setAcademicYears] = useState<string[]>([]);
   const [selectedYear, setSelectedYear] = useState("all");
-  // Country options
-  const countryOptions = useMemo(() => {
-    return Country.getAllCountries().map(c => ({
-      value: c.name,
-      label: c.name,
-      isoCode: c.isoCode,
-    }));
-  }, []);
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -147,43 +140,32 @@ export default function StudentsPage() {
   }, [])
 
 
-  // Selected country object
+  const countryOptions = Country.getAllCountries().map(c => ({
+    value: c.name,
+    label: c.name,
+    isoCode: c.isoCode,
+  }));
   const selectedCountryObj = countryOptions.find(c => c.value === selectedCountry);
 
-  // State options (based on selected country)
-  const stateOptions = useMemo(() => {
-    if (!selectedCountryObj) return [];
-    return State.getStatesOfCountry(selectedCountryObj.isoCode).map(s => ({
+  const stateOptions = selectedCountryObj
+    ? State.getStatesOfCountry(selectedCountryObj.isoCode).map(s => ({
       value: s.name,
       label: s.name,
       isoCode: s.isoCode,
-    }));
-  }, [selectedCountryObj]);
+    }))
+    : [];
 
-  // Selected state object
   const selectedStateObj = stateOptions.find(s => s.value === selectedState);
 
-  // City options (based on selected state)
-  const cityOptions = useMemo(() => {
-    if (!selectedCountryObj || !selectedStateObj) return [];
-    return City.getCitiesOfState(selectedCountryObj.isoCode, selectedStateObj.isoCode).map(c => ({
-      value: c.name,
-      label: c.name,
-    }));
-  }, [selectedCountryObj, selectedStateObj]);
+  const cityOptions =
+    selectedCountryObj && selectedStateObj
+      ? City.getCitiesOfState(selectedCountryObj.isoCode, selectedStateObj.isoCode).map(c => ({
+        value: c.name,
+        label: c.name,
+      }))
+      : [];
 
-  const viewData = selected && {
-    studentId: selected.studentId,
-    firstname: selected.firstname,
-    lastname: selected.lastname,
-    email: selected.email,
-    mobileNo: selected.mobileNo,
-    academicYear: selected.academicYear,
-    status: selected.status,
-    country: selected.country,
-    state: selected.state,
-    city: selected.city,
-  }
+
 
 
 
@@ -271,7 +253,8 @@ export default function StudentsPage() {
         quota: quotaFilter,
         country: selectedCountry,
         state: selectedState,
-        city: selectedCity,
+        city: selectedCities.length ? selectedCities : undefined,
+
         feedbackRating: feedbackFilter,
         familyOccupation: familyOccupationFilter,
       });
@@ -299,7 +282,7 @@ export default function StudentsPage() {
     quotaFilter,
     selectedCountry,
     selectedState,
-    selectedCity,
+    selectedCities,
     feedbackFilter,
     selectedYear,
     familyOccupationFilter
@@ -403,19 +386,19 @@ export default function StudentsPage() {
 
 
 
-    columnVisibility.status && {
-      header: "Status",
-      render: (s: any) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${s.status === "active"
-            ? "bg-green-100 text-green-700"
-            : "bg-red-100 text-red-700"
-            }`}
-        >
-          {s.status}
-        </span>
-      ),
-    },
+    // columnVisibility.status && {
+    //   header: "Status",
+    //   render: (s: any) => (
+    //     <span
+    //       className={`px-2 py-1 rounded-full text-xs font-medium ${s.status === "active"
+    //         ? "bg-green-100 text-green-700"
+    //         : "bg-red-100 text-red-700"
+    //         }`}
+    //     >
+    //       {s.status}
+    //     </span>
+    //   ),
+    // },
 
     {
       header: "Actions",
@@ -427,13 +410,15 @@ export default function StudentsPage() {
               setConfirmType("toggle");
               setConfirmOpen(true);
             }}
-            className={`px-3 py-1 rounded-md text-sm ${s.status === "active"
-              ? "bg-red-100 text-red-700"
-              : "bg-green-100 text-green-700"
+            className={`w-28 px-3 py-1 rounded-md text-sm text-center
+    ${s.status === "active"
+                ? "bg-red-100 text-red-700"
+                : "bg-green-100 text-green-700"
               }`}
           >
             {s.status === "active" ? "Deactivate" : "Activate"}
           </button>
+
 
           <button
             onClick={() => {
@@ -675,50 +660,43 @@ export default function StudentsPage() {
           </select>
 
 
-          {/* Country */}
-          <select
-            value={selectedCountry}
-            onChange={(e) => {
-              setSelectedCountry(e.target.value);
-              setSelectedState("all"); // Reset state
-              setSelectedCity("all");  // Reset city
+          <Select
+            placeholder="Select Country"
+            options={countryOptions}
+            value={countryOptions.find(c => c.value === selectedCountry) || null}
+            onChange={(opt) => {
+              setSelectedCountry(opt?.value || "");
+              setSelectedState("");
+              setSelectedCities([]);
               setCurrentPage(1);
             }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">All Countries</option>
-            {countryOptions.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
-
-          {/* State */}
-          <select
-            value={selectedState}
-            onChange={(e) => {
-              setSelectedState(e.target.value);
-              setSelectedCity("all"); // Reset city
+            isClearable
+          />
+          <Select
+            placeholder="Select State"
+            options={stateOptions}
+            value={stateOptions.find(s => s.value === selectedState) || null}
+            onChange={(opt) => {
+              setSelectedState(opt?.value || "");
+              setSelectedCities([]);
               setCurrentPage(1);
             }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-            disabled={stateOptions.length === 0}
-          >
-            <option value="all">All States</option>
-            {stateOptions.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-
-          {/* City */}
-          <select
-            value={selectedCity}
-            onChange={(e) => {
-              setSelectedCity(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-            disabled={cityOptions.length === 0}
-          >
-            <option value="all">All Cities</option>
-            {cityOptions.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
-
+            isClearable
+            isDisabled={!selectedCountry}
+          />
+          <Select
+            placeholder="Select City"
+            options={cityOptions}
+            value={cityOptions.filter(c =>
+              selectedCities.includes(c.value)
+            )}
+            onChange={(opts) =>
+              setSelectedCities(opts ? opts.map(o => o.value) : [])
+            }
+            isMulti
+            isClearable
+            isDisabled={!selectedState}
+          />
 
           {/* Export */}
           <button
@@ -777,10 +755,10 @@ export default function StudentsPage() {
         )}
       </AnimatePresence>
 
-      <ViewDialog
+      <StudentViewDialog
         open={viewOpen}
         title="Student Details"
-        data={viewData}
+        data={selected}
         onClose={() => setViewOpen(false)}
       />
 

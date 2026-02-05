@@ -71,15 +71,15 @@ export async function listStudentsRequest({
   search = "",
   status = "all",
   instituteId = "all",
-  bloodGroup = "all",
   academicYear = "all",
+  bloodGroup = "all",
   bloodDonate = "all",
   hostelWilling = "all",
   quota = "all",
   country = "all",
   state = "all",
   city = "all",
-  feedbackRating = "all",       // ✅ new
+  feedbackRating = "all",
   familyOccupation = "all",
 }: {
   page?: number;
@@ -94,35 +94,43 @@ export async function listStudentsRequest({
   quota?: string;
   country?: string;
   state?: string;
-  city?: string;
-  feedbackRating?: string;      // ✅ new
+  city?: string | string[];
+  feedbackRating?: string;
   familyOccupation?: string;
 }) {
   try {
-    const response = await api.get("/student", {
-      params: {
-        page,
-        limit,
-        search,
-        status,
-        instituteId,
-        bloodGroup,
-        bloodDonate,
-        hostelWilling,
-        quota,
-        academicYear,
-        country,
-        state,
-        city,
-        feedbackRating,       // ✅ send to backend
-        familyOccupation,     // ✅ send to backend
-      },
-    });
+    const params: any = {
+      page,
+      limit,
+      search,
+      status,
+      instituteId,
+      academicYear,
+      bloodGroup,
+      bloodDonate,
+      hostelWilling,
+      quota,
+      country,
+      state,
+      feedbackRating,
+      familyOccupation,
+    };
+
+    // ✅ multi-city safe handling
+    if (city !== "all") {
+      params.city = city;
+    }
+
+    const response = await api.get("/student", { params });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.message || "Failed to load students. Please try again.");
+    throw new Error(
+      error.response?.data?.message ||
+      "Failed to load students. Please try again."
+    );
   }
 }
+
 
 
 /** 👤 Get Single Student */

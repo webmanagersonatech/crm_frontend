@@ -195,9 +195,9 @@ export default function ApplicationDetailsPage() {
 
 
                 {/* FOOTER */}
-                <div className="mt-10 text-center text-xs text-gray-500">
+                {/* <div className="mt-10 text-center text-xs text-gray-500">
                     © {new Date().getFullYear()}  Hika — Official Application Form
-                </div>
+                </div> */}
             </div>
 
             {/* PRINT STYLES */}

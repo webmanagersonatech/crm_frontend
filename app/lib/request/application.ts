@@ -96,7 +96,7 @@ export async function getApplications(params?: {
   endDate?: string;
   country?: string;
   state?: string;
-  city?: string;
+  city?: string | string[];
   applicationSource?: string;
   interactions?: string;
 }) {
@@ -118,7 +118,14 @@ export async function getApplications(params?: {
 
     if (params?.country) queryParams.append("country", params.country);
     if (params?.state) queryParams.append("state", params.state);
-    if (params?.city) queryParams.append("city", params.city);
+    if (params?.city) {
+      if (Array.isArray(params.city)) {
+        params.city.forEach(c => queryParams.append("city", c));
+      } else {
+        queryParams.append("city", params.city);
+      }
+    }
+
     if (params?.applicationSource) queryParams.append("applicationSource", params.applicationSource);
     if (params?.interactions) queryParams.append("interactions", params.interactions);
 

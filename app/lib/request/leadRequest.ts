@@ -96,7 +96,7 @@ export async function getLeads({
   leadSource?: string;
   country?: string;
   state?: string;
-  city?: string;
+  city?: string | string[];
 }) {
   try {
     const params = new URLSearchParams({
@@ -115,7 +115,14 @@ export async function getLeads({
     if (leadId) params.append("leadId", leadId);
     if (country) params.append("country", country);
     if (state) params.append("state", state);
-    if (city) params.append("city", city);
+    if (city) {
+      if (Array.isArray(city)) {
+        city.forEach(c => params.append("city", c));
+      } else {
+        params.append("city", city);
+      }
+    }
+
 
     if (leadSource) params.append("leadSource", leadSource);
 

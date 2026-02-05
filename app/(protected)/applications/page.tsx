@@ -72,7 +72,9 @@ export default function ApplicationsPage() {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
-  const [selectedCity, setSelectedCity] = useState("");
+
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
+
   const [selectedApplicationSource, setSelectedApplicationSource] = useState("");
   const [selectedInteraction, setSelectedInteraction] = useState("");
   const [totalEntries, setTotalEntries] = useState(0);
@@ -252,7 +254,7 @@ export default function ApplicationsPage() {
         program: searchProgram.trim() || undefined,
         country: selectedCountry || undefined,
         state: selectedState || undefined,
-        city: selectedCity || undefined,
+        city: selectedCities.length ? selectedCities : undefined,
         applicationSource: selectedApplicationSource || undefined,
         interactions: selectedInteraction || undefined,
       });
@@ -270,9 +272,15 @@ export default function ApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCity, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
+  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
 
 
+
+
+
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
 
   const filteredApplications = (applications || []).map((app: any) => {
     const obj: any = {};
@@ -321,10 +329,6 @@ export default function ApplicationsPage() {
 
     return obj;
   });
-
-  useEffect(() => {
-    fetchApplications();
-  }, [fetchApplications]);
 
   /** 🔹 Load Institutions */
   useEffect(() => {
@@ -525,8 +529,6 @@ export default function ApplicationsPage() {
     },
 
 
-
-
     {
       header: "Follow-ups",
       render: (a: Application) => {
@@ -589,7 +591,6 @@ export default function ApplicationsPage() {
       render: (a: Application) => (
         <div className="flex gap-2">
           {/* 👁 View */}
-
 
           {(userpermission === "superadmin" || userpermission?.view) && (
 
@@ -783,7 +784,8 @@ export default function ApplicationsPage() {
                   onChange={(opt) => {
                     setSelectedCountry(opt?.value || "");
                     setSelectedState("");
-                    setSelectedCity("");
+                    setSelectedCities([]);
+
                     setCurrentPage(1);
                   }}
                   isClearable
@@ -794,20 +796,29 @@ export default function ApplicationsPage() {
                   value={stateOptions.find(s => s.value === selectedState) || null}
                   onChange={(opt) => {
                     setSelectedState(opt?.value || "");
-                    setSelectedCity("");
+                    setSelectedCities([]);
+
                     setCurrentPage(1);
                   }}
                   isClearable
                   isDisabled={!selectedCountry}
                 />)}
-                {activeFilters.includes("city") && (<Select
-                  placeholder="Select City"
-                  options={cityOptions}
-                  value={cityOptions.find(c => c.value === selectedCity) || null}
-                  onChange={(opt) => setSelectedCity(opt?.value || "")}
-                  isClearable
-                  isDisabled={!selectedState}
-                />)}
+                {activeFilters.includes("city") && (
+                  <Select
+                    placeholder="Select City"
+                    options={cityOptions}
+                    value={cityOptions.filter(c =>
+                      selectedCities.includes(c.value)
+                    )}
+                    onChange={(opts) =>
+                      setSelectedCities(opts ? opts.map(o => o.value) : [])
+                    }
+                    isMulti
+                    isClearable
+                    isDisabled={!selectedState}
+                  />
+                )}
+
               </div>
 
               {/* Application Source Filter */}

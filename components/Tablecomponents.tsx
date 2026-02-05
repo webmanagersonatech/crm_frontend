@@ -64,13 +64,17 @@ export function DataTable<T extends { _id?: string }>({
                                 <tr
                                     key={row._id || idx}
                                     className={`
-  border-b border-gray-200 dark:border-neutral-800
-  hover:bg-gray-50 dark:hover:bg-neutral-800
-  ${(row as any).isduplicate ? "bg-red-50 border-red-400 hover:bg-red-100" : ""}
-`}
+    border-b border-gray-200 dark:border-neutral-800
 
-
+    ${(row as any).isduplicate
+                                            ? "bg-red-100 border-red-400 hover:bg-red-200"
+                                            : (row as any).status === "inactive"
+                                                ? "bg-red-50 hover:bg-red-100 dark:bg-red-900/20"
+                                                : "hover:bg-gray-50 dark:hover:bg-neutral-800"
+                                        }
+  `}
                                 >
+
                                     {columns.map((col, colIdx) => (
                                         <td key={colIdx} className="px-4 py-2">
                                             {col.render

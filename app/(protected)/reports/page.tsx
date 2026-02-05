@@ -117,7 +117,7 @@ export default function ReportsPage() {
   const [selectedInteraction, setSelectedInteraction] = useState("");
   const [endYear, setEndYear] = useState<string>("")
   const [selectedLeadSource, setSelectedLeadSource] = useState("all");
-
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
 
   // student 
 
@@ -418,7 +418,7 @@ export default function ReportsPage() {
         endDate: endDate || undefined,
         country: selectedCountry || undefined,
         state: selectedState || undefined,
-        city: selectedCity || undefined,
+        city: selectedCities.length ? selectedCities : undefined,
         applicationSource: selectedApplicationSource || undefined,
         interactions: selectedInteraction || undefined,
       });
@@ -435,7 +435,7 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCity, selectedApplicationSource, selectedInteraction, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName, searchProgram]);
+  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName, searchProgram]);
 
   useEffect(() => {
     if (activeTab === "application") {
@@ -469,7 +469,7 @@ export default function ReportsPage() {
         leadSource: selectedLeadSource !== "all" ? selectedLeadSource : undefined,
         country: selectedCountry || undefined,   // ✅
         state: selectedState || undefined,       // ✅
-        city: selectedCity || undefined,
+        city: selectedCities.length ? selectedCities : undefined,
       });
       setLeads(res.docs || []);
       setleadTotalPages(res.totalPages || 1);
@@ -479,7 +479,7 @@ export default function ReportsPage() {
     } finally {
       setleadLoading(false);
     }
-  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, selectedLeadSource, selectedCountry, selectedState, selectedCity, searchTerm, startDate, endDate, phoneSearch, leadIdSearch]);
+  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, selectedLeadSource, selectedCountry, selectedState, selectedCities, searchTerm, startDate, endDate, phoneSearch, leadIdSearch]);
 
   useEffect(() => {
     if (activeTab === "lead") {
@@ -504,7 +504,7 @@ export default function ReportsPage() {
         quota: quotaFilter,
         country: selectedCountry,
         state: selectedState,
-        city: selectedCity,
+        city: selectedCities.length ? selectedCities : undefined,
         feedbackRating: feedbackFilter,
         familyOccupation: familyOccupationFilter,
       });
@@ -533,7 +533,7 @@ export default function ReportsPage() {
     quotaFilter,
     selectedCountry,
     selectedState,
-    selectedCity,
+    selectedCities,
     feedbackFilter,
     familyOccupationFilter
   ]);
@@ -744,6 +744,7 @@ export default function ReportsPage() {
         </span>
       ),
     },
+
     columnVisibility.formStatus && {
       header: "Form Status",
       render: (a: Application) => (
@@ -754,7 +755,7 @@ export default function ReportsPage() {
               : "bg-orange-50 text-orange-700 border-orange-300"
             }`}
         >
-          {a.formStatus}
+          {a.formStatus === "Complete" ? "Completed" : a.formStatus}
         </span>
       ),
     },
@@ -999,19 +1000,19 @@ export default function ReportsPage() {
 
 
 
-    columnVisibilitystudent.status && {
-      header: "Status",
-      render: (s: any) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${s.status === "active"
-            ? "bg-green-100 text-green-700"
-            : "bg-red-100 text-red-700"
-            }`}
-        >
-          {s.status}
-        </span>
-      ),
-    },
+    // columnVisibilitystudent.status && {
+    //   header: "Status",
+    //   render: (s: any) => (
+    //     <span
+    //       className={`px-2 py-1 rounded-full text-xs font-medium ${s.status === "active"
+    //         ? "bg-green-100 text-green-700"
+    //         : "bg-red-100 text-red-700"
+    //         }`}
+    //     >
+    //       {s.status}
+    //     </span>
+    //   ),
+    // },
 
 
   ].filter(Boolean) as Column<Student>[];
@@ -1179,7 +1180,7 @@ export default function ReportsPage() {
                 onChange={(opt) => {
                   setSelectedCountry(opt?.value || "");
                   setSelectedState("");
-                  setSelectedCity("");
+                  setSelectedCities([]);
                   setCurrentPage(1);
                 }}
                 isClearable
@@ -1190,7 +1191,7 @@ export default function ReportsPage() {
                 value={stateOptions.find(s => s.value === selectedState) || null}
                 onChange={(opt) => {
                   setSelectedState(opt?.value || "");
-                  setSelectedCity("");
+                  setSelectedCities([]);
                   setCurrentPage(1);
                 }}
                 isClearable
@@ -1199,11 +1200,18 @@ export default function ReportsPage() {
               <Select
                 placeholder="Select City"
                 options={cityOptions}
-                value={cityOptions.find(c => c.value === selectedCity) || null}
-                onChange={(opt) => setSelectedCity(opt?.value || "")}
+                value={cityOptions.filter(c =>
+                  selectedCities.includes(c.value)
+                )}
+                onChange={(opts) =>
+                  setSelectedCities(opts ? opts.map(o => o.value) : [])
+                }
+                isMulti
                 isClearable
                 isDisabled={!selectedState}
               />
+
+
             </div>
             {/* 💳 Payment Filter */}
             {activeTab !== "lead" && activeTab !== "student" && (

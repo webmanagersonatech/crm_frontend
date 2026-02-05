@@ -93,7 +93,7 @@ export default function LeadsPage() {
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [activeFilter, setActiveFilter] = useState<string[]>([]);
-
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
 
 
   const toggleFilter = (value: string) => {
@@ -321,7 +321,7 @@ export default function LeadsPage() {
         leadId: leadIdSearch || undefined,
         country: selectedCountry || undefined,   // ✅
         state: selectedState || undefined,       // ✅
-        city: selectedCity || undefined,
+        city: selectedCities.length ? selectedCities : undefined,
       });
       setLeads(res.docs || []);
       setTotalPages(res.totalPages || 1);
@@ -331,7 +331,7 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, selectedCountry, selectedState, selectedCity, searchTerm, selectedLeadSource, startDate, endDate, selectedUserId, phoneSearch, leadIdSearch]);
+  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, selectedCountry, selectedState, selectedCities, searchTerm, selectedLeadSource, startDate, endDate, selectedUserId, phoneSearch, leadIdSearch]);
 
 
   useEffect(() => {
@@ -345,7 +345,6 @@ export default function LeadsPage() {
     if (columnVisibility.leadId) {
       obj.LeadID = lead.leadId || "-"; // assuming _id is your lead ID
     }
-
 
 
 
@@ -439,8 +438,6 @@ export default function LeadsPage() {
       render: (lead: any) => lead.leadId || "—",
     },
 
-
-
     ...(userpermission === "superadmin" && columnVisibility.instituteId
       ? [{
         header: "Institute",
@@ -520,6 +517,7 @@ export default function LeadsPage() {
         );
       },
     },
+
     {
       header: "Lead Source",
       render: (lead: Lead) => {
@@ -618,7 +616,6 @@ export default function LeadsPage() {
       header: "Actions",
       render: (lead: Lead) => (
         <div className="flex  gap-2">
-
 
           {(userpermission === "superadmin" || userpermission?.edit) && (<select
             onChange={(e) => handleStatusChange(lead, e.target.value)}
@@ -847,8 +844,13 @@ export default function LeadsPage() {
               {activeFilter.includes("city") && (<Select
                 placeholder="Select City"
                 options={cityOptions}
-                value={cityOptions.find(c => c.value === selectedCity) || null}
-                onChange={(opt) => setSelectedCity(opt?.value || "")}
+                value={cityOptions.filter(c =>
+                  selectedCities.includes(c.value)
+                )}
+                onChange={(opts) =>
+                  setSelectedCities(opts ? opts.map(o => o.value) : [])
+                }
+                isMulti
                 isClearable
                 isDisabled={!selectedState}
               />)}
