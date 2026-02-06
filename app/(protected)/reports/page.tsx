@@ -168,6 +168,7 @@ export default function ReportsPage() {
     mobile: true,
     academicYear: true,
     instituteName: true,
+    bloodGroup: true,
     status: true,
   });
 
@@ -327,6 +328,7 @@ export default function ReportsPage() {
     { key: "studentId", label: "Student ID" },
     { key: "UniversityRegNo", label: "University Reg No" },
     { key: "academicYear", label: "Academic Year" },
+    { key: "bloodGroup", label: "Blood Group" },
     { key: "email", label: "Email" },
     { key: "mobile", label: "Mobile" },
     ...(userpermission === "superadmin"
@@ -657,9 +659,13 @@ export default function ReportsPage() {
     if (columnVisibilitystudent.UniversityRegNo) {
       obj.UniversityRegNo = student.admissionUniversityRegNo || "-";
     }
-    if (columnVisibility.academicYear) {
+    if (columnVisibilitystudent.academicYear) {
       obj.AcademicYear = student.academicYear || "-";
     }
+    if (columnVisibilitystudent.bloodGroup) {
+      obj.BloodGroup = student.bloodGroup || "-";
+    }
+
 
     if (columnVisibilitystudent.email) {
       obj.Email = student.email || "-";
@@ -986,6 +992,10 @@ export default function ReportsPage() {
     columnVisibilitystudent.academicYear && {
       header: "Academic Year",
       accessor: "academicYear",
+    },
+    columnVisibilitystudent.bloodGroup && {
+      header: "Blood Group",
+      accessor: "bloodGroup", // student.bloodGroup
     },
 
     columnVisibilitystudent.email && {

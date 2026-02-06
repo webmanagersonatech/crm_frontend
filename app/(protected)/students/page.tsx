@@ -178,6 +178,7 @@ export default function StudentsPage() {
     mobile: true,
     instituteName: true,
     status: true,
+    bloodGroup: true,
 
   });
 
@@ -189,6 +190,7 @@ export default function StudentsPage() {
     { key: "academicYear", label: "Academic Year" },
     { key: "email", label: "Email" },
     { key: "mobile", label: "Mobile" },
+    { key: "bloodGroup", label: "Blood Group" },
     ...(role === "superadmin"
       ? [{ key: "instituteName", label: "Institute" }]
       : []),
@@ -373,6 +375,10 @@ export default function StudentsPage() {
       header: "Academic Year",
       accessor: "academicYear",
     },
+    columnVisibility.bloodGroup && {
+      header: "Blood Group",
+      accessor: "bloodGroup", // student.bloodGroup
+    },
 
     columnVisibility.email && {
       header: "Email",
@@ -383,6 +389,8 @@ export default function StudentsPage() {
       header: "Mobile",
       accessor: "mobileNo",
     },
+
+
 
 
 
@@ -473,6 +481,10 @@ export default function StudentsPage() {
     if (columnVisibility.academicYear) {
       obj.AcademicYear = student.academicYear || "-";
     }
+    if (columnVisibility.bloodGroup) {
+      obj.BloodGroup = student.bloodGroup || "-";
+    }
+
 
     if (columnVisibility.email) {
       obj.Email = student.email || "-";
@@ -481,6 +493,7 @@ export default function StudentsPage() {
     if (columnVisibility.mobile) {
       obj.Mobile = student.mobileNo || "-";
     }
+
 
     if (
       role === "superadmin" &&
