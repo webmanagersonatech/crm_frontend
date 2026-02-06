@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Select from 'react-select'
-import toast, { Toaster } from 'react-hot-toast'
+import { toast } from "react-toastify";
 import { useRouter } from 'next/navigation'
 import { ClipboardList } from 'lucide-react'
 
@@ -208,7 +208,7 @@ export default function AddDynamicFormPage() {
   // ===============================
   return (
     <div className="p-6 space-y-6">
-      <Toaster position="top-right" />
+      
 
       {/* Header */}
       <div className="flex items-center gap-2">

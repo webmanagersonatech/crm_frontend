@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { FileDown, X, Calendar, Eye, Pencil, Trash2, Settings, FileUp, } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { DataTable } from "@/components/Tablecomponents";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
@@ -958,7 +958,7 @@ John Doe,9876543210,john@example.com,Chennai,React Workshop,2025-01-05`;
                                             importErrors.duplicatesInDB.length === 0 && (
                                                 <tr>
                                                     <td colSpan={4} className="text-center py-4 text-green-600 font-medium">
-                                                        ✅ No validation errors found
+                                                         No validation errors found
                                                     </td>
                                                 </tr>
                                             )}

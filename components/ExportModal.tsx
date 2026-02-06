@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import toast, { Toaster } from "react-hot-toast"; // using react-hot-toast
+import { toast } from "react-toastify";; // using react-hot-toast
 
 interface ExportModalProps {
     open: boolean;
@@ -85,7 +85,7 @@ export default function ExportModal({
     /** --- UI --- */
     return (
         <>
-            <Toaster position="top-right" />
+            
             <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 px-4 sm:px-6">
                 <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md sm:max-w-lg md:max-w-xl text-center relative transform transition-all duration-300 scale-95 opacity-0 animate-modal-in">
                     {/* Close Button */}

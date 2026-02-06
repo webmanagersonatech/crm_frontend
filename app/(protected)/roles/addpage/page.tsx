@@ -10,7 +10,7 @@ export default function AddUserPage() {
   const [form, setForm] = useState({
     instituteType: null,
     RoleName: "",
-    status: null, // ✅ make it null, not ""
+    status: null, //  make it null, not ""
   });
 
   // Institute options
@@ -64,7 +64,7 @@ export default function AddUserPage() {
     }
 
     console.log("Form submitted:", form);
-    alert("Role added successfully ✅");
+    alert("Role added successfully ");
     router.push("/roles");
   };
 
@@ -88,7 +88,7 @@ export default function AddUserPage() {
           </label>
           <Select
             options={instituteOptions}
-            value={form.instituteType} // ✅ controlled properly
+            value={form.instituteType} //  controlled properly
             onChange={(val) => handleChangeSelect("instituteType", val)}
             placeholder="Select Institute Type"
             styles={selectStyles}

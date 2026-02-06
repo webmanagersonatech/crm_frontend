@@ -116,7 +116,7 @@ export async function listStudentsRequest({
       familyOccupation,
     };
 
-    // ✅ multi-city safe handling
+    //  multi-city safe handling
     if (city !== "all") {
       params.city = city;
     }
@@ -203,7 +203,7 @@ export async function updateStudentIndividualRequest(
 
 
 
-/** ❌ Delete Student (if enabled) */
+/**  Delete Student (if enabled) */
 export async function deleteStudentRequest(studentId: string) {
   try {
     const response = await api.delete(`/student/${studentId}`);

@@ -9,7 +9,7 @@ const api = axios.create({
   },
 });
 
-// ✅ Attach token if available
+//  Attach token if available
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {

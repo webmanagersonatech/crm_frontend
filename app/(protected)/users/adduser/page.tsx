@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Select, { SingleValue } from "react-select";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";;
 import { UserPlus2, Eye, EyeOff } from "lucide-react";
 
 import {
@@ -234,7 +234,7 @@ export default function AddUserPage() {
   /** --- JSX --- */
   return (
     <div className="p-6">
-      <Toaster position="top-right" />
+      
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <UserPlus2 className="w-6 h-6 text-blue-600" />

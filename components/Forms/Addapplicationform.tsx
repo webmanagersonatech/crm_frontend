@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Select from "react-select"
-import toast, { Toaster } from "react-hot-toast"
+import { toast } from "react-toastify";
 
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest"
 import { getFormByInstituteId } from "@/app/lib/request/formManager"
@@ -351,7 +351,7 @@ export default function AddApplicationForm({
             return
         }
 
-        // ❌ DUPLICATE CHECK (BEFORE setState)
+        //  DUPLICATE CHECK (BEFORE setState)
         const alreadyExists = targetSection.fields.some(
             (f: any) =>
                 f.fieldName.trim().toLowerCase() === fieldName.trim().toLowerCase()
@@ -362,7 +362,7 @@ export default function AddApplicationForm({
             return
         }
 
-        // ✅ SAFE STATE UPDATE
+        //  SAFE STATE UPDATE
         setFormConfig((prev: any) => {
             const updatedSections = prev[`${tab}Details`].map((section: any) => {
                 if (section.sectionName !== sectionName) return section
@@ -940,7 +940,7 @@ export default function AddApplicationForm({
         const birthDate = new Date(dob)
         const today = new Date()
 
-        // ❌ future date check
+        //  future date check
         if (birthDate > today) return false
 
         const minAge = minApplicantAge ?? 16
@@ -1024,7 +1024,7 @@ export default function AddApplicationForm({
 
     return (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow space-y-6">
-            <Toaster position="top-right" />
+            
 
             {/* Institute */}
             {showInstituteDropdown && (
@@ -1238,7 +1238,7 @@ export default function AddApplicationForm({
                                     key={f.fieldName}
                                     className="flex flex-col relative border rounded p-2"
                                 >
-                                    {/* ❌ REMOVE BUTTON (only for manually added fields) */}
+                                    {/*  REMOVE BUTTON (only for manually added fields) */}
                                     {f.isCustom && (
                                         <button
                                             type="button"

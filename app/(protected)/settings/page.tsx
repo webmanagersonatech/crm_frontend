@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import toast, { Toaster } from 'react-hot-toast'
+import { toast } from "react-toastify";
 import Select from 'react-select'
 import { getActiveInstitutions } from '@/app/lib/request/institutionRequest'
 import {
@@ -212,7 +212,7 @@ export default function SettingsPage() {
   // ------------------- Render -------------------
   return (
     <div className="p-6 space-y-8">
-      <Toaster position="top-right" />
+      
 
       {/* ---------- General Settings ---------- */}
       <div className="border rounded-lg shadow-sm overflow-hidden">

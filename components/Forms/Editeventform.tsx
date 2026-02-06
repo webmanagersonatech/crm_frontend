@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { getEventById, updateEvent } from "@/app/lib/request/eventsRequest";
 
 interface EditEventFormProps {
@@ -88,7 +88,7 @@ export default function EditEventForm({
             toast.success("Event updated successfully");
             onSuccess();
         } catch (err: any) {
-            toast.error(String(err)); // ✅ FORCE STRING
+            toast.error(String(err)); //  FORCE STRING
         } finally {
             setLoading(false);
         }

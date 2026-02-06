@@ -6,7 +6,7 @@ import {
   FileDown,
   HistoryIcon,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { DataTable,Column } from "@/components/Tablecomponents";
 import ViewDialog from "@/components/ViewDialog";
 
@@ -47,7 +47,7 @@ export default function LoginHistoryPage() {
   useEffect(() => {
     const token = localStorage.getItem("token")
     if (!token) {
-      console.log("❌ No token found")
+      console.log(" No token found")
       return
     }
     try {
@@ -55,7 +55,7 @@ export default function LoginHistoryPage() {
       setRole(payload.role)
 
     } catch (error) {
-      console.error("❌ Failed to decode token", error)
+      console.error(" Failed to decode token", error)
     }
   }, [])
   /** 🔹 Fetch Login Histories */

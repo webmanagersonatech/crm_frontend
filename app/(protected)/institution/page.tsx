@@ -23,7 +23,7 @@ import ViewDialog from "@/components/ViewDialog";
 import ExportModal from "@/components/ExportModal";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import { Column } from "@/components/Tablecomponents";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 
 export default function InstitutionsPage() {
@@ -195,7 +195,7 @@ export default function InstitutionsPage() {
     try {
       if (confirmType === "delete") {
         await deleteInstitution(selected._id);
-        toast.success("Institution deleted successfully ✅");
+        toast.success("Institution deleted successfully ");
       } else if (confirmType === "toggle") {
         const newStatus =
           selected.status === "active" ? "inactive" : "active";
@@ -204,7 +204,7 @@ export default function InstitutionsPage() {
 
         toast.success(
           `Institution ${newStatus === "active" ? "activated" : "deactivated"
-          } successfully ✅`
+          } successfully `
         );
       }
 
@@ -212,7 +212,7 @@ export default function InstitutionsPage() {
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message ||
-        "Something went wrong. Please try again ❌"
+        "Something went wrong. Please try again "
       );
     } finally {
       toast.dismiss(loadingId);

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { loginRequest } from "./lib/request/authRequest";
 import CryptoJS from "crypto-js";
 
@@ -36,7 +36,7 @@ export default function LoginPage() {
         toast.error("Invalid response from server.");
       }
     } catch (error: any) {
-      console.error("❌ Login failed:", error);
+      console.error(" Login failed:", error);
       toast.error(error.message || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);

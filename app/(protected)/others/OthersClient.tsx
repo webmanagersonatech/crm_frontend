@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { FileDown, X, Layers, Eye, Trash2, Settings, FileUp, } from "lucide-react";
 
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { DataTable } from "@/components/Tablecomponents";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";

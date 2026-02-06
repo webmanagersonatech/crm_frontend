@@ -6,7 +6,7 @@ import { Eye, Plus, Pencil, Trash2, FileDown, FileText, Settings, Edit2, PlusCir
 import { DataTable } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ViewDialog from "@/components/ViewDialog";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { getApplications, deleteApplication, updatePaymentStatus } from "@/app/lib/request/application";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
@@ -937,7 +937,7 @@ export default function ApplicationsPage() {
         />
       </div>
 
-      {/* ✅ Data Table */}
+      {/*  Data Table */}
       <DataTable
         columns={columns}
         data={applications}
@@ -948,7 +948,7 @@ export default function ApplicationsPage() {
         onPageChange={setCurrentPage}
       />
 
-      {/* ✅ View Dialog */}
+      {/*  View Dialog */}
       <ViewDialog
         open={viewOpen}
         title="Application Details"

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Select, { SingleValue } from "react-select";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { FilePlus } from "lucide-react";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css";

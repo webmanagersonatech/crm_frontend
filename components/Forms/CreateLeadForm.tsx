@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Select, { SingleValue } from "react-select";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";;
 import { UserPlus2 } from "lucide-react";
 import { createLead, Lead } from "@/app/lib/request/leadRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
@@ -451,7 +451,7 @@ export default function CreateLeadForm({
 
     return (
         <div className="p-6">
-            <Toaster position="top-right" />
+            
             <div className="flex items-center gap-2 mb-6">
                 <UserPlus2 className="w-6 h-6 text-blue-600" />
                 <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">

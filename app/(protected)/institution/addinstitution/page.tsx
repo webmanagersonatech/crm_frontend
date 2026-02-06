@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Select, { SingleValue } from "react-select";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import {
   createInstitution,
   Institution,

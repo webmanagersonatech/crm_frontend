@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Select from "react-select"
-import toast, { Toaster } from "react-hot-toast"
+import { toast } from "react-toastify";
 
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest"
 import { getFormByInstituteId } from "@/app/lib/request/formManager"
@@ -335,7 +335,7 @@ export default function AddApplicationForm({
 
     return (
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow space-y-6">
-            <Toaster position="top-right" />
+            
 
             {showInstituteDropdown && (
                 <Select

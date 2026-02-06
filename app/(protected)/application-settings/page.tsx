@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Select from 'react-select'
-import toast, { Toaster } from 'react-hot-toast'
+import { toast } from "react-toastify";
 import {
   saveFormConfiguration,
 } from '@/app/lib/request/formManager'
@@ -97,7 +97,7 @@ function SortableField({
           onClick={() => onRemove(field.id)}
           className="text-red-500 text-xs"
         >
-          ❌ Remove
+           Remove
         </button>
       </div>
 
@@ -193,7 +193,7 @@ export default function SettingsPage() {
       try {
         const res = await getFormByInstituteId(selectedInstitute.id)
 
-        // ❌ API-level failure (extra safety)
+        //  API-level failure (extra safety)
         if (!res.success) {
           toast.error(res.message || 'Failed to load form configuration')
           setFields([])
@@ -209,7 +209,7 @@ export default function SettingsPage() {
           return
         }
 
-        // ✅ Convert + set fields
+        //  Convert + set fields
         const converted = convertApiToFieldConfig(
           apiData,
           selectedInstitute.id
@@ -217,13 +217,13 @@ export default function SettingsPage() {
 
         setFields(converted)
 
-        // ✅ SUCCESS TOAST
+        //  SUCCESS TOAST
         toast.success(res.message || 'Form loaded successfully')
 
       } catch (error: any) {
         console.error('Load form error:', error)
 
-        // ❌ ERROR TOAST (backend message)
+        //  ERROR TOAST (backend message)
         toast.error(error.message || 'Something went wrong while loading form')
         setFields([])
       }
@@ -321,14 +321,14 @@ export default function SettingsPage() {
         { fieldName: 'Email Address', fieldType: 'email', required: true, maxLength: 100 },
         { fieldName: 'Address', fieldType: 'textarea', required: true, maxLength: 200 },
 
-        /* ✅ STUDENT IMAGE */
+        /*  STUDENT IMAGE */
         {
           fieldName: 'Student Image',
           fieldType: 'file',
           required: false,
         },
 
-        /* ✅ INSTITUTE BASED DETAILS */
+        /*  INSTITUTE BASED DETAILS */
         { fieldName: 'Aadhaar Number', fieldType: 'number', required: false },
         {
           fieldName: 'Blood Group',
@@ -729,7 +729,7 @@ export default function SettingsPage() {
 
       <BackButton />
 
-      <Toaster position="top-right" />
+      
 
       <div className="border rounded">
         <div className=" bg-gradient-to-b from-[#2a3970] to-[#5667a8]

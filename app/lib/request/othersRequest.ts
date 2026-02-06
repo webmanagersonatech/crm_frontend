@@ -75,7 +75,7 @@ export async function importOthers(
 
         return response.data;
     } catch (error: any) {
-        // ✅ THROW FULL BACKEND RESPONSE
+        //  THROW FULL BACKEND RESPONSE
         throw error.response?.data || {
             message: "Failed to import file",
             missingFields: [],

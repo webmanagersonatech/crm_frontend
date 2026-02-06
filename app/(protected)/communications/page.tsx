@@ -9,7 +9,7 @@ import {
   FileDown,
 
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { DataTable } from "@/components/Tablecomponents";
 import { getpendingApplications, sendMail } from "@/app/lib/request/application";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
@@ -165,7 +165,7 @@ export default function CommunicationsPage() {
           selectedStatus === "incomplete" ? "Incomplete" : undefined,
       });
 
-      // ✅ Correct access
+      //  Correct access
       setApplications(res.applications.docs);
       setTotalPages(res.applications.totalPages);
       setTotalEntries(res.applications?.totalDocs || 0);
@@ -360,7 +360,7 @@ export default function CommunicationsPage() {
         setIsSending(true);
         await sendMail(payload);
 
-        toast.success("Bulk mail sent successfully ✅");
+        toast.success("Bulk mail sent successfully ");
 
         setSelectedApplicants([]);
         setSelectedTemplate(null);

@@ -4,7 +4,7 @@ import { Bell, ChevronDown, Menu, User, Lock, LogOut } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 export default function Header({ onMenuOpen }: { onMenuOpen: () => void }) {
   const [open, setOpen] = useState(false);

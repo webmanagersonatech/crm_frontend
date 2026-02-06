@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Pencil, FileDown, Settings, Plus, Search, Trash2 } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 import { DataTable } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";

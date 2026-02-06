@@ -112,7 +112,7 @@ export default function PermissionsPage() {
           if (response.data && response.data.length > 0) {
             setPermissions(response.data[0].permissions);
             setIsUpdating(true);
-            toast.success("Existing permissions loaded ✅");
+            toast.success("Existing permissions loaded ");
           } else {
             setPermissions(defaultPermissions);
             setIsUpdating(false);
@@ -120,7 +120,7 @@ export default function PermissionsPage() {
           }
         } catch (error: any) {
           console.error("Error loading permissions:", error);
-          toast.error(error.message || "Failed to load permissions ❌");
+          toast.error(error.message || "Failed to load permissions ");
         }
       })();
     }
@@ -150,12 +150,12 @@ export default function PermissionsPage() {
       const response = await savePermission(payload);
       toast.success(
         response.message ||
-        (isUpdating ? "Permissions updated successfully ✅" : "Permissions created successfully ✅")
+        (isUpdating ? "Permissions updated successfully " : "Permissions created successfully ")
       );
       setIsUpdating(true);
     } catch (error: any) {
       console.error("Error saving permissions:", error);
-      toast.error(error.message || "Failed to save permissions ❌");
+      toast.error(error.message || "Failed to save permissions ");
     }
   };
 

@@ -20,7 +20,7 @@ import { DataTable } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ViewDialog from "@/components/ViewDialog";
 import ExportModal from "@/components/ExportModal";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import { Column } from "@/components/Tablecomponents";
@@ -307,7 +307,7 @@ export default function UsersPage() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* ✅ Header */}
+      {/*  Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
           <User2 className="w-6 h-6 text-blue-700" />
@@ -402,7 +402,7 @@ export default function UsersPage() {
             <Plus className="w-4 h-4" /> Add New
           </Link>
         </div>
-        {/* ✅ Export Modal */}
+        {/*  Export Modal */}
         <ExportModal
           open={exportOpen}
           title={"users"}

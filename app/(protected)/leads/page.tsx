@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { Eye, Pencil, FileDown, Users, Plus, Settings, Trash2, Search, FileText, X, Clock } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import Link from "next/link";
 import { DataTable } from "@/components/Tablecomponents";
 import ViewDialog from "@/components/ViewDialog";
@@ -316,11 +316,11 @@ export default function LeadsPage() {
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         userId: selectedUserId || undefined,
-        phoneNumber: phoneSearch || undefined, // ✅ added
+        phoneNumber: phoneSearch || undefined, //  added
         leadSource: selectedLeadSource !== "all" ? selectedLeadSource : undefined,
         leadId: leadIdSearch || undefined,
-        country: selectedCountry || undefined,   // ✅
-        state: selectedState || undefined,       // ✅
+        country: selectedCountry || undefined,   // 
+        state: selectedState || undefined,       // 
         city: selectedCities.length ? selectedCities : undefined,
       });
       setLeads(res.docs || []);
@@ -582,7 +582,7 @@ export default function LeadsPage() {
     {
       header: "Duplicate",
       render: (lead: Lead) => {
-        const [showPopup, setShowPopup] = useState(false); // ✅ use imported hook
+        const [showPopup, setShowPopup] = useState(false); //  use imported hook
 
         if (!lead.isduplicate) return null;
 

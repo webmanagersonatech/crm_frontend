@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";;
 import { ClipboardEdit } from "lucide-react";
 
 import {
@@ -152,7 +152,7 @@ export default function EditDynamicFormPage() {
   // ===============================
   return (
     <div className="p-6 space-y-6">
-      <Toaster position="top-right" />
+      
 
       {/* Header */}
       <div className="flex items-center gap-2">

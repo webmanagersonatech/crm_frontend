@@ -11,7 +11,7 @@ import {
   GraduationCap,
   Trash2,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 
 import { DataTable, Column } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -127,7 +127,7 @@ export default function StudentsPage() {
   useEffect(() => {
     const token = localStorage.getItem("token")
     if (!token) {
-      console.log("❌ No token found")
+      console.log(" No token found")
       return
     }
     try {
@@ -135,7 +135,7 @@ export default function StudentsPage() {
       setRole(payload.role)
 
     } catch (error) {
-      console.error("❌ Failed to decode token", error)
+      console.error(" Failed to decode token", error)
     }
   }, [])
 

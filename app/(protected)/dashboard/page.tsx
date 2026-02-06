@@ -17,7 +17,7 @@ import {
 } from "recharts";
 import { getDashboardData, getNewAndFollowupLeads } from "@/app/lib/request/dashboard";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { getaccesscontrol, } from "@/app/lib/request/permissionRequest";
 
 interface OptionType {
@@ -461,7 +461,7 @@ export default function DashboardPage() {
     {
       header: "Duplicate",
       render: (lead: Lead) => {
-        const [showPopup, setShowPopup] = useState(false); // ✅ use imported hook
+        const [showPopup, setShowPopup] = useState(false); //  use imported hook
 
         if (!lead.isduplicate) return null;
 
@@ -550,7 +550,7 @@ export default function DashboardPage() {
     );
   }
 
-  // ✅ Main Dashboard UI
+  //  Main Dashboard UI
   return (
     <div className="space-y-6 p-3 sm:p-6">
       <div className="flex justify-between items-center">

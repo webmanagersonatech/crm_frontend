@@ -146,7 +146,7 @@ export async function updateEvent(id: string, data: Partial<Event>) {
       error?.message ||
       "Failed to update event";
 
-    return Promise.reject(message); // ✅ reject ONLY message
+    return Promise.reject(message); //  reject ONLY message
   }
 }
 

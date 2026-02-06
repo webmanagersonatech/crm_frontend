@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Select, { SingleValue } from "react-select";
-import toast, { Toaster } from "react-hot-toast"
+import { toast } from "react-toastify";
 import { Edit3 } from "lucide-react";
 import { getLeadById, updateLead, Lead } from "@/app/lib/request/leadRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
@@ -81,7 +81,7 @@ export default function EditLeadPage() {
 
     return age >= 18;
   };
-  // ✅ Load institutions & countries
+  //  Load institutions & countries
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -101,7 +101,7 @@ export default function EditLeadPage() {
     loadData();
   }, []);
 
-  // ✅ Load existing lead details
+  //  Load existing lead details
   useEffect(() => {
     if (!id) return;
     const loadLead = async () => {
@@ -142,14 +142,14 @@ export default function EditLeadPage() {
     loadLead();
   }, [id]);
 
-  // ✅ Sync institute selection after institutions load
+  //  Sync institute selection after institutions load
   useEffect(() => {
     if (institutions.length && form.instituteId) {
       setSelectedInstitute(form.instituteId);
     }
   }, [institutions, form.instituteId]);
 
-  // ✅ Load programs when institute changes
+  //  Load programs when institute changes
   useEffect(() => {
     if (!selectedInstitute) {
       setProgramOptions([]);
@@ -172,7 +172,7 @@ export default function EditLeadPage() {
     loadPrograms();
   }, [selectedInstitute]);
 
-  // ✅ Input handlers
+  //  Input handlers
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
@@ -203,7 +203,7 @@ export default function EditLeadPage() {
     }
   };
 
-  // ✅ Save updates
+  //  Save updates
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -276,7 +276,7 @@ export default function EditLeadPage() {
 
   return (
     <div className="p-6">
-      <Toaster position="top-right" />
+      
       <div className="flex items-center gap-2 mb-6">
         <Edit3 className="w-6 h-6 text-blue-600" />
         <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">

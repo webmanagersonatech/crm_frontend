@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Select, { SingleValue } from "react-select";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";;
 import { FilePlus } from "lucide-react";
 import dynamic from "next/dynamic";
 import "react-quill/dist/quill.snow.css"; // CSS must be imported at top
@@ -151,7 +151,7 @@ export default function AddEmailTemplatePage() {
   return (
 
     <div className="p-6">
-      <Toaster position="top-right" />
+      
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <FilePlus className="w-6 h-6 text-blue-600" />

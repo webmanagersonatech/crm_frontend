@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { User, X } from "lucide-react";
 import { getStudentRequest, updateStudentIndividualRequest } from "@/app/lib/request/studentRequest";
 
@@ -192,13 +192,13 @@ export default function StudentCleanupForm({
                     internshipDuration: data.internshipDuration ?? "",
                     internshipRemarks: data.internshipRemarks ?? "",
 
-                    // ✅ hostel: student true → application → no
+                    //  hostel: student true → application → no
                     hostelWilling:
                         data.hostelWilling === true ? "yes" : hostelFromApplication,
 
                     hostelReason: data.hostelReason ?? "",
 
-                    // ✅ blood group: student → application
+                    //  blood group: student → application
                     bloodGroup:
                         data.bloodGroup && data.bloodGroup !== ""
                             ? data.bloodGroup
@@ -209,13 +209,13 @@ export default function StudentCleanupForm({
                     familyOccupation: data.familyOccupation ?? "",
                     otherOccupation: data.familyOtherOccupation ?? "",
 
-                    // ✅ siblings count: student (>0) → application
+                    //  siblings count: student (>0) → application
                     siblingsCount:
                         data.siblingsCount && data.siblingsCount > 0
                             ? data.siblingsCount
                             : siblingCountFromApplication,
 
-                    // ✅ siblings list: student → application
+                    //  siblings list: student → application
                     siblings:
                         data.siblingsDetails && data.siblingsDetails.length > 0
                             ? data.siblingsDetails
@@ -280,7 +280,7 @@ export default function StudentCleanupForm({
         try {
             await updateStudentIndividualRequest(studentid, payload);
 
-            toast.success("Student details updated successfully ✅");
+            toast.success("Student details updated successfully ");
             refetch()
             onSuccess()
 

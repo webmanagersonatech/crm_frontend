@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { BarChart3, FileText, Users, FileDown, Search, Settings, GraduationCap } from "lucide-react";
 import { DataTable } from "@/components/Tablecomponents";
 import { getApplications, } from "@/app/lib/request/application";
-import toast from "react-hot-toast";
+import { toast } from "react-toastify";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import { getLeads, } from "@/app/lib/request/leadRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
@@ -464,11 +464,11 @@ export default function ReportsPage() {
         candidateName: searchTerm || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
-        phoneNumber: phoneSearch || undefined, // ✅ added
+        phoneNumber: phoneSearch || undefined, //  added
         leadId: leadIdSearch || undefined,
         leadSource: selectedLeadSource !== "all" ? selectedLeadSource : undefined,
-        country: selectedCountry || undefined,   // ✅
-        state: selectedState || undefined,       // ✅
+        country: selectedCountry || undefined,   // 
+        state: selectedState || undefined,       // 
         city: selectedCities.length ? selectedCities : undefined,
       });
       setLeads(res.docs || []);
@@ -894,7 +894,7 @@ export default function ReportsPage() {
     {
       header: "Duplicate",
       render: (lead: Lead) => {
-        const [showPopup, setShowPopup] = useState(false); // ✅ use imported hook
+        const [showPopup, setShowPopup] = useState(false); //  use imported hook
 
         if (!lead.isduplicate) return null;
 
