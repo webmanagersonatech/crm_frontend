@@ -481,7 +481,7 @@ export default function ReportsPage() {
     } finally {
       setleadLoading(false);
     }
-  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, selectedLeadSource, selectedCountry, selectedState, selectedCities, searchTerm, startDate, endDate, phoneSearch, leadIdSearch]);
+  }, [leadcurrentPage, selectedInstitution, selectedStatus, selectedCommunication, selectedLeadSource, selectedCountry, selectedState, selectedCities, searchTerm, startDate, endDate, phoneSearch, leadIdSearch]);
 
   useEffect(() => {
     if (activeTab === "lead") {
@@ -495,7 +495,7 @@ export default function ReportsPage() {
     setStudentLoading(true);
     try {
       const res = await listStudentsRequest({
-        page: currentPage,
+        page: studentCurrentPage,
         search: searchTerm,
         status: statusFilter,
         academicYear: selectedYear !== "all" ? selectedYear : undefined,
@@ -525,7 +525,7 @@ export default function ReportsPage() {
     }
   }, [
     selectedYear,
-    currentPage,
+    studentCurrentPage,
     searchTerm,
     statusFilter,
     selectedInstitution,
