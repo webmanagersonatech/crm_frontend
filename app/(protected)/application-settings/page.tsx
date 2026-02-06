@@ -205,7 +205,7 @@ export default function SettingsPage() {
         // ⚠️ No form exists yet
         if (!apiData) {
           setFields([])
-          toast('No form configuration found', { icon: 'ℹ️' })
+          toast.error('No form configuration found', )
           return
         }
 
