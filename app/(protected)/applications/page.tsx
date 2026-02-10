@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import CreateLeadform from "@/components/Forms/CreateLeadForm";
 import Select from "react-select";
 import { Country, State, City } from "country-state-city";
+import { FiSearch } from "react-icons/fi";
 
 interface Application {
   _id?: string;
@@ -37,6 +38,25 @@ interface Application {
   };
   leadId: string;
 }
+
+
+export interface FilterMeta {
+  metaKey: string;   // original key from backend (Blood Group)
+  label: string;
+  type: string;
+  options?: string[];
+  multiple?: boolean;
+}
+
+export interface UiFilter extends FilterMeta {
+  searchKey: string; // normalized key (bloodgroup)
+  value: string;
+}
+
+
+
+
+
 
 export default function ApplicationsPage() {
   const router = useRouter();
@@ -73,12 +93,21 @@ export default function ApplicationsPage() {
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
 
+
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
 
   const [selectedApplicationSource, setSelectedApplicationSource] = useState("");
   const [selectedInteraction, setSelectedInteraction] = useState("");
   const [totalEntries, setTotalEntries] = useState(0);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
+  const [uiFilters, setUiFilters] = useState<UiFilter[]>([]);
+  const [availableFilterFields, setAvailableFilterFields] =
+    useState<FilterMeta[]>([]);
+  const [searchAny, setSearchAny] = useState("");
+
+
+
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -257,6 +286,7 @@ export default function ApplicationsPage() {
         city: selectedCities.length ? selectedCities : undefined,
         applicationSource: selectedApplicationSource || undefined,
         interactions: selectedInteraction || undefined,
+        q: searchAny.trim() || undefined,
       });
 
       setApplications((res.data as Application[]) || []);
@@ -266,13 +296,86 @@ export default function ApplicationsPage() {
       if (res.academicYears) {
         setAcademicYears(res.academicYears);
       }
+      const r: any = res;
+
+      if (r.filters) {
+        const merged = [
+          ...(r.filters.personalDetails || []),
+          ...(r.filters.educationDetails || [])
+        ].map((f: any) => ({
+          metaKey: f.key,
+          label: f.label,
+          type: f.type,
+          options: f.options || [],
+          multiple: f.multiple || false
+        }));
+
+        setAvailableFilterFields(merged);
+      }
+
+
+
+
     } catch (err: any) {
       toast.error("Failed to load applications");
       console.error("Error fetching applications:", err);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
+  }, [currentPage, searchAny,
+    selectedYear, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
+
+
+
+  // UTILS
+  const normalizeKey = (label: string) =>
+    label.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  // ADD FILTER
+  const addUiFilter = () => {
+    setUiFilters(prev => [
+      ...prev,
+      {
+        metaKey: "",
+        searchKey: "",
+        label: "",
+        type: "text",
+        value: ""
+      }
+    ]);
+  };
+
+  // REMOVE FILTER
+  const removeUiFilter = (index: number) => {
+    setUiFilters(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // BUILD QUERY
+  const buildQueryString = () => {
+    return uiFilters
+      .filter(f => f.searchKey && f.value)
+      .map(f => `${f.searchKey}:${f.value.toLowerCase().trim()}`)
+      .join(" ");
+  };
+
+  // APPLY
+  const applyFilters = () => {
+    const query = buildQueryString();
+    setSearchAny(query);
+    setCurrentPage(1);
+  };
+  const updateValue = (index: number, value: string) => {
+    setUiFilters(prev => {
+      const copy = [...prev];
+      copy[index] = {
+        ...copy[index],
+        value: value.toLowerCase()
+      };
+      return copy;
+    });
+  };
+
+
 
 
 
@@ -604,39 +707,41 @@ export default function ApplicationsPage() {
 
 
 
-          {/* ✏️ Edit */}
-          {(userpermission === "superadmin" || userpermission?.edit) && (
-            a.paymentStatus === "Paid" ? (
-              <span className="bg-gray-400 text-white px-3 py-1 rounded-md cursor-not-allowed flex items-center justify-center">
-                <Pencil className="w-4 h-4" />
-              </span>
-            ) : (
-              <Link
-                href={`/applications/editapplication/${a._id}`}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center justify-center"
-              >
-                <Pencil className="w-4 h-4" />
-              </Link>
-            )
-          )}
+     {/* ✏️ Edit */}
+{(userpermission === "superadmin" || userpermission?.edit) && (
+  userpermission === "superadmin" || a.paymentStatus !== "Paid" ? (
+    <Link
+      href={`/applications/editapplication/${a._id}`}
+      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center justify-center"
+    >
+      <Pencil className="w-4 h-4" />
+    </Link>
+  ) : (
+    <span className="bg-gray-400 text-white px-3 py-1 rounded-md cursor-not-allowed flex items-center justify-center">
+      <Pencil className="w-4 h-4" />
+    </span>
+  )
+)}
 
-          {/* 🗑 Delete */}
-          {(userpermission === "superadmin" || userpermission?.delete) && (
-            <button
-              disabled={a.paymentStatus === "Paid"}
-              onClick={() => {
-                setSelected(a);
-                setConfirmType("delete");
-                setConfirmOpen(true);
-              }}
-              className={`px-3 py-1 rounded-md flex items-center justify-center text-white ${a.paymentStatus === "Paid"
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-red-600 hover:bg-red-700"
-                }`}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
+{/* 🗑 Delete */}
+{(userpermission === "superadmin" || userpermission?.delete) && (
+  <button
+    disabled={!(userpermission === "superadmin") && a.paymentStatus === "Paid"}
+    onClick={() => {
+      setSelected(a);
+      setConfirmType("delete");
+      setConfirmOpen(true);
+    }}
+    className={`px-3 py-1 rounded-md flex items-center justify-center text-white ${
+      !(userpermission === "superadmin") && a.paymentStatus === "Paid"
+        ? "bg-gray-400 cursor-not-allowed"
+        : "bg-red-600 hover:bg-red-700"
+    }`}
+  >
+    <Trash2 className="w-4 h-4" />
+  </button>
+)}
+
 
         </div>
       ),
@@ -689,6 +794,8 @@ export default function ApplicationsPage() {
               >
                 <Settings className="w-4 h-4" /> Customize Columns
               </button>
+
+
               <Select
                 placeholder="Add filter"
                 options={filterOptions.filter(f => !activeFilters.includes(f.value))}
@@ -898,12 +1005,6 @@ export default function ApplicationsPage() {
               />)}
 
 
-
-
-
-
-
-
             </>
           )}
 
@@ -929,6 +1030,8 @@ export default function ApplicationsPage() {
             </Link>)}
 
         </div>
+
+
         <ExportModal
           open={open}
           title={"Applications"}
@@ -936,6 +1039,184 @@ export default function ApplicationsPage() {
           data={filteredApplications}
         />
       </div>
+
+
+
+      <div className="w-full bg-white rounded-xl shadow-md border border-gray-200 p-4 md:p-6">
+
+        <h1 className="text-lg font-semibold text-gray-800 mb-4">
+          Search Anything in Personal Details & Educational Details
+        </h1>
+
+        {/* SEARCH PREVIEW */}
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Search Preview
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="bloodgroup:o+ hostelrequired:yes"
+              value={searchAny}
+              disabled
+              className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-gray-50 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            />
+            {/* React Icon */}
+            <FiSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          </div>
+
+        </div>
+
+        {/* FILTER ROWS */}
+        <div className="space-y-4">
+          {uiFilters.map((filter, index) => {
+            const meta = availableFilterFields.find(f => f.metaKey === filter.metaKey);
+
+            return (
+              <div
+                key={index}
+                className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center bg-gray-50 rounded-lg p-3 border border-gray-200 hover:shadow-md transition"
+              >
+                {/* FIELD SELECT */}
+                <div className="sm:col-span-5">
+                  <select
+                    value={filter.metaKey}
+                    onChange={(e) => {
+                      const selected = availableFilterFields.find(f => f.metaKey === e.target.value);
+                      if (!selected) return;
+                      setUiFilters(prev => {
+                        const copy = [...prev];
+                        copy[index] = {
+                          ...selected,
+                          metaKey: selected.metaKey,
+                          searchKey: normalizeKey(selected.label),
+                          value: ""
+                        };
+                        return copy;
+                      });
+                    }}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                  >
+                    <option value="">Select field</option>
+                    {availableFilterFields.map(f => (
+                      <option key={f.metaKey} value={f.metaKey}>
+                        {f.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* VALUE INPUT */}
+                <div className="sm:col-span-5">
+                  {meta?.type === "text" && (
+                    <input
+                      type="text"
+                      placeholder={`Enter ${meta.label}`}
+                      value={filter.value}
+                      onChange={(e) => updateValue(index, e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                    />
+                  )}
+                  {meta?.type === "number" && (
+                    <input
+                      type="number"
+                      placeholder={`Enter ${meta.label}`}
+                      value={filter.value}
+                      onChange={(e) => updateValue(index, e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                    />
+                  )}
+                  {meta?.type === "select" && (
+                    <select
+                      value={filter.value}
+                      onChange={(e) => updateValue(index, e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                    >
+                      <option value="">Select {meta.label}</option>
+                      {meta.options?.map(opt => (
+                        <option key={opt} value={opt.toLowerCase()}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {meta?.type === "radio" && (
+                    <div className="flex flex-wrap gap-3">
+                      {meta.options?.map(opt => (
+                        <label key={opt} className="flex items-center gap-1 text-sm">
+                          <input
+                            type="radio"
+                            name={filter.metaKey}
+                            checked={filter.value === opt.toLowerCase()}
+                            onChange={() => updateValue(index, opt.toLowerCase())}
+                            className="accent-blue-500"
+                          />
+                          {opt}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {meta?.type === "checkbox" && (
+                    <div className="flex flex-wrap gap-3">
+                      {meta.options?.map(opt => {
+                        const values = filter.value ? filter.value.split(",") : [];
+                        return (
+                          <label key={opt} className="flex items-center gap-1 text-sm">
+                            <input
+                              type="checkbox"
+                              checked={values.includes(opt.toLowerCase())}
+                              onChange={() => {
+                                const updated = values.includes(opt.toLowerCase())
+                                  ? values.filter(v => v !== opt.toLowerCase())
+                                  : [...values, opt.toLowerCase()];
+                                updateValue(index, updated.join(","));
+                              }}
+                              className="accent-blue-500"
+                            />
+                            {opt}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* REMOVE */}
+                <div className="sm:col-span-2 flex justify-end">
+                  <button
+                    onClick={() => removeUiFilter(index)}
+                    className="text-red-500 hover:text-red-700 text-sm px-2 py-1 transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ACTIONS */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6">
+          <button
+            onClick={addUiFilter}
+            className="text-[#1e2a5a] text-sm font-medium hover:underline"
+          >
+            + Add Filter
+          </button>
+
+          <button
+            onClick={applyFilters}
+            className="bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91]  text-white px-6 py-2 rounded-lg text-sm font-medium shadow-sm transition"
+          >
+            Apply Filters
+          </button>
+        </div>
+      </div>
+
+
+
+
+
 
       {/*  Data Table */}
       <DataTable

@@ -35,6 +35,23 @@ export interface Application {
   createdAt?: string;
   updatedAt?: string;
 }
+interface ApplicationFilters {
+  personalDetails?: {
+    key: string;
+    label: string;
+    type: string;
+    options?: string[];
+    multiple?: boolean;
+  }[];
+  educationDetails?: {
+    key: string;
+    label: string;
+    type: string;
+    options?: string[];
+    multiple?: boolean;
+  }[];
+}
+
 
 export interface PaginatedResponse<T> {
   success: boolean;
@@ -99,6 +116,8 @@ export async function getApplications(params?: {
   city?: string | string[];
   applicationSource?: string;
   interactions?: string;
+  q?: string;
+  filters?: ApplicationFilters;
 }) {
   try {
     const queryParams = new URLSearchParams();
@@ -115,6 +134,7 @@ export async function getApplications(params?: {
     if (params?.program) queryParams.append("program", params.program);
     if (params?.startDate) queryParams.append("startDate", params.startDate);
     if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.q) queryParams.append("q", params.q);
 
     if (params?.country) queryParams.append("country", params.country);
     if (params?.state) queryParams.append("state", params.state);

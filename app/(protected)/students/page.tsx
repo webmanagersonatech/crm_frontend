@@ -172,6 +172,7 @@ export default function StudentsPage() {
   const [columnVisibility, setColumnVisibility] = useState({
     name: true,
     studentId: true,
+    applicationId: true,
     UniversityRegNo: true,
     academicYear: true,
     email: true,
@@ -185,6 +186,7 @@ export default function StudentsPage() {
 
   const columnOptions = [
     { key: "name", label: "Name" },
+    { key: "applicationId", label: "Application ID" },
     { key: "studentId", label: "Student ID" },
     { key: "UniversityRegNo", label: "University Reg No" },
     { key: "academicYear", label: "Academic Year" },
@@ -364,6 +366,11 @@ export default function StudentsPage() {
     columnVisibility.studentId && {
       header: "Student ID",
       accessor: "studentId",
+
+    },
+    columnVisibility.applicationId && {  // ✅ added
+      header: "Application ID",
+      accessor: "applicationId",
     },
 
     columnVisibility.UniversityRegNo && {
@@ -449,16 +456,19 @@ export default function StudentsPage() {
           </button>
 
 
-          <button
-            onClick={() => {
-              setSelected(s);
-              setConfirmType("delete");
-              setConfirmOpen(true);
-            }}
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {role === "superadmin" && (
+            <button
+              onClick={() => {
+                setSelected(s);
+                setConfirmType("delete");
+                setConfirmOpen(true);
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+
         </div>
       ),
     },
@@ -473,6 +483,9 @@ export default function StudentsPage() {
 
     if (columnVisibility.studentId) {
       obj.StudentID = student.studentId || "-";
+    }
+    if (columnVisibility.applicationId) {
+      obj.ApplicationID = student.applicationId || "-"; // ✅ added
     }
 
     if (columnVisibility.UniversityRegNo) {
