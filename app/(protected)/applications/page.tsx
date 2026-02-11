@@ -345,35 +345,58 @@ export default function ApplicationsPage() {
     ]);
   };
 
-  // REMOVE FILTER
-  const removeUiFilter = (index: number) => {
-    setUiFilters(prev => prev.filter((_, i) => i !== index));
-  };
 
-  // BUILD QUERY
-  const buildQueryString = () => {
-    return uiFilters
+
+  // APPLY
+const updateValue = (index: number, value: string) => {
+  setUiFilters(prev => {
+    const copy = [...prev];
+
+    copy[index] = {
+      ...copy[index],
+      value: value.toLowerCase()
+    };
+
+    return copy;
+  });
+
+  // ⬇️ Auto apply after value change
+  setTimeout(() => {
+    const updatedFilters = uiFilters.map((f, i) =>
+      i === index ? { ...f, value: value.toLowerCase() } : f
+    );
+
+    const query = updatedFilters
+      .filter(f => f.searchKey && f.value)
+      .map(f => `${f.searchKey}:${f.value.trim()}`)
+      .join(" ");
+
+    setSearchAny(query);
+    setCurrentPage(1);
+
+
+
+  }, 0);
+};
+
+const removeUiFilter = (index: number) => {
+  setUiFilters(prev => {
+    const updated = prev.filter((_, i) => i !== index);
+
+    // rebuild query from remaining filters
+    const query = updated
       .filter(f => f.searchKey && f.value)
       .map(f => `${f.searchKey}:${f.value.toLowerCase().trim()}`)
       .join(" ");
-  };
 
-  // APPLY
-  const applyFilters = () => {
-    const query = buildQueryString();
     setSearchAny(query);
     setCurrentPage(1);
-  };
-  const updateValue = (index: number, value: string) => {
-    setUiFilters(prev => {
-      const copy = [...prev];
-      copy[index] = {
-        ...copy[index],
-        value: value.toLowerCase()
-      };
-      return copy;
-    });
-  };
+
+    return updated;
+  });
+};
+
+
 
 
 
@@ -1049,7 +1072,7 @@ export default function ApplicationsPage() {
         </h1>
 
         {/* SEARCH PREVIEW */}
-        <div className="mb-6">
+        {/* <div className="mb-6">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Search Preview
           </label>
@@ -1061,11 +1084,11 @@ export default function ApplicationsPage() {
               disabled
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-gray-50 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
-            {/* React Icon */}
+         
             <FiSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
           </div>
 
-        </div>
+        </div> */}
 
         {/* FILTER ROWS */}
         <div className="space-y-4">
@@ -1199,17 +1222,12 @@ export default function ApplicationsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6">
           <button
             onClick={addUiFilter}
-            className="text-[#1e2a5a] text-sm font-medium hover:underline"
+            className="bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91]  text-white px-6 py-2 rounded-lg text-sm font-medium shadow-sm transition"
           >
             + Add Filter
           </button>
 
-          <button
-            onClick={applyFilters}
-            className="bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91]  text-white px-6 py-2 rounded-lg text-sm font-medium shadow-sm transition"
-          >
-            Apply Filters
-          </button>
+      
         </div>
       </div>
 
