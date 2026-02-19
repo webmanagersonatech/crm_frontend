@@ -5,7 +5,7 @@ import { useState } from "react";
 import BackButton from "@/components/BackButton";
 import { changePasswordRequestvialogin } from "@/app/lib/request/authRequest";
 import CryptoJS from "crypto-js";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 
 const SECRET_KEY = "sonacassecretkey@2025";
 
