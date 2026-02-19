@@ -164,13 +164,16 @@ export default function ApplicationDetailsPage() {
                                     <div className="text-sm text-gray-500">
                                         Follow-up :
                                         <span className="ml-1 font-semibold text-gray-800">
-                                            {new Date(f.followUpDate).toLocaleDateString("en-IN", {
-                                                day: "2-digit",
-                                                month: "short",
-                                                year: "numeric",
-                                            })}
+                                            {f.followUpDate
+                                                ? new Date(f.followUpDate).toLocaleDateString("en-IN", {
+                                                    day: "2-digit",
+                                                    month: "short",
+                                                    year: "numeric",
+                                                })
+                                                : "—"}
                                         </span>
                                     </div>
+
                                 </div>
 
                                 {/* Content */}
