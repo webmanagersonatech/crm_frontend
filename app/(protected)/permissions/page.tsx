@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Select from "react-select";
 import { ShieldCheck } from "lucide-react";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { savePermission, getPermissions } from "@/app/lib/request/permissionRequest";
 import { listAllUsers } from "@/app/lib/request/authRequest";
