@@ -80,11 +80,17 @@ export default function ApplicationDetailsPage() {
                                     {/* VALUE */}
                                     <span className="text-gray-700">
                                         {isImage ? (
-                                            <img
-                                                src={`${BASE_URL}${value}`}
-                                                alt={key}
-                                                className="mt-1 max-h-[60px] max-w-[60px] object-contain border"
-                                            />
+                                            <a
+                                                href={`${BASE_URL}${value}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                <img
+                                                    src={`${BASE_URL}${value}`}
+                                                    alt={key}
+                                                    className="mt-1 max-h-[60px] max-w-[60px] object-contain border cursor-pointer hover:opacity-80 transition"
+                                                />
+                                            </a>
                                         ) : isDocument ? (
                                             <a
                                                 href={`${BASE_URL}${value}`}

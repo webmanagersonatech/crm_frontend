@@ -22,6 +22,15 @@ api.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
+export interface BulkUploadResponse {
+  successCount: number;
+  errorCount: number;
+  errors: {
+    row: number;
+    message: string;
+  }[];
+  data: Application[];
+}
 
 export interface Application {
   _id?: string;
@@ -160,6 +169,31 @@ export async function getApplications(params?: {
     );
   }
 }
+export async function bulkUploadApplications(
+  file: File
+): Promise<BulkUploadResponse> {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await api.post<BulkUploadResponse>(
+      "/application/bulk-upload",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error?.response?.data?.message || "Bulk upload failed."
+    );
+  }
+}
+
 
 export async function getpendingApplications(params?: {
   page?: number;

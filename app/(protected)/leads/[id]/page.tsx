@@ -80,7 +80,12 @@ export default function ApplicationDetailsPage() {
                     <div><span className="font-medium">program:</span> {data.program.toUpperCase()}</div>
                     <div><span className="font-medium">phoneNumber:</span> {data.phoneNumber}</div>
                     <div><span className="font-medium">UG Degree:</span> {data.ugDegree}</div>
-                    <div><span className="font-medium">DOB:</span> {new Date(data.dateOfBirth).toLocaleDateString()}</div>
+                    <div>
+                        <span className="font-medium">DOB:</span>{" "}
+                        {data?.dateOfBirth && !isNaN(new Date(data.dateOfBirth).getTime())
+                            ? new Date(data.dateOfBirth).toLocaleDateString("en-IN")
+                            : "—"}
+                    </div>
                     <div><span className="font-medium">Country:</span> {data.country}</div>
                     <div><span className="font-medium">State:</span> {data.state}</div>
                     <div><span className="font-medium">City:</span> {data.city}</div>

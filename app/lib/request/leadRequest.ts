@@ -63,6 +63,25 @@ export async function createLead(data: Partial<Lead>) {
     throw new Error(error.response?.data?.message || "Failed to create lead.");
   }
 }
+// Bulk upload leads (CSV)
+export async function bulkUploadLeads(file: File) {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await api.post("/leads/bulk-upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to upload CSV."
+    );
+  }
+}
 
 // Get paginated leads with filters
 export async function getLeads({

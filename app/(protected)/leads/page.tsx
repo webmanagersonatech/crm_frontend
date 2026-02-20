@@ -8,7 +8,7 @@ import ViewDialog from "@/components/ViewDialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { getActivedata } from "@/app/lib/request/institutionRequest";
 import AddapplicationForm from "@/components/Forms/Addapplicationform";
-import { getLeads, deleteLead, updateLead } from "@/app/lib/request/leadRequest";
+import { getLeads, deleteLead, updateLead, bulkUploadLeads } from "@/app/lib/request/leadRequest";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
@@ -16,6 +16,7 @@ import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import { Country, State, City } from "country-state-city";
 import Select from "react-select";
+import BulkLeadGenerator from "@/components/oko";
 
 interface OptionType {
   value: string;
@@ -94,7 +95,9 @@ export default function LeadsPage() {
   const [selectedCity, setSelectedCity] = useState("");
   const [activeFilter, setActiveFilter] = useState<string[]>([]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [file, setFile] = useState<File | null>(null);
 
+  const [result, setResult] = useState<any>(null);
 
   const toggleFilter = (value: string) => {
     if (!value) return;
@@ -105,9 +108,87 @@ export default function LeadsPage() {
         : [...prev, value]                 // add if not selected
     );
   };
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
 
+  const handleUpload = async () => {
+    if (!file) {
+      alert("Please select a CSV file");
+      return;
+    }
 
+    try {
+      setLoading(true);
+      const res = await bulkUploadLeads(file);
+      setResult(res);
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const filterOptions = [
+    { value: "institution", label: "Institution" },
+    { value: "user", label: "User" },
+    { value: "leadSource", label: "Lead Source" },
+    { value: "country", label: "Country" },
+    { value: "state", label: "State" },
+    { value: "city", label: "City" },
+    { value: "status", label: "Status" },
+    { value: "communication", label: "Communication" },
+    { value: "name", label: "Candidate Name" },
+    { value: "phone", label: "Phone" },
+    { value: "leadId", label: "Lead ID" },
+    { value: "date", label: "Date Range" },
+  ];
+  const resetFilterState = (filter: string) => {
+    switch (filter) {
+      case "date":
+        setStartDate("");
+        setEndDate("");
+        break;
+      case "institution":
+        setSelectedInstitution("all");
+        break;
+      case "user":
+        setSelectedUserId("");
+        break;
+      case "leadSource":
+        setSelectedLeadSource("all");
+        break;
+      case "country":
+        setSelectedCountry("");
+        setSelectedState("");
+        setSelectedCities([]);
+        break;
+      case "state":
+        setSelectedState("");
+        setSelectedCities([]);
+        break;
+      case "city":
+        setSelectedCities([]);
+        break;
+      case "status":
+        setSelectedStatus("all");
+        break;
+      case "communication":
+        setSelectedCommunication("all");
+        break;
+      case "name":
+        setSearchTerm("");
+        break;
+      case "phone":
+        setPhoneSearch("");
+        break;
+      case "leadId":
+        setLeadIdSearch("");
+        break;
+    }
+  };
   const countryOptions = Country.getAllCountries().map(c => ({
     value: c.name,
     label: c.name,
@@ -694,7 +775,37 @@ export default function LeadsPage() {
         </div>
 
         {/* FILTERS */}
+        {/* 
+        <div className="p-6 bg-white shadow rounded-xl max-w-md">
+          <h2 className="text-lg font-semibold mb-4">
+            Bulk Upload Leads (CSV)
+          </h2>
 
+          <input
+            type="file"
+            accept=".csv"
+            onChange={handleFileChange}
+            className="mb-4"
+          />
+
+          <button
+            onClick={handleUpload}
+            disabled={loading}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            {loading ? "Uploading..." : "Upload CSV"}
+          </button>
+
+          {result && (
+            <div className="mt-4 text-sm bg-gray-100 p-3 rounded">
+              <p>Total: {result.total}</p>
+              <p>Inserted: {result.inserted}</p>
+              <p>Duplicates: {result.duplicates}</p>
+            </div>
+          )}
+        </div> */}
+
+        {/* <BulkLeadGenerator /> */}
 
         <div className="flex flex-wrap items-center gap-3 sm:justify-end w-full">
 
@@ -707,26 +818,31 @@ export default function LeadsPage() {
               >
                 <Settings className="w-4 h-4" /> Customize Columns
               </button>
-              <select
-                onChange={(e) => toggleFilter(e.target.value)}
-                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3"
-              >
-                <option value="">Add Filter</option>
-                {(userpermission === "superadmin") && (<option value="institution">Institution</option>)}
-                {role !== "user" && (
-                  <option value="user">User</option>
+              <Select
+                placeholder="Add Filters"
+                options={filterOptions}
+                isMulti
+                closeMenuOnSelect={false}
+                value={filterOptions.filter(opt =>
+                  activeFilter.includes(opt.value)
                 )}
-                <option value="leadSource">Lead Source</option>
-                <option value="country">Country</option>
-                <option value="state">State</option>
-                <option value="city">City</option>
-                <option value="status">Status</option>
-                <option value="communication">Communication</option>
-                <option value="name">Candidate Name</option>
-                <option value="phone">Phone</option>
-                <option value="leadId">Lead ID</option>
-                <option value="date">Date Range</option>
-              </select>
+                onChange={(selectedOptions) => {
+                  const values = selectedOptions?.map(opt => opt.value) || [];
+
+                  // 🔥 Find removed filters
+                  const removedFilters = activeFilter.filter(
+                    f => !values.includes(f)
+                  );
+
+                  // 🔥 Reset removed filters state
+                  removedFilters.forEach((filter) => {
+                    resetFilterState(filter);
+                  });
+
+                  setActiveFilter(values);
+                }}
+                className="min-w-[220px]"
+              />
 
 
               {activeFilter.includes("date") && (<div className="flex items-center gap-2">

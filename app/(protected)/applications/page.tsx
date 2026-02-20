@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import CreateLeadform from "@/components/Forms/CreateLeadForm";
 import Select from "react-select";
 import { Country, State, City } from "country-state-city";
-import { FiSearch } from "react-icons/fi";
+import BulkUploadForm from "@/components/sheetupload";
 
 interface Application {
   _id?: string;
@@ -348,53 +348,53 @@ export default function ApplicationsPage() {
 
 
   // APPLY
-const updateValue = (index: number, value: string) => {
-  setUiFilters(prev => {
-    const copy = [...prev];
+  const updateValue = (index: number, value: string) => {
+    setUiFilters(prev => {
+      const copy = [...prev];
 
-    copy[index] = {
-      ...copy[index],
-      value: value.toLowerCase()
-    };
+      copy[index] = {
+        ...copy[index],
+        value: value.toLowerCase()
+      };
 
-    return copy;
-  });
+      return copy;
+    });
 
-  // ⬇️ Auto apply after value change
-  setTimeout(() => {
-    const updatedFilters = uiFilters.map((f, i) =>
-      i === index ? { ...f, value: value.toLowerCase() } : f
-    );
+    // ⬇️ Auto apply after value change
+    setTimeout(() => {
+      const updatedFilters = uiFilters.map((f, i) =>
+        i === index ? { ...f, value: value.toLowerCase() } : f
+      );
 
-    const query = updatedFilters
-      .filter(f => f.searchKey && f.value)
-      .map(f => `${f.searchKey}:${f.value.trim()}`)
-      .join(" ");
+      const query = updatedFilters
+        .filter(f => f.searchKey && f.value)
+        .map(f => `${f.searchKey}:${f.value.trim()}`)
+        .join(" ");
 
-    setSearchAny(query);
-    setCurrentPage(1);
+      setSearchAny(query);
+      setCurrentPage(1);
 
 
 
-  }, 0);
-};
+    }, 0);
+  };
 
-const removeUiFilter = (index: number) => {
-  setUiFilters(prev => {
-    const updated = prev.filter((_, i) => i !== index);
+  const removeUiFilter = (index: number) => {
+    setUiFilters(prev => {
+      const updated = prev.filter((_, i) => i !== index);
 
-    // rebuild query from remaining filters
-    const query = updated
-      .filter(f => f.searchKey && f.value)
-      .map(f => `${f.searchKey}:${f.value.toLowerCase().trim()}`)
-      .join(" ");
+      // rebuild query from remaining filters
+      const query = updated
+        .filter(f => f.searchKey && f.value)
+        .map(f => `${f.searchKey}:${f.value.toLowerCase().trim()}`)
+        .join(" ");
 
-    setSearchAny(query);
-    setCurrentPage(1);
+      setSearchAny(query);
+      setCurrentPage(1);
 
-    return updated;
-  });
-};
+      return updated;
+    });
+  };
 
 
 
@@ -730,40 +730,39 @@ const removeUiFilter = (index: number) => {
 
 
 
-     {/* ✏️ Edit */}
-{(userpermission === "superadmin" || userpermission?.edit) && (
-  userpermission === "superadmin" || a.paymentStatus !== "Paid" ? (
-    <Link
-      href={`/applications/editapplication/${a._id}`}
-      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center justify-center"
-    >
-      <Pencil className="w-4 h-4" />
-    </Link>
-  ) : (
-    <span className="bg-gray-400 text-white px-3 py-1 rounded-md cursor-not-allowed flex items-center justify-center">
-      <Pencil className="w-4 h-4" />
-    </span>
-  )
-)}
+          {/* ✏️ Edit */}
+          {(userpermission === "superadmin" || userpermission?.edit) && (
+            userpermission === "superadmin" || a.paymentStatus !== "Paid" ? (
+              <Link
+                href={`/applications/editapplication/${a._id}`}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center justify-center"
+              >
+                <Pencil className="w-4 h-4" />
+              </Link>
+            ) : (
+              <span className="bg-gray-400 text-white px-3 py-1 rounded-md cursor-not-allowed flex items-center justify-center">
+                <Pencil className="w-4 h-4" />
+              </span>
+            )
+          )}
 
-{/* 🗑 Delete */}
-{(userpermission === "superadmin" || userpermission?.delete) && (
-  <button
-    disabled={!(userpermission === "superadmin") && a.paymentStatus === "Paid"}
-    onClick={() => {
-      setSelected(a);
-      setConfirmType("delete");
-      setConfirmOpen(true);
-    }}
-    className={`px-3 py-1 rounded-md flex items-center justify-center text-white ${
-      !(userpermission === "superadmin") && a.paymentStatus === "Paid"
-        ? "bg-gray-400 cursor-not-allowed"
-        : "bg-red-600 hover:bg-red-700"
-    }`}
-  >
-    <Trash2 className="w-4 h-4" />
-  </button>
-)}
+          {/* 🗑 Delete */}
+          {(userpermission === "superadmin" || userpermission?.delete) && (
+            <button
+              disabled={!(userpermission === "superadmin") && a.paymentStatus === "Paid"}
+              onClick={() => {
+                setSelected(a);
+                setConfirmType("delete");
+                setConfirmOpen(true);
+              }}
+              className={`px-3 py-1 rounded-md flex items-center justify-center text-white ${!(userpermission === "superadmin") && a.paymentStatus === "Paid"
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-red-600 hover:bg-red-700"
+                }`}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
 
 
         </div>
@@ -806,7 +805,7 @@ const removeUiFilter = (index: number) => {
           <FileText className="w-6 h-6 text-blue-700" />
           <h1 className="text-2xl font-semibold">Applications</h1>
         </div>
-
+        {/* <BulkUploadForm /> */}
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
 
           {(userpermission === "superadmin" || userpermission?.filter) && (
@@ -821,17 +820,68 @@ const removeUiFilter = (index: number) => {
 
               <Select
                 placeholder="Add filter"
-                options={filterOptions.filter(f => !activeFilters.includes(f.value))}
-                onChange={(opt) => {
-                  if (opt?.value) {
-                    setActiveFilters([...activeFilters, opt.value]);
-                    setCurrentPage(1);
-                  }
-                }}
-                isClearable
-                className="w-52"
-              />
+                options={filterOptions}
+                isMulti
+                closeMenuOnSelect={false}
+                hideSelectedOptions={false}
+                value={filterOptions.filter(opt =>
+                  activeFilters.includes(opt.value)
+                )}
+                onChange={(selectedOptions) => {
+                  const values = selectedOptions?.map(opt => opt.value) || [];
 
+                  // 🔥 Find removed filters
+                  const removedFilters = activeFilters.filter(
+                    filter => !values.includes(filter)
+                  );
+
+                  // 🔥 Reset states for removed filters
+                  removedFilters.forEach((filter) => {
+                    switch (filter) {
+                      case "academicYear":
+                        setSelectedYear("all");
+                        break;
+                      case "instituteId":
+                        setSelectedInstitution("all");
+                        break;
+                      case "formStatus":
+                        setSelectedFormStatus("all");
+                        break;
+                      case "paymentStatus":
+                        setSelectedPayment("all");
+                        break;
+                      case "country":
+                        setSelectedCountry("");
+                        break;
+                      case "state":
+                        setSelectedState("");
+                        break;
+                      case "city":
+                        setSelectedCities([]);
+                        break;
+                      case "applicationSource":
+                        setSelectedApplicationSource("");
+                        break;
+                      case "interactions":
+                        setSelectedInteraction("");
+                        break;
+                      case "applicationId":
+                        setSearchApplicationId("");
+                        break;
+                      case "applicantName":
+                        setSearchApplicantName("");
+                        break;
+                      case "program":
+                        setSearchProgram("");
+                        break;
+                    }
+                  });
+
+                  setActiveFilters(values);
+                  setCurrentPage(1);
+                }}
+                className="min-w-[220px]"
+              />
 
               {/* Academic Year Filter (Manual) */}
               {activeFilters.includes("academicYear") && (
@@ -1072,23 +1122,23 @@ const removeUiFilter = (index: number) => {
         </h1>
 
         {/* SEARCH PREVIEW */}
-        {/* <div className="mb-6">
+        <div className="mb-6">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Search Preview
           </label>
-          <div className="relative">
+          {/* <div className="relative">
             <input
               type="text"
               placeholder="bloodgroup:o+ hostelrequired:yes"
               value={searchAny}
               disabled
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm bg-gray-50 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-            />
-         
-            <FiSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-          </div>
+            /> */}
 
-        </div> */}
+          {/* <FiSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} /> */}
+          {/* </div> */}
+
+        </div>
 
         {/* FILTER ROWS */}
         <div className="space-y-4">
@@ -1227,7 +1277,7 @@ const removeUiFilter = (index: number) => {
             + Add Filter
           </button>
 
-      
+
         </div>
       </div>
 
