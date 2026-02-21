@@ -106,9 +106,6 @@ export default function ApplicationsPage() {
     useState<FilterMeta[]>([]);
   const [searchAny, setSearchAny] = useState("");
 
-
-
-
   const [isOpen, setIsOpen] = useState(false);
 
   const [columnVisibility, setColumnVisibility] = useState({
@@ -1193,6 +1190,15 @@ export default function ApplicationsPage() {
                   {meta?.type === "number" && (
                     <input
                       type="number"
+                      placeholder={`Enter ${meta.label}`}
+                      value={filter.value}
+                      onChange={(e) => updateValue(index, e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+                    />
+                  )}
+                  {meta?.type === "email" && (
+                    <input
+                      type="email"
                       placeholder={`Enter ${meta.label}`}
                       value={filter.value}
                       onChange={(e) => updateValue(index, e.target.value)}

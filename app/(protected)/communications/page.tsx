@@ -523,40 +523,7 @@ export default function CommunicationsPage() {
 
             <>
 
-              <input
-                type="text"
-                placeholder="Search by Application ID"
-                value={searchApplicationId}
-                onChange={(e) => {
-                  setSearchApplicationId(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-              />
 
-
-
-              {/* Applicant Name Search */}
-              <input
-                type="text"
-                placeholder="Search by Applicant "
-                value={searchApplicantName}
-                onChange={(e) => {
-                  setSearchApplicantName(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-              />
-
-              <Select
-                value={selectedStatus}
-                onChange={(option: any) => setSelectedStatus(option.value)}
-                options={[
-                  { value: "all", label: "All" },
-                  { value: "unpaid", label: "Unpaid" },
-                  { value: "incomplete", label: "Incomplete" },
-                ]}
-              />
 
               {/* Institution Filter */}
               {(userpermission === "superadmin" && <select
@@ -600,6 +567,43 @@ export default function CommunicationsPage() {
                   ))}
                 </select>
               </div>
+
+              <Select
+                value={selectedStatus}
+                onChange={(option: any) => setSelectedStatus(option.value)}
+                options={[
+                  { value: "all", label: "All" },
+                  { value: "unpaid", label: "Unpaid" },
+                  { value: "incomplete", label: "Incomplete" },
+                ]}
+              />
+
+              <input
+                type="text"
+                placeholder="Search by Application ID"
+                value={searchApplicationId}
+                onChange={(e) => {
+                  setSearchApplicationId(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+              />
+
+
+
+              {/* Applicant Name Search */}
+              <input
+                type="text"
+                placeholder="Search by Applicant "
+                value={searchApplicantName}
+                onChange={(e) => {
+                  setSearchApplicantName(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+              />
+
+
             </>
           )}
 
