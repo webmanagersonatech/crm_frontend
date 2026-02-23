@@ -341,21 +341,21 @@ export default function UsersPage() {
           </div>
 
           {/* Institution Filter */}
-          <select
-            value={selectedInstitution}
-            onChange={(e) => {
-              setSelectedInstitution(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">All Institutions</option>
-            {institutions.map((inst) => (
-              <option key={inst.value} value={inst.value}>
-                {inst.label}
-              </option>
-            ))}
-          </select>
+      <select
+  value={selectedInstitution}
+  onChange={(e) => {
+    setSelectedInstitution(e.target.value);
+    setCurrentPage(1);
+  }}
+  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-[160px] sm:w-[160px] md:w-[160px] lg:w-[160px]"
+>
+  <option value="all">All Institutions</option>
+  {institutions.map((inst) => (
+    <option key={inst.value} value={inst.value}>
+      {inst.label}
+    </option>
+  ))}
+</select>
 
           {/* Role Filter */}
           <select

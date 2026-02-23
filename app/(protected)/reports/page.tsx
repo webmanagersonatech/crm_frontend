@@ -1117,7 +1117,7 @@ export default function ReportsPage() {
                   setSelectedInstitution(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-[160px] sm:w-[160px] md:w-[160px] lg:w-[160px]"
               >
                 <option value="all">All Institutions</option>
                 {institutions.map((inst) => (

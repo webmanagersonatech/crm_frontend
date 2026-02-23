@@ -144,7 +144,60 @@ export async function getStudentRequest(studentId: string) {
     );
   }
 }
+export async function uploadStudentImageByAdmin(
+  studentId: string,
+  file: File
+): Promise<{ success: boolean; message: string; filename: string }> {
+  try {
+    // Create FormData
+    const formData = new FormData();
+    formData.append("studentImage", file);
 
+    // Make API request
+    const response = await api.post(
+      `/student/admin/upload-image/${studentId}`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to upload student image"
+    );
+  }
+}
+
+export function validateStudentImage(file: File): boolean {
+  // Allowed file types
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+
+  // Max file size (5MB)
+  const maxSize = 5 * 1024 * 1024;
+
+  // Check file type
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error("Only PNG, WebP, and JPEG images are allowed");
+  }
+
+  // Check file extension
+  const extension = "." + file.name.split(".").pop()?.toLowerCase();
+  if (!allowedExtensions.includes(extension)) {
+    throw new Error("Invalid file extension. Only .jpg, .jpeg, .png, .webp are allowed");
+  }
+
+  // Check file size
+  if (file.size > maxSize) {
+    throw new Error("File size must be less than 5MB");
+  }
+
+  return true;
+}
 /** ➕ Create Student */
 export async function createStudentRequest(data: CreateStudentData) {
   try {

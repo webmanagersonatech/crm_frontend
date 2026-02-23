@@ -37,6 +37,7 @@ interface Student {
     internshipCompany?: string;
     internshipDuration?: string;
     internshipType?: string;
+    studentImage?: string
     [key: string]: any; // other fields
 }
 
@@ -53,7 +54,18 @@ export default function StudentViewDialog({
     data,
     onClose,
 }: StudentViewDialogProps) {
+    // Base URL for images - change this to your server URL
+    const BASE_URL = "http://160.187.54.80:5000/uploads/";
 
+    // Function to get full image URL
+    const getImageUrl = () => {
+        if (data?.studentImage) {
+            return `${BASE_URL}${data.studentImage}`;
+        }
+        return null;
+    };
+
+    const imageUrl = getImageUrl();
 
     return (
         <AnimatePresence>
@@ -87,7 +99,36 @@ export default function StudentViewDialog({
 
                             {/* Modal Title */}
                             <h2 className="text-2xl font-semibold mb-4">{title}</h2>
+                            <div className="flex flex-col items-center mb-6">
+                                <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-blue-200 shadow-lg">
+                                    {imageUrl ? (
+                                        <img
+                                            src={imageUrl}
+                                            alt={`${data.firstname} ${data.lastname}`}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                // Fallback if image fails to load
+                                                e.currentTarget.style.display = 'none';
+                                                const parent = e.currentTarget.parentElement;
+                                                if (parent) {
+                                                    const fallbackDiv = document.createElement('div');
+                                                    fallbackDiv.className = 'w-full h-full flex items-center justify-center bg-blue-100 text-blue-600 text-3xl font-bold';
+                                                    fallbackDiv.innerText = data.firstname?.charAt(0).toUpperCase() || 'S';
+                                                    parent.appendChild(fallbackDiv);
+                                                }
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-blue-100 text-blue-600 text-3xl font-bold">
+                                            {data.firstname?.charAt(0).toUpperCase() || 'S'}
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="mt-2 text-xs text-gray-500">
+                                    {data.studentImage ? 'Student Photo' : 'No Photo Available'}
+                                </p>
 
+                            </div>
                             {/* Student Info */}
                             {/* Student Info */}
                             <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
@@ -119,8 +160,8 @@ export default function StudentViewDialog({
                                         {data.bloodWilling !== undefined && (
                                             <span
                                                 className={`px-2 py-1 text-xs font-medium rounded-full ${data.bloodWilling
-                                                        ? "bg-green-100 text-green-700"
-                                                        : "bg-gray-200 text-gray-700"
+                                                    ? "bg-green-100 text-green-700"
+                                                    : "bg-gray-200 text-gray-700"
                                                     }`}
                                             >
                                                 {data.bloodWilling ? "Willing to Donate" : "Not Willing"}
@@ -177,14 +218,31 @@ export default function StudentViewDialog({
 
                                 {/* View Application Button */}
                                 <div className="flex justify-center mt-4">
-                                    {data.applicationId && (
-                                        <Link
-                                            href={`/applications/${data?.application?._id}`}
-                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-center"
-                                        >
-                                            View Full Application Details
-                                        </Link>
-                                    )}
+                                    <div className="flex justify-center mt-6">
+                                        {data.applicationId && (
+                                            <div className="flex flex-col items-center gap-3 bg-red-50 p-4 rounded-lg border border-red-200 w-full max-w-md">
+                                                {/* Note first */}
+                                                <p className="text-sm text-red-700 font-medium flex items-center gap-2">
+                                                    <span className="text-xl">📋</span>
+                                                    Want to see more details of this student?
+                                                </p>
+
+                                                {/* Red Button */}
+                                                <Link
+                                                    href={`/applications/${data?.application?._id}`}
+                                                    className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-md transition-all"
+                                                >
+                                                    <span>CLICK TO VIEW APPLICATION</span>
+                                                    <span className="text-lg">→</span>
+                                                </Link>
+
+                                                {/* Small helper text */}
+                                                <p className="text-xs text-gray-500">
+                                                    (View full application details of this student)
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

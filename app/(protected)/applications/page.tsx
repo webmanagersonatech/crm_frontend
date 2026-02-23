@@ -914,7 +914,7 @@ export default function ApplicationsPage() {
                     setSelectedInstitution(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-[160px] sm:w-[160px] md:w-[160px] lg:w-[160px]"
                 >
                   <option value="all">All Institutions</option>
                   {institutions.map((inst) => (
@@ -1094,7 +1094,7 @@ export default function ApplicationsPage() {
           {(userpermission === "superadmin" || userpermission?.create) && (
             <Link
               href={"/applications/addapplication"}
-              className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
+              className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" /> New Application
             </Link>)}

@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-import { User, X } from "lucide-react";
-import { getStudentRequest, updateStudentIndividualRequest } from "@/app/lib/request/studentRequest";
-
+import { User, X, Upload, Camera } from "lucide-react";
+import { getStudentRequest, updateStudentIndividualRequest, uploadStudentImageByAdmin, validateStudentImage } from "@/app/lib/request/studentRequest";
+import Image from "next/image";
 
 interface Sibling {
     name: string;
@@ -86,6 +86,10 @@ export default function StudentCleanupForm({
 }: StudentCleanupFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [imageUploading, setImageUploading] = useState(false);
+    const [studentImage, setStudentImage] = useState<string>("");
+    const [imagePreview, setImagePreview] = useState<string>("");
+    const [uploadedFilename, setUploadedFilename] = useState<string>("");
     const [student, setStudent] = useState<any>(null);
 
     const [form, setForm] = useState<FormState>({
@@ -123,7 +127,10 @@ export default function StudentCleanupForm({
             try {
                 const data = await getStudentRequest(studentid);
                 setStudent(data);
+                if (data.studentImage) {
+                    setStudentImage(data.studentImage);
 
+                }
                 // ---------------- APPLICATION DATA ----------------
                 const personalDetails = data?.application?.personalDetails || [];
 
@@ -232,6 +239,40 @@ export default function StudentCleanupForm({
         fetchStudent();
     }, [studentid]);
 
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            // Validate image
+            validateStudentImage(file);
+
+            // Show preview
+            const previewUrl = URL.createObjectURL(file);
+            setImagePreview(previewUrl);
+
+            // Upload image
+            setImageUploading(true);
+            const response: any = await uploadStudentImageByAdmin(studentid, file);
+
+            if (response.success) {
+                setUploadedFilename(response?.data?.filename);
+                setStudentImage(response?.data.filename);
+                toast.success("Image uploaded successfully!");
+
+                // Clear preview after upload
+                setTimeout(() => {
+                    setImagePreview("");
+                }, 2000);
+            }
+        } catch (error: any) {
+            toast.error(error.message || "Image upload failed");
+            setImagePreview("");
+        } finally {
+            setImageUploading(false);
+            e.target.value = ""; // Reset input
+        }
+    };
 
 
 
@@ -273,6 +314,7 @@ export default function StudentCleanupForm({
                 status: s.status,
             })),
             feedbackRating: form.feedbackRating || undefined,
+            studentImage: studentImage,
             feedbackReason: form.feedbackReason,
         };
 
@@ -299,6 +341,17 @@ export default function StudentCleanupForm({
 
 
     const labelClass = "block mb-1 font-medium text-gray-700";
+    const getImageUrl = () => {
+        const baseUrl = "http://160.187.54.80:5000";
+        if (studentImage) {
+            // Clean the filename (remove any accidental double slashes)
+            const cleanFilename = studentImage.replace(/^\/+/, '');
+            const url = `${baseUrl}/uploads/${cleanFilename}`;
+            console.log("Generated Image URL:", url); // Debug log
+            return url;
+        }
+        return null;
+    };
 
     /* ===================== RENDER ===================== */
     return (
@@ -313,7 +366,75 @@ export default function StudentCleanupForm({
                 <p>Loading student data...</p>
             ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    <section className="border p-6 rounded-lg shadow-sm bg-gray-50">
+                        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <Camera className="w-5 h-5" /> Student Photo
+                        </h3>
 
+                        <div className="flex flex-col md:flex-row items-center gap-6">
+                            {/* Image Display */}
+                            <div className="relative">
+                                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-blue-200 shadow-lg">
+                                    {imagePreview ? (
+                                        <img
+                                            src={imagePreview}
+                                            alt="Preview"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : getImageUrl() ? (
+                                        <img
+                                            src={getImageUrl()!}
+                                            alt={student.firstname}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                e.currentTarget.src = `https://ui-avatars.com/api/?name=${student.firstname}+${student.lastname}&background=3a4480&color=fff`;
+                                            }}
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-blue-100 text-blue-600 text-4xl font-bold">
+                                            {student.firstname?.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Upload Overlay */}
+                                <label
+                                    htmlFor="image-upload"
+                                    className="absolute -bottom-2 -right-2 bg-blue-600 text-white p-2 rounded-full cursor-pointer hover:bg-blue-700 transition shadow-lg"
+                                >
+                                    <Upload className="w-4 h-4" />
+                                </label>
+                                <input
+                                    id="image-upload"
+                                    type="file"
+                                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                    onChange={handleImageUpload}
+                                    className="hidden"
+                                    disabled={imageUploading}
+                                />
+                            </div>
+
+                            {/* Image Info */}
+                            <div className="flex-1">
+                                <p className="text-sm text-gray-600">
+                                    <span className="font-medium">Current Image:</span> {studentImage || "No image"}
+                                </p>
+                                {uploadedFilename && (
+                                    <p className="text-xs text-green-600 mt-1">
+                                        ✅ Uploaded: {uploadedFilename}
+                                    </p>
+                                )}
+                                {imageUploading && (
+                                    <p className="text-xs text-blue-600 mt-1">
+                                        ⏳ Uploading...
+                                    </p>
+                                )}
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Allowed: PNG, WebP, JPEG (Max 5MB)
+                                </p>
+                            </div>
+                        </div>
+                    </section>
                     {/* ================= ADMISSION ================= */}
                     <section className="space-y-2 border p-4 rounded-lg shadow-sm">
                         <h3 className="font-semibold text-gray-700 mb-2">Admission Details</h3>
@@ -495,7 +616,7 @@ export default function StudentCleanupForm({
                     </section>
                     {/* ================= FAMILY ================= */}
                     <section className="space-y-2 border p-4 rounded-lg shadow-sm">
-                        <h3 className="font-semibold text-gray-700 mb-2">Family Details</h3>
+
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* OCCUPATION */}
