@@ -9,6 +9,7 @@ import {
   Pencil,
   X,
   GraduationCap,
+  Loader2,
   Trash2,
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -22,7 +23,7 @@ import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import StudentCleanupForm from "@/components/Forms/Studentdatacleanform";
 import { listStudentsRequest } from "@/app/lib/request/studentRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
-import { deleteStudentRequest, toggleStudentStatusRequest } from "@/app/lib/request/studentRequest";
+import { deleteStudentRequest, toggleStudentStatusRequest, exportStudentsRequest } from "@/app/lib/request/studentRequest";
 import { motion, AnimatePresence } from "framer-motion";
 import { Country, State, City } from "country-state-city";
 import Select from "react-select";
@@ -123,6 +124,8 @@ export default function StudentsPage() {
   const [academicYears, setAcademicYears] = useState<string[]>([]);
   const [selectedYear, setSelectedYear] = useState("all");
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
+  const [exportData, setExportData] = useState<any[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -139,6 +142,92 @@ export default function StudentsPage() {
     }
   }, [])
 
+  const handleExport = async () => {
+    try {
+      setExportLoading(true);
+
+      // Call the export API with the same filters (without pagination)
+      const result = await exportStudentsRequest({
+        search: searchTerm,
+        status: statusFilter,
+        academicYear: selectedYear !== "all" ? selectedYear : undefined,
+        instituteId: selectedInstitution,
+        bloodGroup: bloodGroupFilter,
+        bloodDonate: bloodDonateFilter,
+        hostelWilling: hostelWillingFilter,
+        quota: quotaFilter,
+        country: selectedCountry,
+        state: selectedState,
+        city: selectedCities.length ? selectedCities : undefined,
+        feedbackRating: feedbackFilter,
+        familyOccupation: familyOccupationFilter,
+      });
+
+      // Check if we have data
+      if (!result.data || result.data.length === 0) {
+        toast.info("No data to export");
+        setExportLoading(false);
+        return;
+      }
+
+      // Transform the data using the SAME logic as filteredStudents
+      const transformedData = result.data.map((student: any) => {
+        const obj: any = {};
+
+        if (columnVisibility.name) {
+          obj.Name = `${student.firstname || ""} ${student.lastname || ""}`.trim() || "-";
+        }
+
+        if (columnVisibility.studentId) {
+          obj.StudentID = student.studentId || "-";
+        }
+
+        if (columnVisibility.applicationId) {
+          obj.ApplicationID = student.applicationId || "-";
+        }
+
+        if (columnVisibility.UniversityRegNo) {
+          obj.UniversityRegNo = student.admissionUniversityRegNo || "-";
+        }
+
+        if (columnVisibility.academicYear) {
+          obj.AcademicYear = student.academicYear || "-";
+        }
+
+        if (columnVisibility.bloodGroup) {
+          obj.BloodGroup = student.bloodGroup || "-";
+        }
+
+        if (columnVisibility.email) {
+          obj.Email = student.email || "-";
+        }
+
+        if (columnVisibility.mobile) {
+          obj.Mobile = student.mobileNo || "-";
+        }
+
+        if (role === "superadmin" && columnVisibility.instituteName) {
+          obj.Institute = student.institute?.name || student.instituteId || "-";
+        }
+
+        if (columnVisibility.status) {
+          obj.Status = student.status || "-";
+        }
+
+        return obj;
+      });
+
+      // Set the data and open modal
+      setExportData(transformedData);
+      setExportOpen(true);
+
+    } catch (error: any) {
+      toast.error("Failed to export students: " + (error.message || "Unknown error"));
+      console.error("Error exporting students:", error);
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   const countryOptions = Country.getAllCountries().map(c => ({
     value: c.name,
@@ -166,9 +255,6 @@ export default function StudentsPage() {
       : [];
 
 
-
-
-
   const [columnVisibility, setColumnVisibility] = useState({
     name: true,
     studentId: true,
@@ -182,7 +268,6 @@ export default function StudentsPage() {
     bloodGroup: true,
 
   });
-
 
   const columnOptions = [
     { key: "name", label: "Name" },
@@ -726,10 +811,24 @@ export default function StudentsPage() {
 
           {/* Export */}
           <button
-            onClick={() => setExportOpen(true)}
-            className="flex items-center gap-1 bg-green-700 hover:bg-green-800 text-white px-3 py-2 text-sm rounded-md"
+            onClick={handleExport}  // Change from setExportOpen(true) to handleExport
+            disabled={exportLoading}
+            className={`flex items-center gap-1 px-3 py-2 text-sm rounded-md ${exportLoading
+              ? 'bg-green-400 cursor-not-allowed'
+              : 'bg-green-700 hover:bg-green-800'
+              } text-white`}
           >
-            <FileDown className="w-4 h-4" /> Export
+            {exportLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Fetching Data...
+              </>
+            ) : (
+              <>
+                <FileDown className="w-4 h-4" />
+                Export
+              </>
+            )}
           </button>
 
 
@@ -811,9 +910,16 @@ export default function StudentsPage() {
 
       <ExportModal
         open={exportOpen}
-        title="students"
-        data={filteredStudents}
-        onClose={() => setExportOpen(false)}
+        title="Students"
+        data={exportData}  // Use exportData instead of filteredStudents
+        onClose={() => {
+          setExportOpen(false);
+          // Clear data after modal closes
+          setTimeout(() => {
+            setExportData([]);
+          }, 300);
+        }}
+        loading={exportLoading}
       />
 
       <ColumnCustomizeDialog

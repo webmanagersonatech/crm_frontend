@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { Eye, Pencil, FileDown, Users, Plus, Settings, Trash2, Search, FileText, X, Clock } from "lucide-react";
+import { Eye, Pencil, FileDown, Users, Plus, Loader2, Settings, Trash2, Search, FileText, X, Clock } from "lucide-react";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import { DataTable } from "@/components/Tablecomponents";
@@ -8,7 +8,7 @@ import ViewDialog from "@/components/ViewDialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { getActivedata } from "@/app/lib/request/institutionRequest";
 import AddapplicationForm from "@/components/Forms/Addapplicationform";
-import { getLeads, deleteLead, updateLead, bulkUploadLeads } from "@/app/lib/request/leadRequest";
+import { getLeads, deleteLead, updateLead, bulkUploadLeads, exportLeads } from "@/app/lib/request/leadRequest";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
@@ -96,7 +96,8 @@ export default function LeadsPage() {
   const [activeFilter, setActiveFilter] = useState<string[]>([]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
-
+  const [exportData, setExportData] = useState<any[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
   const toggleFilter = (value: string) => {
@@ -418,6 +419,102 @@ export default function LeadsPage() {
   useEffect(() => {
     fetchLeads();
   }, [fetchLeads]);
+
+
+  const handleExport = async () => {
+    try {
+      setExportLoading(true);
+
+      // Call the export API with the same filters (without pagination)
+      const exportResult = await exportLeads({
+        instituteId: selectedInstitution !== "all" ? selectedInstitution : undefined,
+        status: selectedStatus !== "all" ? selectedStatus : undefined,
+        communication: selectedCommunication !== "all" ? selectedCommunication : undefined,
+        candidateName: searchTerm || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        userId: selectedUserId || undefined,
+        phoneNumber: phoneSearch || undefined,
+        leadSource: selectedLeadSource !== "all" ? selectedLeadSource : undefined,
+        leadId: leadIdSearch || undefined,
+        country: selectedCountry || undefined,
+        state: selectedState || undefined,
+        city: selectedCities.length ? selectedCities : undefined,
+      });
+
+      // Check if we have data
+      if (!exportResult.data || exportResult.data.length === 0) {
+        toast.info("No data to export");
+        setExportLoading(false);
+        return;
+      }
+
+      // Transform the data using the SAME logic as filteredLeads
+      const transformedData = exportResult.data.map((lead: any) => {
+        const obj: any = {};
+
+        if (columnVisibility.leadId) {
+          obj.LeadID = lead.leadId || "-";
+        }
+
+        if (userpermission === "superadmin" && columnVisibility.instituteId) {
+          obj.Institute = lead.institute?.name || lead.instituteId || "-";
+        }
+
+        if (columnVisibility.candidateName) {
+          obj.Candidate = lead.candidateName || "-";
+        }
+
+        if (columnVisibility.program) {
+          obj.Program = lead.program || "-";
+        }
+
+        if (columnVisibility.phoneNumber) {
+          obj.Phone = lead.phoneNumber || "-";
+        }
+
+        if (columnVisibility.communication) {
+          obj.Communication = lead.communication || "-";
+        }
+
+        if (columnVisibility.followUp) {
+          obj.FollowUpDate = lead.followUpDate
+            ? new Date(lead.followUpDate).toLocaleString()
+            : "-";
+        }
+
+        if (columnVisibility.createdBy) {
+          obj.CreatedBy = lead.creator
+            ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`.trim()
+            : "-";
+        }
+
+        if (columnVisibility.status) {
+          obj.Status = lead.status || "-";
+        }
+
+        if (columnVisibility.applicationStatus) {
+          obj.ApplicationStatus = lead.applicationId
+            ? "Applied"
+            : lead.status === "Interested"
+              ? "Pending Application"
+              : "Pending";
+        }
+
+        return obj;
+      });
+
+      // Set the data and open modal
+      setExportData(transformedData);
+      setOpen(true);
+
+    } catch (error: any) {
+      toast.error("Failed to export leads: " + (error.message || "Unknown error"));
+      console.error("Error exporting leads:", error);
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
 
 
@@ -1046,11 +1143,26 @@ export default function LeadsPage() {
           {/* 📤 Export */}
           {(userpermission === "superadmin" || userpermission?.download) && (
             <button
-              onClick={() => setOpen(true)}
-              className="flex items-center justify-center gap-1 bg-green-700 hover:bg-green-800 text-white px-3 py-2 text-sm rounded-md w-full sm:w-auto transition"
+              onClick={handleExport}
+              disabled={exportLoading}
+              className={`flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-md w-full sm:w-auto transition ${exportLoading
+                ? 'bg-green-400 cursor-not-allowed'
+                : 'bg-green-700 hover:bg-green-800'
+                } text-white`}
             >
-              <FileDown className="w-4 h-4" /> Export
-            </button>)}
+              {exportLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Fetching Data...
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-4 h-4" />
+                  Export
+                </>
+              )}
+            </button>
+          )}
 
           {/* ➕ Add Lead */}
           {(userpermission === "superadmin" || userpermission?.create) && (
@@ -1065,9 +1177,17 @@ export default function LeadsPage() {
         <ExportModal
           open={open}
           title={"Leads"}
-          onClose={() => setOpen(false)}
-          data={filteredLeads}
+          onClose={() => {
+            setOpen(false);
+            // Clear data after modal closes
+            setTimeout(() => {
+              setExportData([]);
+            }, 300);
+          }}
+          data={exportData}
+          loading={exportLoading}
         />
+
       </div>
 
       {/* TABLE */}

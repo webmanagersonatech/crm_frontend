@@ -74,6 +74,15 @@ export interface PaginatedResponse<T> {
   data: T[];
 }
 
+
+export interface ExportResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T[];
+  totalCount: number;
+
+}
+
 export interface EmailRequest {
   templateId: any;
   recipients: { name: string; email: string }[];
@@ -166,6 +175,63 @@ export async function getApplications(params?: {
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message || "Failed to fetch applications list."
+    );
+  }
+}
+
+export async function exportApplications(params?: {
+  academicYear?: string;
+  instituteId?: string;
+  paymentStatus?: string;
+  formStatus?: string;
+  applicationId?: string;
+  applicantName?: string;
+  program?: string;
+  startDate?: string;
+  endDate?: string;
+  country?: string;
+  state?: string;
+  city?: string | string[];
+  applicationSource?: string;
+  interactions?: string;
+  q?: string;
+}) {
+  try {
+    const queryParams = new URLSearchParams();
+
+    // Add all the same filters as getApplications (without page/limit)
+    if (params?.academicYear) queryParams.append("academicYear", params.academicYear);
+    if (params?.instituteId) queryParams.append("instituteId", params.instituteId);
+    if (params?.paymentStatus) queryParams.append("paymentStatus", params.paymentStatus);
+    if (params?.formStatus) queryParams.append("formStatus", params.formStatus);
+    if (params?.applicationId) queryParams.append("applicationId", params.applicationId);
+    if (params?.applicantName) queryParams.append("applicantName", params.applicantName);
+    if (params?.program) queryParams.append("program", params.program);
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.q) queryParams.append("q", params.q);
+    if (params?.country) queryParams.append("country", params.country);
+    if (params?.state) queryParams.append("state", params.state);
+
+    if (params?.city) {
+      if (Array.isArray(params.city)) {
+        params.city.forEach(c => queryParams.append("city", c));
+      } else {
+        queryParams.append("city", params.city);
+      }
+    }
+
+    if (params?.applicationSource) queryParams.append("applicationSource", params.applicationSource);
+    if (params?.interactions) queryParams.append("interactions", params.interactions);
+
+    const response = await api.get<ExportResponse<Application>>(
+      `/application/export?${queryParams.toString()}`
+    );
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to export applications."
     );
   }
 }

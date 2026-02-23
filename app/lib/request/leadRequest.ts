@@ -51,6 +51,12 @@ export interface Lead {
   createdAt?: string;
   updatedAt?: string;
 }
+export interface ExportResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T[];
+  totalCount: number;
+}
 
 // ---------------- API Calls ----------------
 
@@ -151,7 +157,66 @@ export async function getLeads({
     throw new Error(error.response?.data?.message || "Failed to fetch leads.");
   }
 }
+export async function exportLeads({
+  instituteId,
+  status,
+  candidateName,
+  communication,
+  startDate,
+  endDate,
+  userId,
+  phoneNumber,
+  leadId,
+  leadSource,
+  country,
+  state,
+  city,
+}: {
+  instituteId?: string;
+  status?: string;
+  candidateName?: string;
+  communication?: string;
+  startDate?: string;
+  endDate?: string;
+  userId?: string;
+  phoneNumber?: string;
+  leadId?: string;
+  leadSource?: string;
+  country?: string;
+  state?: string;
+  city?: string | string[];
+}) {
+  try {
+    const params = new URLSearchParams();
 
+    if (instituteId) params.append("instituteId", instituteId);
+    if (status) params.append("status", status);
+    if (candidateName) params.append("candidateName", candidateName);
+    if (communication) params.append("communication", communication);
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+    if (userId) params.append("userId", userId);
+    if (phoneNumber) params.append("phoneNumber", phoneNumber);
+    if (leadId) params.append("leadId", leadId);
+    if (country) params.append("country", country);
+    if (state) params.append("state", state);
+    if (city) {
+      if (Array.isArray(city)) {
+        city.forEach(c => params.append("city", c));
+      } else {
+        params.append("city", city);
+      }
+    }
+    if (leadSource) params.append("leadSource", leadSource);
+
+    const response = await api.get<ExportResponse<Lead>>(`/leads/export?${params.toString()}`);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to export leads."
+    );
+  }
+}
 
 
 // Get a single lead by ID

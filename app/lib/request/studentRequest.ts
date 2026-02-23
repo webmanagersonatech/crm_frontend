@@ -35,7 +35,12 @@ export interface CreateStudentData {
   city?: string;
   status?: "active" | "inactive";
 }
-
+export interface ExportResponse<T> {
+  status: boolean;
+  message?: string;
+  data: T[];
+  totalCount: number;
+}
 /* =======================
    Axios Instance
 ======================= */
@@ -131,6 +136,64 @@ export async function listStudentsRequest({
   }
 }
 
+export async function exportStudentsRequest({
+  search = "",
+  status = "all",
+  instituteId = "all",
+  academicYear = "all",
+  bloodGroup = "all",
+  bloodDonate = "all",
+  hostelWilling = "all",
+  quota = "all",
+  country = "all",
+  state = "all",
+  city = "all",
+  feedbackRating = "all",
+  familyOccupation = "all",
+}: {
+  search?: string;
+  status?: string;
+  instituteId?: string;
+  academicYear?: string;
+  bloodGroup?: string;
+  bloodDonate?: string;
+  hostelWilling?: string;
+  quota?: string;
+  country?: string;
+  state?: string;
+  city?: string | string[];
+  feedbackRating?: string;
+  familyOccupation?: string;
+}) {
+  try {
+    const params: any = {
+      search,
+      status,
+      instituteId,
+      academicYear,
+      bloodGroup,
+      bloodDonate,
+      hostelWilling,
+      quota,
+      country,
+      state,
+      feedbackRating,
+      familyOccupation,
+    };
+
+    // Handle multi-city safely
+    if (city !== "all") {
+      params.city = city;
+    }
+
+    const response = await api.get<ExportResponse<Student>>("/student/export", { params });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to export students."
+    );
+  }
+}
 
 
 /** 👤 Get Single Student */

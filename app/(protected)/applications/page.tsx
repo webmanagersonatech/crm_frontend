@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Eye, Plus, Pencil, Trash2, FileDown, FileText, Settings, Edit2, PlusCircle, X } from "lucide-react";
+import { Eye, Plus, Loader2, Pencil, Trash2, FileDown, FileText, Settings, Edit2, PlusCircle, X } from "lucide-react";
 import { DataTable } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ViewDialog from "@/components/ViewDialog";
 import { toast } from "react-toastify";
-import { getApplications, deleteApplication, updatePaymentStatus } from "@/app/lib/request/application";
+import { getApplications, deleteApplication, updatePaymentStatus, exportApplications } from "@/app/lib/request/application";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import ExportModal from "@/components/ExportModal";
@@ -92,7 +92,8 @@ export default function ApplicationsPage() {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
-
+  const [exportData, setExportData] = useState<any[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
 
@@ -100,7 +101,7 @@ export default function ApplicationsPage() {
   const [selectedInteraction, setSelectedInteraction] = useState("");
   const [totalEntries, setTotalEntries] = useState(0);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [uiFilters, setUiFilters] = useState<UiFilter[]>([]);
   const [availableFilterFields, setAvailableFilterFields] =
     useState<FilterMeta[]>([]);
@@ -322,7 +323,79 @@ export default function ApplicationsPage() {
   }, [currentPage, searchAny,
     selectedYear, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
 
+  const handleExport = async () => {
+    try {
+      setExportLoading(true); // You'll need to add this state
 
+      // Call the export API with the same filters (without pagination)
+      const exportResult = await exportApplications({
+        academicYear: selectedYear !== "all" ? selectedYear : undefined,
+        instituteId: selectedInstitution !== "all" ? selectedInstitution : undefined,
+        paymentStatus: selectedPayment !== "all" ? selectedPayment : undefined,
+        formStatus: selectedFormStatus !== "all" ? selectedFormStatus : undefined,
+        applicationId: searchApplicationId.trim() || undefined,
+        applicantName: searchApplicantName.trim() || undefined,
+        program: searchProgram.trim() || undefined,
+        country: selectedCountry || undefined,
+        state: selectedState || undefined,
+        city: selectedCities.length ? selectedCities : undefined,
+        applicationSource: selectedApplicationSource || undefined,
+        interactions: selectedInteraction || undefined,
+        q: searchAny.trim() || undefined,
+      });
+
+      // Transform the exported data for display in modal
+      const exportedData = (exportResult.data || []).map((app: any) => {
+        const obj: any = {};
+
+        if (columnVisibility.applicationId) {
+          obj.ApplicationId = app.applicationId || "-";
+        }
+
+        if (userpermission === "superadmin" && columnVisibility.institute) {
+          obj.Institute = app.institute?.name || app.instituteId || "-";
+        }
+
+        if (columnVisibility.applicantName) {
+          obj.ApplicantName = app.applicantName || app.personalData?.["Full Name"] || "-";
+        }
+
+        if (columnVisibility.academicYear) {
+          obj.AcademicYear = app.academicYear || "-";
+        }
+
+        if (columnVisibility.city) {
+          obj.City = app.city || app?.City || "-";
+        }
+
+        if (columnVisibility.paymentStatus) {
+          obj.PaymentStatus = app.paymentStatus || "-";
+        }
+
+        if (columnVisibility.formStatus) {
+          obj.FormStatus = app.formStatus || "-";
+        }
+
+        if (columnVisibility.createdAt) {
+          obj.CreatedAt = app.createdAt
+            ? new Date(app.createdAt).toLocaleDateString()
+            : "-";
+        }
+
+        return obj;
+      });
+
+      // Set the exported data to the modal
+      setExportData(exportedData); // You'll need to add this state
+      setOpen(true); // Open the modal with exported data
+
+    } catch (error: any) {
+      toast.error("Failed to export applications");
+      console.error("Error exporting applications:", error);
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   // UTILS
   const normalizeKey = (label: string) =>
@@ -1081,12 +1154,23 @@ export default function ApplicationsPage() {
 
 
           {(userpermission === "superadmin" || userpermission?.download) && (
-            <button
-              onClick={() => setOpen(true)}
-              className="flex items-center justify-center gap-1 bg-green-700 hover:bg-green-800 text-white px-3 py-2 text-sm rounded-md w-full sm:w-auto transition"
-            >
-              <FileDown className="w-4 h-4" /> Export
-            </button>)}
+               <button
+          onClick={handleExport}
+          disabled={exportLoading}
+          className="flex items-center justify-center gap-1 bg-green-700 hover:bg-green-800 text-white px-3 py-2 text-sm rounded-md w-full sm:w-auto transition"
+        >
+          {exportLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Fetching Data...
+            </>
+          ) : (
+            <>
+              <FileDown className="w-4 h-4" />
+              Export
+            </>
+          )}
+        </button>)}
 
           {/* Add Application */}
 
@@ -1102,11 +1186,18 @@ export default function ApplicationsPage() {
         </div>
 
 
+
+
+
         <ExportModal
           open={open}
           title={"Applications"}
-          onClose={() => setOpen(false)}
-          data={filteredApplications}
+          onClose={() => {
+            setOpen(false);
+            setExportData([]);
+          }}
+          data={exportData}
+          loading={exportLoading}
         />
       </div>
 
