@@ -876,313 +876,375 @@ export default function ApplicationsPage() {
           <h1 className="text-2xl font-semibold">Applications</h1>
         </div>
         {/* <BulkUploadForm /> */}
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+        <div className="flex flex-col gap-4 p-3 sm:p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
 
-          {(userpermission === "superadmin" || userpermission?.filter) && (
-            <>
-              <button
-                onClick={() => setCustomizeOpen(true)}
-                className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
-              >
-                <Settings className="w-4 h-4" /> Customize Columns
-              </button>
+          {/* Header Section - Always at top */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 
 
-              <Select
-                placeholder="Add filter"
-                options={filterOptions}
-                isMulti
-                closeMenuOnSelect={false}
-                hideSelectedOptions={false}
-                value={filterOptions.filter(opt =>
-                  activeFilters.includes(opt.value)
-                )}
-                onChange={(selectedOptions) => {
-                  const values = selectedOptions?.map(opt => opt.value) || [];
-
-                  // 🔥 Find removed filters
-                  const removedFilters = activeFilters.filter(
-                    filter => !values.includes(filter)
-                  );
-
-                  // 🔥 Reset states for removed filters
-                  removedFilters.forEach((filter) => {
-                    switch (filter) {
-                      case "academicYear":
-                        setSelectedYear("all");
-                        break;
-                      case "instituteId":
-                        setSelectedInstitution("all");
-                        break;
-                      case "formStatus":
-                        setSelectedFormStatus("all");
-                        break;
-                      case "paymentStatus":
-                        setSelectedPayment("all");
-                        break;
-                      case "country":
-                        setSelectedCountry("");
-                        break;
-                      case "state":
-                        setSelectedState("");
-                        break;
-                      case "city":
-                        setSelectedCities([]);
-                        break;
-                      case "applicationSource":
-                        setSelectedApplicationSource("");
-                        break;
-                      case "interactions":
-                        setSelectedInteraction("");
-                        break;
-                      case "applicationId":
-                        setSearchApplicationId("");
-                        break;
-                      case "applicantName":
-                        setSearchApplicantName("");
-                        break;
-                      case "program":
-                        setSearchProgram("");
-                        break;
-                    }
-                  });
-
-                  setActiveFilters(values);
-                  setCurrentPage(1);
-                }}
-                className="min-w-[220px]"
-              />
-
-              {/* Academic Year Filter (Manual) */}
-              {activeFilters.includes("academicYear") && (
-                <div className="rounded-md w-fit border p-[3px] flex items-center gap-3">
-                  <label className="text-sm font-semibold text-gray-700">
-                    Academic Year:
-                  </label>
-
-                  <select
-                    value={selectedYear}
-                    onChange={(e) => {
-                      setSelectedYear(e.target.value);
+            {/* Entries selector - Left side on large screens */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">Show</span>
+              <div className="flex rounded-md border border-gray-200 dark:border-gray-700 divide-x divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                {[10, 50, 100, 250, 500].map((value) => (
+                  <button
+                    key={value}
+                    onClick={() => {
+                      setLimit(value);
                       setCurrentPage(1);
                     }}
-                    className="border text-sm rounded-md py-2 px-3 w-40 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                    className={`px-2 sm:px-3 py-1.5 text-xs font-medium transition-all ${limit === value
+                        ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
                   >
-                    <option value="all">All</option>
+                    {value}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">entries</span>
+            </div>
 
-                    {academicYears.map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+            {/* Action Buttons - Right side on large screens */}
+            <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
+              {/* Export Button */}
+              {(userpermission === "superadmin" || userpermission?.download) && (
+                <button
+                  onClick={handleExport}
+                  disabled={exportLoading}
+                  className={`inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-medium rounded-md transition-all shadow-sm whitespace-nowrap flex-1 sm:flex-initial ${exportLoading
+                      ? 'bg-green-400 text-white cursor-not-allowed opacity-75'
+                      : 'bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white'
+                    }`}
+                >
+                  {exportLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span className="hidden xs:inline">Exporting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileDown className="w-3.5 h-3.5" />
+                      <span className="hidden xs:inline">Export</span>
+                    </>
+                  )}
+                </button>
               )}
 
-
-              {activeFilters.includes("instituteId") && (
-                <select
-                  value={selectedInstitution}
-                  onChange={(e) => {
-                    setSelectedInstitution(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-[160px] sm:w-[160px] md:w-[160px] lg:w-[160px]"
+              {/* Add Application Button */}
+              {(userpermission === "superadmin" || userpermission?.create) && (
+                <Link
+                  href="/applications/addapplication"
+                  className="inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-medium bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] hover:from-[#2a3970] hover:to-[#4a5d9e] text-white rounded-md transition-all shadow-sm whitespace-nowrap flex-1 sm:flex-initial"
                 >
-                  <option value="all">All Institutions</option>
-                  {institutions.map((inst) => (
-                    <option key={inst.value} value={inst.value}>
-                      {inst.label}
-                    </option>
-                  ))}
-                </select>)}
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden xs:inline">New</span>
+                  <span className="hidden sm:inline">Application</span>
+                </Link>
+              )}
+            </div>
+          </div>
 
+          {/* Filter Section - Main content */}
+          {(userpermission === "superadmin" || userpermission?.filter) && (
+            <div className="flex flex-col gap-3">
+              {/* Filter Controls Row - Horizontal on large screens */}
+              <div className="flex flex-col lg:flex-row lg:items-center gap-2">
+                {/* Customize Button */}
+                <button
+                  onClick={() => setCustomizeOpen(true)}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all shadow-sm w-full lg:w-auto lg:flex-none"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  <span>Customize Columns</span>
+                </button>
 
-              {activeFilters.includes("formStatus") && (<select
-                value={selectedFormStatus}
-                onChange={(e) => {
-                  setSelectedFormStatus(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-              >
-                <option value="all">All Form Status</option>
-                <option value="Complete">Complete</option>
-                <option value="Incomplete">Incomplete</option>
-              </select>)}
-
-              {activeFilters.includes("paymentStatus") && (<select
-                value={selectedPayment}
-                onChange={(e) => {
-                  setSelectedPayment(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-              >
-                <option value="all">All Payments</option>
-                <option value="Paid">Paid</option>
-                <option value="Unpaid">Unpaid</option>
-
-              </select>)}
-
-              {/* Country → State → City */}
-              <div className="flex gap-2">
-                {activeFilters.includes("country") && (<Select
-                  placeholder="Select Country"
-                  options={countryOptions}
-                  value={countryOptions.find(c => c.value === selectedCountry) || null}
-                  onChange={(opt) => {
-                    setSelectedCountry(opt?.value || "");
-                    setSelectedState("");
-                    setSelectedCities([]);
-
-                    setCurrentPage(1);
-                  }}
-                  isClearable
-                />)}
-                {activeFilters.includes("state") && (<Select
-                  placeholder="Select State"
-                  options={stateOptions}
-                  value={stateOptions.find(s => s.value === selectedState) || null}
-                  onChange={(opt) => {
-                    setSelectedState(opt?.value || "");
-                    setSelectedCities([]);
-
-                    setCurrentPage(1);
-                  }}
-                  isClearable
-                  isDisabled={!selectedCountry}
-                />)}
-                {activeFilters.includes("city") && (
+                {/* Filter Selector - Takes remaining space on large screens */}
+                <div className="flex-1 min-w-0 lg:flex-1">
                   <Select
-                    placeholder="Select City"
-                    options={cityOptions}
-                    value={cityOptions.filter(c =>
-                      selectedCities.includes(c.value)
-                    )}
-                    onChange={(opts) =>
-                      setSelectedCities(opts ? opts.map(o => o.value) : [])
-                    }
+                    placeholder="Add filter"
+                    options={filterOptions}
                     isMulti
-                    isClearable
-                    isDisabled={!selectedState}
-                  />
-                )}
+                    closeMenuOnSelect={false}
+                    hideSelectedOptions={false}
+                    value={filterOptions.filter(opt => activeFilters.includes(opt.value))}
+                    onChange={(selectedOptions) => {
+                      const values = selectedOptions?.map(opt => opt.value) || [];
+                      const removedFilters = activeFilters.filter(filter => !values.includes(filter));
 
+                      removedFilters.forEach((filter) => {
+                        switch (filter) {
+                          case "academicYear": setSelectedYear("all"); break;
+                          case "instituteId": setSelectedInstitution("all"); break;
+                          case "formStatus": setSelectedFormStatus("all"); break;
+                          case "paymentStatus": setSelectedPayment("all"); break;
+                          case "country": setSelectedCountry(""); break;
+                          case "state": setSelectedState(""); break;
+                          case "city": setSelectedCities([]); break;
+                          case "applicationSource": setSelectedApplicationSource(""); break;
+                          case "interactions": setSelectedInteraction(""); break;
+                          case "applicationId": setSearchApplicationId(""); break;
+                          case "applicantName": setSearchApplicantName(""); break;
+                          case "program": setSearchProgram(""); break;
+                        }
+                      });
+
+                      setActiveFilters(values);
+                      setCurrentPage(1);
+                    }}
+                    className="text-sm w-full"
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        minHeight: '36px',
+                        borderColor: '#e5e7eb',
+                        boxShadow: 'none',
+                        '&:hover': { borderColor: '#d1d5db' }
+                      })
+                    }}
+                  />
+                </div>
               </div>
 
-              {/* Application Source Filter */}
-              {activeFilters.includes("applicationSource") && (<Select
-                placeholder="Select Application Source"
-                options={[
-                  { value: "online", label: "Online" },
-                  { value: "offline", label: "Offline" },
-                  { value: "lead", label: "Lead" },
-                ]}
-                value={selectedApplicationSource ? { value: selectedApplicationSource, label: selectedApplicationSource } : null}
-                onChange={(opt) => {
-                  setSelectedApplicationSource(opt?.value || "");
-                  setCurrentPage(1);
-                }}
-                isClearable
-              />)}
+              {/* Dynamic Filters - Horizontal wrapping on large screens */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Academic Year Filter */}
+                {activeFilters.includes("academicYear") && (
+                  <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 rounded-md border border-gray-100 dark:border-gray-800">
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">Year:</span>
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => {
+                        setSelectedYear(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="text-xs border-0 bg-transparent focus:ring-0 py-1 w-20"
+                    >
+                      <option value="all">All</option>
+                      {academicYears.map((year) => (
+                        <option key={year} value={year}>{year}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
-              {/* Applicant Interaction Filter */}
-              {activeFilters.includes("interactions") && (<Select
-                placeholder="Select Interaction"
-                options={[
-                  { value: "New", label: "New" },
-                  { value: "Followup", label: "Followup" },
-                  { value: "Not Reachable", label: "Not Reachable" },
-                  { value: "Switched Off", label: "Switched Off" },
-                  { value: "Not Picked", label: "Not Picked" },
-                  { value: "Irrelevant", label: "Irrelevant" },
-                  { value: "Interested", label: "Interested" },
-                  { value: "Not Interested", label: "Not Interested" },
-                  { value: "Cut the call", label: "Cut the call" },
-                  { value: "Admitted", label: "Admitted" },
-                  { value: "Closed", label: "Closed" },
-                ]}
-                value={selectedInteraction ? { value: selectedInteraction, label: selectedInteraction } : null}
-                onChange={(opt) => {
-                  setSelectedInteraction(opt?.value || "");
-                  setCurrentPage(1);
-                }}
-                isClearable
-              />)}
+                {/* Institution Filter */}
+                {activeFilters.includes("instituteId") && (
+                  <select
+                    value={selectedInstitution}
+                    onChange={(e) => {
+                      setSelectedInstitution(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 min-w-[140px]"
+                  >
+                    <option value="all">All Institutions</option>
+                    {institutions.map((inst) => (
+                      <option key={inst.value} value={inst.value}>{inst.label}</option>
+                    ))}
+                  </select>
+                )}
 
-              {activeFilters.includes("applicationId") && (<input
-                type="text"
-                placeholder="Search by Application ID"
-                value={searchApplicationId}
-                onChange={(e) => {
-                  setSearchApplicationId(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-              />)}
+                {/* Form Status Filter */}
+                {activeFilters.includes("formStatus") && (
+                  <select
+                    value={selectedFormStatus}
+                    onChange={(e) => {
+                      setSelectedFormStatus(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 min-w-[130px]"
+                  >
+                    <option value="all">All Form Status</option>
+                    <option value="Complete">Complete</option>
+                    <option value="Incomplete">Incomplete</option>
+                  </select>
+                )}
 
+                {/* Payment Status Filter */}
+                {activeFilters.includes("paymentStatus") && (
+                  <select
+                    value={selectedPayment}
+                    onChange={(e) => {
+                      setSelectedPayment(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 min-w-[130px]"
+                  >
+                    <option value="all">All Payments</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Unpaid">Unpaid</option>
+                  </select>
+                )}
+              </div>
 
+              {/* Location and Complex Filters - Horizontal on large screens */}
+              <div className="flex flex-wrap items-start lg:items-center gap-2">
+                {/* Location Filters Group */}
+                {(activeFilters.includes("country") || activeFilters.includes("state") || activeFilters.includes("city")) && (
+                  <div className="flex flex-wrap items-center gap-1.5 p-1 bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-100 dark:border-gray-800">
+                    {activeFilters.includes("country") && (
+                      <div className="w-full sm:w-[130px]">
+                        <Select
+                          placeholder="Country"
+                          options={countryOptions}
+                          value={countryOptions.find(c => c.value === selectedCountry) || null}
+                          onChange={(opt) => {
+                            setSelectedCountry(opt?.value || "");
+                            setSelectedState("");
+                            setSelectedCities([]);
+                            setCurrentPage(1);
+                          }}
+                          isClearable
+                          className="text-xs"
+                          styles={{
+                            control: (base) => ({ ...base, minHeight: '32px', border: 'none', background: 'transparent' })
+                          }}
+                        />
+                      </div>
+                    )}
 
-              {/* Applicant Name Search */}
-              {activeFilters.includes("applicantName") && (<input
-                type="text"
-                placeholder="Search by Applicant "
-                value={searchApplicantName}
-                onChange={(e) => {
-                  setSearchApplicantName(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-              />)}
+                    {activeFilters.includes("state") && (
+                      <div className="w-full sm:w-[130px]">
+                        <Select
+                          placeholder="State"
+                          options={stateOptions}
+                          value={stateOptions.find(s => s.value === selectedState) || null}
+                          onChange={(opt) => {
+                            setSelectedState(opt?.value || "");
+                            setSelectedCities([]);
+                            setCurrentPage(1);
+                          }}
+                          isClearable
+                          isDisabled={!selectedCountry}
+                          className="text-xs"
+                          styles={{
+                            control: (base) => ({ ...base, minHeight: '32px', border: 'none', background: 'transparent' })
+                          }}
+                        />
+                      </div>
+                    )}
 
-              {activeFilters.includes("program") && (<input
-                type="text"
-                placeholder="Search by Program"
-                value={searchProgram}
-                onChange={(e) => {
-                  setSearchProgram(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-              />)}
+                    {activeFilters.includes("city") && (
+                      <div className="w-full sm:w-[130px]">
+                        <Select
+                          placeholder="City"
+                          options={cityOptions}
+                          value={cityOptions.filter(c => selectedCities.includes(c.value))}
+                          onChange={(opts) => setSelectedCities(opts ? opts.map(o => o.value) : [])}
+                          isMulti
+                          isClearable
+                          isDisabled={!selectedState}
+                          className="text-xs"
+                          styles={{
+                            control: (base) => ({ ...base, minHeight: '32px', border: 'none', background: 'transparent' })
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
 
+                {/* Application Source Filter */}
+                {activeFilters.includes("applicationSource") && (
+                  <div className="w-full sm:w-[150px]">
+                    <Select
+                      placeholder="Source"
+                      options={[
+                        { value: "online", label: "Online" },
+                        { value: "offline", label: "Offline" },
+                        { value: "lead", label: "Lead" },
+                      ]}
+                      value={selectedApplicationSource ? { value: selectedApplicationSource, label: selectedApplicationSource } : null}
+                      onChange={(opt) => {
+                        setSelectedApplicationSource(opt?.value || "");
+                        setCurrentPage(1);
+                      }}
+                      isClearable
+                      className="text-xs"
+                    />
+                  </div>
+                )}
 
-            </>
+                {/* Interaction Filter */}
+                {activeFilters.includes("interactions") && (
+                  <div className="w-full sm:w-[150px]">
+                    <Select
+                      placeholder="Interaction"
+                      options={[
+                        { value: "New", label: "New" },
+                        { value: "Followup", label: "Followup" },
+                        { value: "Not Reachable", label: "Not Reachable" },
+                        { value: "Switched Off", label: "Switched Off" },
+                        { value: "Not Picked", label: "Not Picked" },
+                        { value: "Irrelevant", label: "Irrelevant" },
+                        { value: "Interested", label: "Interested" },
+                        { value: "Not Interested", label: "Not Interested" },
+                        { value: "Cut the call", label: "Cut the call" },
+                        { value: "Admitted", label: "Admitted" },
+                        { value: "Closed", label: "Closed" },
+                      ]}
+                      value={selectedInteraction ? { value: selectedInteraction, label: selectedInteraction } : null}
+                      onChange={(opt) => {
+                        setSelectedInteraction(opt?.value || "");
+                        setCurrentPage(1);
+                      }}
+                      isClearable
+                      className="text-xs"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Search Inputs - Horizontal on large screens */}
+              <div className="flex flex-wrap items-center gap-2">
+                {activeFilters.includes("applicationId") && (
+                  <div className="relative flex-1 min-w-[160px]">
+                    <input
+                      type="text"
+                      placeholder="Search by App ID"
+                      value={searchApplicationId}
+                      onChange={(e) => {
+                        setSearchApplicationId(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480]"
+                    />
+                  </div>
+                )}
+
+                {activeFilters.includes("applicantName") && (
+                  <div className="relative flex-1 min-w-[160px]">
+                    <input
+                      type="text"
+                      placeholder="Search by Applicant"
+                      value={searchApplicantName}
+                      onChange={(e) => {
+                        setSearchApplicantName(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480]"
+                    />
+                  </div>
+                )}
+
+                {activeFilters.includes("program") && (
+                  <div className="relative flex-1 min-w-[160px]">
+                    <input
+                      type="text"
+                      placeholder="Search by Program"
+                      value={searchProgram}
+                      onChange={(e) => {
+                        setSearchProgram(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480]"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           )}
-
-
-
-          {(userpermission === "superadmin" || userpermission?.download) && (
-               <button
-          onClick={handleExport}
-          disabled={exportLoading}
-          className="flex items-center justify-center gap-1 bg-green-700 hover:bg-green-800 text-white px-3 py-2 text-sm rounded-md w-full sm:w-auto transition"
-        >
-          {exportLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Fetching Data...
-            </>
-          ) : (
-            <>
-              <FileDown className="w-4 h-4" />
-              Export
-            </>
-          )}
-        </button>)}
-
-          {/* Add Application */}
-
-
-          {(userpermission === "superadmin" || userpermission?.create) && (
-            <Link
-              href={"/applications/addapplication"}
-              className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md w-full sm:w-auto"
-            >
-              <Plus className="w-4 h-4" /> New Application
-            </Link>)}
-
         </div>
 
 
@@ -1211,9 +1273,9 @@ export default function ApplicationsPage() {
 
         {/* SEARCH PREVIEW */}
         <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          {/* <label className="block text-sm font-semibold text-gray-700 mb-2">
             Search Preview
-          </label>
+          </label> */}
           {/* <div className="relative">
             <input
               type="text"

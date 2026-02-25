@@ -332,19 +332,24 @@ export default function InstitutionsPage() {
         </div>
 
 
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          {userpermission === "superadmin" || userpermission?.filter
-            ? (
-              <>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
 
+          {/* Left side - Filters Group */}
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 flex-1">
+            {(userpermission === "superadmin" || userpermission?.filter) && (
+              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full lg:w-auto">
+                {/* Customize Columns Button */}
                 <button
                   onClick={() => setCustomizeOpen(true)}
-                  className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] hover:from-[#2a3970] hover:to-[#4a5d9e] text-white rounded-lg transition-all shadow-sm whitespace-nowrap order-1 sm:order-1 w-full sm:w-auto"
                 >
-                  <Settings className="w-4 h-4" /> Customize Columns
+                  <Settings className="w-4 h-4" />
+                  <span>Customize Columns</span>
                 </button>
-                <div className="relative w-full sm:w-auto">
-                  <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
+
+                {/* Search Input - Grows on large screens */}
+                <div className="relative flex-1 min-w-[250px] lg:min-w-[300px] order-3 sm:order-2 w-full sm:w-auto">
+                  <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search by name..."
@@ -353,44 +358,51 @@ export default function InstitutionsPage() {
                       setSearchTerm(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full sm:w-48 md:w-64 pl-8 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] "
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#3a4480] focus:border-transparent bg-white dark:bg-gray-800 placeholder-gray-400 dark:placeholder-gray-500 transition-all"
                   />
                 </div>
 
-
+                {/* Status Filter */}
                 <select
                   value={statusFilter}
                   onChange={(e) => {
                     setStatusFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] "
+                  className="px-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#3a4480] focus:border-transparent bg-white dark:bg-gray-800 order-2 sm:order-3 w-full sm:w-auto min-w-[140px]"
                 >
-                  <option value="all">All</option>
+                  <option value="all">All Status</option>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
-              </>
-            ) : null}
+              </div>
+            )}
+          </div>
 
-          {/* Export */}
-          {userpermission === "superadmin" || userpermission?.download ? (
-            <button
-              onClick={() => setOpen(true)}
-              className="flex items-center justify-center gap-1 w-full sm:w-auto bg-green-700 hover:bg-green-800 text-white px-3 py-2 text-sm rounded-md"
-            >
-              <FileDown className="w-4 h-4" /> Export
-            </button>
-          ) : null}
+          {/* Right side - Action Buttons Group */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 lg:ml-auto">
+            {/* Export Button */}
+            {(userpermission === "superadmin" || userpermission?.download) && (
+              <button
+                onClick={() => setOpen(true)}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all shadow-sm bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white whitespace-nowrap"
+              >
+                <FileDown className="w-4 h-4" />
+                <span>Export</span>
+              </button>
+            )}
 
-          {userpermission === "superadmin" || userpermission?.create ? (<Link
-            href="/institution/addinstitution"
-            className="flex items-center justify-center gap-1 w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 text-sm rounded-md"
-          >
-            <Plus className="w-4 h-4" /> Add New
-          </Link>
-          ) : null}
-
+            {/* Add Institution Button */}
+            {(userpermission === "superadmin" || userpermission?.create) && (
+              <Link
+                href="/institution/addinstitution"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all shadow-sm bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add New</span>
+              </Link>
+            )}
+          </div>
         </div>
         <ExportModal
           open={open}

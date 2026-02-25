@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { Eye, Pencil, FileDown, Users, Plus, Loader2, Settings, Trash2, Search, FileText, X, Clock } from "lucide-react";
+import { Eye, Pencil, FileDown, Users, ArrowRight, Plus, Loader2, Settings, Trash2, Search, FileText, X, Clock } from "lucide-react";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import { DataTable } from "@/components/Tablecomponents";
@@ -64,7 +64,7 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
+  const [limit, setLimit] = useState(10);
   const [institutions, setInstitutions] = useState<OptionType[]>([]);
   const [selectedInstitution, setSelectedInstitution] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -390,7 +390,7 @@ export default function LeadsPage() {
     try {
       const res = await getLeads({
         page: currentPage,
-        limit: 10,
+        limit: limit,
         instituteId: selectedInstitution !== "all" ? selectedInstitution : undefined,
         status: selectedStatus !== "all" ? selectedStatus : undefined,
         communication: selectedCommunication !== "all" ? selectedCommunication : undefined,
@@ -413,7 +413,7 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedInstitution, selectedStatus, selectedCommunication, selectedCountry, selectedState, selectedCities, searchTerm, selectedLeadSource, startDate, endDate, selectedUserId, phoneSearch, leadIdSearch]);
+  }, [currentPage, limit, selectedInstitution, selectedStatus, selectedCommunication, selectedCountry, selectedState, selectedCities, searchTerm, selectedLeadSource, startDate, endDate, selectedUserId, phoneSearch, leadIdSearch]);
 
 
   useEffect(() => {
@@ -904,275 +904,295 @@ export default function LeadsPage() {
 
         {/* <BulkLeadGenerator /> */}
 
-        <div className="flex flex-wrap items-center gap-3 sm:justify-end w-full">
+        <div className="flex flex-wrap items-center gap-4 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
 
-          {(userpermission === "superadmin" || userpermission?.filter) && (
-            <>
-
-              <button
-                onClick={() => setCustomizeOpen(true)}
-                className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
-              >
-                <Settings className="w-4 h-4" /> Customize Columns
-              </button>
-              <Select
-                placeholder="Add Filters"
-                options={filterOptions}
-                isMulti
-                closeMenuOnSelect={false}
-                value={filterOptions.filter(opt =>
-                  activeFilter.includes(opt.value)
-                )}
-                onChange={(selectedOptions) => {
-                  const values = selectedOptions?.map(opt => opt.value) || [];
-
-                  // 🔥 Find removed filters
-                  const removedFilters = activeFilter.filter(
-                    f => !values.includes(f)
-                  );
-
-                  // 🔥 Reset removed filters state
-                  removedFilters.forEach((filter) => {
-                    resetFilterState(filter);
-                  });
-
-                  setActiveFilter(values);
-                }}
-                className="min-w-[220px]"
-              />
-
-
-              {activeFilter.includes("date") && (<div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                />
-
-                {/* Center Icon */}
-                <span className="flex items-center justify-center text-gray-500">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                    stroke="currentColor"
-                    className="w-5 h-5"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </span>
-
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                />
-              </div>)}
-
-
-
-              {/* 🏫 Institution Filter */}
-
-
-              {(activeFilter.includes("institution") && userpermission === "superadmin" && <select
-                value={selectedInstitution}
-                onChange={(e) => setSelectedInstitution(e.target.value)}
-                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              >
-                <option value="all">All Institutions</option>
-                {institutions.map((inst) => (
-                  <option key={inst.value} value={inst.value}>
-                    {inst.label}
-                  </option>
-                ))}
-              </select>)}
-
-              {/* 👤 User Select Filter */}
-
-              {activeFilter.includes("user") && role !== "user" && (
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+          {/* Left side - Entries selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Show</span>
+            <div className="flex rounded-md border border-gray-200 dark:border-gray-700 divide-x divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+              {[10, 50, 100, 250, 500].map((value) => (
+                <button
+                  key={value}
+                  onClick={() => {
+                    setLimit(value);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-3 py-1.5 text-xs font-medium transition-all ${limit === value
+                      ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
                 >
-                  <option value="">Select User</option>
+                  {value}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">entries</span>
+          </div>
 
-                  {userList.map((user) => (
-                    <option key={user._id} value={user._id}>
-                      {user.firstname} {user.lastname}
-                    </option>
-                  ))}
-                </select>)}
-
-              {/* 🔹 Lead Source Filter */}
-              {activeFilter.includes("leadSource") && (
-
-                <select
-                  value={selectedLeadSource}
-                  onChange={(e) => setSelectedLeadSource(e.target.value)}
-                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+          {/* Right side - All filters and actions */}
+          <div className="flex-1 flex flex-wrap items-center gap-3 justify-end">
+            {(userpermission === "superadmin" || userpermission?.filter) && (
+              <>
+                {/* Customize Columns Button */}
+                <button
+                  onClick={() => setCustomizeOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all shadow-sm"
                 >
-                  <option value="all">All Lead Sources</option>
-                  <option value="offline">Offline</option>
-                  <option value="online">Online</option>
-                  <option value="application">Application</option>
-                </select>
+                  <Settings className="w-3.5 h-3.5" />
+                  <span>Customize</span>
+                </button>
 
-              )}
-
-
-              {/* 🌍 Country */}
-              {activeFilter.includes("country") && (<Select
-                placeholder="Select Country"
-                options={countryOptions}
-                value={countryOptions.find(c => c.value === selectedCountry) || null}
-                onChange={(opt) => {
-                  setSelectedCountry(opt?.value || "");
-                  setSelectedState("");
-                  setSelectedCity("");
-                }}
-                isClearable
-              />)}
-
-
-              {/* 🏞 State */}
-              {activeFilter.includes("state") && (<Select
-                placeholder="Select State"
-                options={stateOptions}
-                value={stateOptions.find(s => s.value === selectedState) || null}
-                onChange={(opt) => {
-                  setSelectedState(opt?.value || "");
-                  setSelectedCity("");
-                }}
-                isClearable
-                isDisabled={!selectedCountry}
-              />)}
-
-
-
-              {/* 🏙 City */}
-              {activeFilter.includes("city") && (<Select
-                placeholder="Select City"
-                options={cityOptions}
-                value={cityOptions.filter(c =>
-                  selectedCities.includes(c.value)
-                )}
-                onChange={(opts) =>
-                  setSelectedCities(opts ? opts.map(o => o.value) : [])
-                }
-                isMulti
-                isClearable
-                isDisabled={!selectedState}
-              />)}
-
-
-
-
-              {/* 📊 Status Filter */}
-              {activeFilter.includes("status") && (<select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              >
-                <option value="all">All Status</option>
-                {statusOptions.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>)}
-
-              {/* 💬 Communication Filter */}
-              {activeFilter.includes("communication") && (
-                <select
-                  value={selectedCommunication}
-                  onChange={(e) => setSelectedCommunication(e.target.value)}
-                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                >
-                  <option value="all">All Communication</option>
-                  {communicationOptions.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>)}
-
-              {activeFilter.includes("name") && (<div className="relative w-full sm:w-48 md:w-60">
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                />
-              </div>)}
-
-              {/* 🔹 Phone Number Search */}
-              {activeFilter.includes("phone") && (
-                <div className="relative w-full sm:w-48 md:w-60">
-                  <input
-                    type="text"
-                    placeholder="Search by phone..."
-                    value={phoneSearch}
-                    onChange={(e) => setPhoneSearch(e.target.value)}
-                    className="w-full pl-3 pr-3 py-2 text-sm border rounded-md"
+                {/* Filter Selector */}
+                <div className="min-w-[180px]">
+                  <Select
+                    placeholder="Add Filters"
+                    options={filterOptions}
+                    isMulti
+                    closeMenuOnSelect={false}
+                    value={filterOptions.filter(opt => activeFilter.includes(opt.value))}
+                    onChange={(selectedOptions) => {
+                      const values = selectedOptions?.map(opt => opt.value) || [];
+                      const removedFilters = activeFilter.filter(f => !values.includes(f));
+                      removedFilters.forEach((filter) => resetFilterState(filter));
+                      setActiveFilter(values);
+                    }}
+                    className="text-sm"
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        minHeight: '36px',
+                        borderColor: '#e5e7eb',
+                        boxShadow: 'none',
+                        '&:hover': { borderColor: '#d1d5db' }
+                      })
+                    }}
                   />
                 </div>
-              )}
 
+                {/* Dynamic Filters Section */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Date Range Filter */}
+                  {activeFilter.includes("date") && (
+                    <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 p-1.5 rounded-md border border-gray-100 dark:border-gray-800">
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480]"
+                      />
+                      <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480]"
+                      />
+                    </div>
+                  )}
 
-              {/* 🔹 Lead ID Search */}
-              {activeFilter.includes("leadId") && (
-                <div className="relative w-full sm:w-48 md:w-60">
-                  <input
-                    type="text"
-                    placeholder="Search by Lead ID..."
-                    value={leadIdSearch}
-                    onChange={(e) => setLeadIdSearch(e.target.value)}
-                    className="w-full pl-3 pr-3 py-2 text-sm border rounded-md"
-                  />
+                  {/* Institution Filter */}
+                  {activeFilter.includes("institution") && userpermission === "superadmin" && (
+                    <select
+                      value={selectedInstitution}
+                      onChange={(e) => setSelectedInstitution(e.target.value)}
+                      className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 min-w-[140px]"
+                    >
+                      <option value="all">All Institutions</option>
+                      {institutions.map((inst) => (
+                        <option key={inst.value} value={inst.value}>{inst.label}</option>
+                      ))}
+                    </select>
+                  )}
+
+                  {/* User Filter */}
+                  {activeFilter.includes("user") && role !== "user" && (
+                    <select
+                      value={selectedUserId}
+                      onChange={(e) => setSelectedUserId(e.target.value)}
+                      className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 min-w-[140px]"
+                    >
+                      <option value="">Select User</option>
+                      {userList.map((user) => (
+                        <option key={user._id} value={user._id}>
+                          {user.firstname} {user.lastname}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  {/* Lead Source Filter */}
+                  {activeFilter.includes("leadSource") && (
+                    <select
+                      value={selectedLeadSource}
+                      onChange={(e) => setSelectedLeadSource(e.target.value)}
+                      className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 min-w-[140px]"
+                    >
+                      <option value="all">All Lead Sources</option>
+                      <option value="offline">Offline</option>
+                      <option value="online">Online</option>
+                      <option value="application">Application</option>
+                    </select>
+                  )}
+
+                  {/* Country/State/City Group */}
+                  <div className="flex items-center gap-2">
+                    {activeFilter.includes("country") && (
+                      <div className="w-[140px]">
+                        <Select
+                          placeholder="Country"
+                          options={countryOptions}
+                          value={countryOptions.find(c => c.value === selectedCountry) || null}
+                          onChange={(opt) => {
+                            setSelectedCountry(opt?.value || "");
+                            setSelectedState("");
+                            setSelectedCity("");
+                          }}
+                          isClearable
+                          className="text-xs"
+                        />
+                      </div>
+                    )}
+
+                    {activeFilter.includes("state") && (
+                      <div className="w-[140px]">
+                        <Select
+                          placeholder="State"
+                          options={stateOptions}
+                          value={stateOptions.find(s => s.value === selectedState) || null}
+                          onChange={(opt) => {
+                            setSelectedState(opt?.value || "");
+                            setSelectedCity("");
+                          }}
+                          isClearable
+                          isDisabled={!selectedCountry}
+                          className="text-xs"
+                        />
+                      </div>
+                    )}
+
+                    {activeFilter.includes("city") && (
+                      <div className="w-[140px]">
+                        <Select
+                          placeholder="City"
+                          options={cityOptions}
+                          value={cityOptions.filter(c => selectedCities.includes(c.value))}
+                          onChange={(opts) => setSelectedCities(opts ? opts.map(o => o.value) : [])}
+                          isMulti
+                          isClearable
+                          isDisabled={!selectedState}
+                          className="text-xs"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Status Filter */}
+                  {activeFilter.includes("status") && (
+                    <select
+                      value={selectedStatus}
+                      onChange={(e) => setSelectedStatus(e.target.value)}
+                      className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 min-w-[140px]"
+                    >
+                      <option value="all">All Status</option>
+                      {statusOptions.map((s) => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </select>
+                  )}
+
+                  {/* Communication Filter */}
+                  {activeFilter.includes("communication") && (
+                    <select
+                      value={selectedCommunication}
+                      onChange={(e) => setSelectedCommunication(e.target.value)}
+                      className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 min-w-[140px]"
+                    >
+                      <option value="all">All Communication</option>
+                      {communicationOptions.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                  )}
+
+                  {/* Search Inputs */}
+                  {activeFilter.includes("name") && (
+                    <div className="relative min-w-[200px]">
+                      <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search by name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480]"
+                      />
+                    </div>
+                  )}
+
+                  {activeFilter.includes("phone") && (
+                    <div className="relative min-w-[160px]">
+                      <input
+                        type="text"
+                        placeholder="Search by phone..."
+                        value={phoneSearch}
+                        onChange={(e) => setPhoneSearch(e.target.value)}
+                        className="w-full px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480]"
+                      />
+                    </div>
+                  )}
+
+                  {activeFilter.includes("leadId") && (
+                    <div className="relative min-w-[160px]">
+                      <input
+                        type="text"
+                        placeholder="Search by Lead ID..."
+                        value={leadIdSearch}
+                        onChange={(e) => setLeadIdSearch(e.target.value)}
+                        className="w-full px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480]"
+                      />
+                    </div>
+                  )}
                 </div>
+              </>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              {/* Export Button */}
+              {(userpermission === "superadmin" || userpermission?.download) && (
+                <button
+                  onClick={handleExport}
+                  disabled={exportLoading}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md transition-all shadow-sm ${exportLoading
+                      ? 'bg-green-400 text-white cursor-not-allowed opacity-75'
+                      : 'bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white'
+                    }`}
+                >
+                  {exportLoading ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Exporting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FileDown className="w-3.5 h-3.5" />
+                      <span>Export</span>
+                    </>
+                  )}
+                </button>
               )}
-            </>
-          )}
 
-          {/* 📤 Export */}
-          {(userpermission === "superadmin" || userpermission?.download) && (
-            <button
-              onClick={handleExport}
-              disabled={exportLoading}
-              className={`flex items-center justify-center gap-1 px-3 py-2 text-sm rounded-md w-full sm:w-auto transition ${exportLoading
-                ? 'bg-green-400 cursor-not-allowed'
-                : 'bg-green-700 hover:bg-green-800'
-                } text-white`}
-            >
-              {exportLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Fetching Data...
-                </>
-              ) : (
-                <>
-                  <FileDown className="w-4 h-4" />
-                  Export
-                </>
+              {/* Add Lead Button */}
+              {(userpermission === "superadmin" || userpermission?.create) && (
+                <Link
+                  href="/leads/addlead"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] hover:from-[#2a3970] hover:to-[#4a5d9e] text-white rounded-md transition-all shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Lead</span>
+                </Link>
               )}
-            </button>
-          )}
-
-          {/* ➕ Add Lead */}
-          {(userpermission === "superadmin" || userpermission?.create) && (
-            <Link
-              href="/leads/addlead"
-              className="flex items-center justify-center gap-1 bg-gradient-to-b from-[#2a3970] to-[#5667a8] hover:bg-blue-700 text-white px-3 py-2 text-sm rounded-md w-full sm:w-auto transition"
-            >
-              <Plus className="w-4 h-4" /> Add
-            </Link>)}
-
+            </div>
+          </div>
         </div>
         <ExportModal
           open={open}

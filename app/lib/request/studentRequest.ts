@@ -106,7 +106,7 @@ export async function listStudentsRequest({
   try {
     const params: any = {
       page,
-      limit,
+      limit: limit,
       search,
       status,
       instituteId,

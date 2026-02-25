@@ -16,7 +16,6 @@ import { toast } from "react-toastify";
 
 import { DataTable, Column } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import ViewDialog from "@/components/ViewDialog";
 import StudentViewDialog from "@/components/StudentViewDialog";
 import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
@@ -126,6 +125,7 @@ export default function StudentsPage() {
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [exportData, setExportData] = useState<any[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
+  const [limit, setLimit] = useState(10);
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -287,7 +287,7 @@ export default function StudentsPage() {
   const quotaOptions = [
     { value: "government", label: "Government Quota" },
     { value: "management", label: "Management Quota" },
-    { value: "minority", label: "Minority Quota" },
+    // { value: "minority", label: "Minority Quota" },
     { value: "sports", label: "Sports Quota" },
     { value: "nri", label: "NRI Quota" },
     { value: "lateral", label: "Lateral Entry" },
@@ -331,6 +331,7 @@ export default function StudentsPage() {
     setLoading(true);
     try {
       const res = await listStudentsRequest({
+        limit: limit,
         page: currentPage,
         search: searchTerm,
         status: statusFilter,
@@ -363,6 +364,7 @@ export default function StudentsPage() {
   }, [
     currentPage,
     searchTerm,
+    limit,
     statusFilter,
     selectedInstitution,
     bloodGroupFilter,
@@ -620,7 +622,7 @@ export default function StudentsPage() {
           <h1 className="text-2xl font-semibold">Students</h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+        <div className="flex flex-wrap p-4 bg-white rounded-lg items-center gap-2 sm:justify-end">
 
           <button
             onClick={() => setCustomizeOpen(true)}
@@ -628,7 +630,27 @@ export default function StudentsPage() {
           >
             <Settings className="w-4 h-4" /> Customize Columns
           </button>
-
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Show</span>
+            <div className="flex rounded-md border border-gray-200 dark:border-gray-700 divide-x divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+              {[10, 25, 50, 100, 250, 500].map((value) => (
+                <button
+                  key={value}
+                  onClick={() => {
+                    setLimit(value);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-3 py-1.5 text-xs font-medium transition-all ${limit === value
+                    ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    }`}
+                >
+                  {value}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">entries</span>
+          </div>
 
           {/* Institution Filter */}
 

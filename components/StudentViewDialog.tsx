@@ -174,7 +174,7 @@ export default function StudentViewDialog({
 
                                 {/* Hostel Willingness */}
                                 <p>
-                                    <strong>Hostel Willingness:</strong> {data.hostelWilling ? "Yes" : "No"}
+                                    <strong>Hostel :</strong> {data.hostelWilling ? "Yes" : "No"}
                                     {data.hostelReason && ` - Reason: ${data.hostelReason}`}
                                 </p>
 
@@ -220,24 +220,24 @@ export default function StudentViewDialog({
                                 <div className="flex justify-center mt-4">
                                     <div className="flex justify-center mt-6">
                                         {data.applicationId && (
-                                            <div className="flex flex-col items-center gap-3 bg-red-50 p-4 rounded-lg border border-red-200 w-full max-w-md">
-                                                {/* Note first */}
-                                                <p className="text-sm text-red-700 font-medium flex items-center gap-2">
+                                            <div className="flex flex-col items-center gap-3 bg-blue-50 p-4 rounded-lg border border-blue-200 w-full max-w-md">
+                                                {/* Note first - Blue theme */}
+                                                <p className="text-sm text-blue-700 font-medium flex items-center gap-2">
                                                     <span className="text-xl">📋</span>
                                                     Want to see more details of this student?
                                                 </p>
 
-                                                {/* Red Button */}
+                                                {/* Blue Button - Matching the upload circle border */}
                                                 <Link
                                                     href={`/applications/${data?.application?._id}`}
-                                                    className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-md transition-all"
+                                                    className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition-all"
                                                 >
                                                     <span>CLICK TO VIEW APPLICATION</span>
                                                     <span className="text-lg">→</span>
                                                 </Link>
 
-                                                {/* Small helper text */}
-                                                <p className="text-xs text-gray-500">
+                                                {/* Small helper text - Subtle blue-gray */}
+                                                <p className="text-xs text-blue-400/70">
                                                     (View full application details of this student)
                                                 </p>
                                             </div>

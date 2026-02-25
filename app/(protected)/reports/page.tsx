@@ -364,7 +364,7 @@ export default function ReportsPage() {
   const quotaOptions = [
     { value: "government", label: "Government Quota" },
     { value: "management", label: "Management Quota" },
-    { value: "minority", label: "Minority Quota" },
+    // { value: "minority", label: "Minority Quota" },
     { value: "sports", label: "Sports Quota" },
     { value: "nri", label: "NRI Quota" },
     { value: "lateral", label: "Lateral Entry" },

@@ -5,8 +5,9 @@ import { useState, useEffect, useCallback } from "react";
 import {
   MessageSquare,
   Mail,
-
+  Search,
   FileDown,
+  User
 
 } from "lucide-react";
 import { toast } from "react-toastify";
@@ -51,7 +52,7 @@ export default function CommunicationsPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [institutions, setInstitutions] = useState<
     { value: string; label: string }[]
   >([]);
@@ -517,121 +518,153 @@ export default function CommunicationsPage() {
           <h1 className="text-2xl font-semibold">communications</h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-
-          {(userpermission === "superadmin" || userpermission?.filter) && (
-
-            <>
-
-
-
-              {/* Institution Filter */}
-              {(userpermission === "superadmin" && <select
-                value={selectedInstitution}
-                onChange={(e) => {
-                  setSelectedInstitution(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-              >
-                <option value="all">All Institutions</option>
-                {institutions.map((inst) => (
-                  <option key={inst.value} value={inst.value}>
-                    {inst.label}
-                  </option>
+        <div className="flex flex-col gap-4 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
+          {/* Top row - Entries selector and Actions */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            {/* Left side - Entries selector */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Show</span>
+              <div className="flex rounded-md border border-gray-200 dark:border-gray-700 divide-x divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                {[10, 50, 100, 250, 500].map((value) => (
+                  <button
+                    key={value}
+                    onClick={() => {
+                      setLimit(value);
+                      setCurrentPage(1);
+                    }}
+                    className={`px-2 sm:px-3 py-1.5 text-xs font-medium transition-all first:rounded-l-md last:rounded-r-md ${limit === value
+                      ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      }`}
+                  >
+                    {value}
+                  </button>
                 ))}
-              </select>)}
+              </div>
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">entries</span>
+            </div>
 
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
+              {/* Export Button */}
+              {(userpermission === "superadmin" || userpermission?.download) && (
+                <button
+                  onClick={() => setOpen(true)}
+                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-md transition-all shadow-sm whitespace-nowrap flex-1 sm:flex-none"
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  <span className="inline">Export</span>
+                </button>
+              )}
 
+              {/* Bulk Mail Button */}
+              <button
+                onClick={handleBulkMail}
+                disabled={selectedApplicants.length === 0}
+                className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md transition-all shadow-sm whitespace-nowrap flex-1 sm:flex-none ${selectedApplicants.length === 0
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                  : 'bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white'
+                  }`}
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span className="inline">Bulk Mail</span>
+                {selectedApplicants.length > 0 && (
+                  <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded-full text-xs">
+                    {selectedApplicants.length}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
 
-              {/* Academic Year Filter */}
-              <div className="rounded-md w-fit border p-[3px] flex items-center gap-3">
-                <label className="text-sm font-semibold text-gray-700">
-                  Academic Year:
-                </label>
-
+          {/* Bottom section - Filters (if permission allows) */}
+          {(userpermission === "superadmin" || userpermission?.filter) ? (
+            <div className="flex flex-col gap-3">
+              {/* Filters Row 1 - Dropdowns */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Academic Year Filter */}
                 <select
                   value={selectedYear}
                   onChange={(e) => {
                     setSelectedYear(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="border text-sm rounded-md py-2 px-3 w-40 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                  className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 flex-1 min-w-[120px]"
                 >
-                  <option value="all">All</option>
-
+                  <option value="all">All Years</option>
                   {academicYears.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
+                    <option key={year} value={year}>{year}</option>
                   ))}
+                </select>
+
+                {/* Institution Filter - Only for superadmin */}
+                {userpermission === "superadmin" && (
+                  <select
+                    value={selectedInstitution}
+                    onChange={(e) => {
+                      setSelectedInstitution(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 flex-1 min-w-[140px]"
+                  >
+                    <option value="all">All Institutions</option>
+                    {institutions.map((inst) => (
+                      <option key={inst.value} value={inst.value}>
+                        {inst.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {/* Status Filter */}
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => {
+                    setSelectedStatus(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 flex-1 min-w-[120px]"
+                >
+                  <option value="all">All Status</option>
+                  <option value="unpaid">Unpaid</option>
+                  <option value="incomplete">Incomplete</option>
                 </select>
               </div>
 
-              <Select
-                value={selectedStatus}
-                onChange={(option: any) => setSelectedStatus(option.value)}
-                options={[
-                  { value: "all", label: "All" },
-                  { value: "unpaid", label: "Unpaid" },
-                  { value: "incomplete", label: "Incomplete" },
-                ]}
-              />
+              {/* Filters Row 2 - Search inputs */}
+              <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                {/* Application ID Search */}
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by Application ID..."
+                    value={searchApplicationId}
+                    onChange={(e) => {
+                      setSearchApplicationId(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800"
+                  />
+                </div>
 
-              <input
-                type="text"
-                placeholder="Search by Application ID"
-                value={searchApplicationId}
-                onChange={(e) => {
-                  setSearchApplicationId(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-              />
-
-
-
-              {/* Applicant Name Search */}
-              <input
-                type="text"
-                placeholder="Search by Applicant "
-                value={searchApplicantName}
-                onChange={(e) => {
-                  setSearchApplicantName(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-              />
-
-
-            </>
-          )}
-
-
-
-          {(userpermission === "superadmin" || userpermission?.download) && (
-            <button
-              onClick={() => setOpen(true)}
-              className="flex items-center justify-center gap-1 bg-green-700 hover:bg-green-800 text-white px-3 py-2 text-sm rounded-md w-full sm:w-auto transition"
-            >
-              <FileDown className="w-4 h-4" /> Export
-            </button>)}
-
-          <button
-            onClick={handleBulkMail}
-            disabled={selectedApplicants.length === 0}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm transition
-    ${selectedApplicants.length === 0
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-              }`}
-          >
-            <Mail className="w-4 h-4" />
-            Bulk Send Mail
-          </button>
-
-
-
+                {/* Applicant Name Search */}
+                <div className="relative flex-1">
+                  <User className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by Applicant..."
+                    value={searchApplicantName}
+                    onChange={(e) => {
+                      setSearchApplicantName(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800"
+                  />
+                </div>
+              </div>
+            </div>
+          ) : null /* Remove the empty div - just don't render anything */}
         </div>
 
         <ExportModal

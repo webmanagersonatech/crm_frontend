@@ -317,90 +317,101 @@ export default function UsersPage() {
 
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
 
-          <button
-            onClick={() => setCustomizeOpen(true)}
-            className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
-          >
-            <Settings className="w-4 h-4" /> Customize Columns
-          </button>
-          {/* Search */}
-          <div className="relative w-full sm:w-auto">
-            <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name..."
-              value={searchTerm}
+          {/* Left side - Filters Group */}
+          <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 flex-1">
+            {/* Customize Columns Button */}
+            <button
+              onClick={() => setCustomizeOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] hover:from-[#2a3970] hover:to-[#4a5d9e] text-white rounded-lg transition-all shadow-sm whitespace-nowrap order-1 w-full sm:w-auto"
+            >
+              <Settings className="w-4 h-4" />
+              <span>Customize</span>
+              <span className="hidden lg:inline">Columns</span>
+            </button>
+
+            {/* Search Input - Grows on large screens */}
+            <div className="relative flex-1 min-w-[200px] lg:min-w-[250px] order-2 w-full sm:w-auto">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#3a4480] focus:border-transparent bg-white dark:bg-gray-800 placeholder-gray-400 dark:placeholder-gray-500 transition-all"
+              />
+            </div>
+
+            {/* Institution Filter - Fixed width */}
+            <select
+              value={selectedInstitution}
               onChange={(e) => {
-                setSearchTerm(e.target.value);
+                setSelectedInstitution(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full sm:w-56 pl-8 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-            />
+              className="px-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#3a4480] focus:border-transparent bg-white dark:bg-gray-800 order-3 w-full sm:w-[160px]"
+            >
+              <option value="all">All Institutions</option>
+              {institutions.map((inst) => (
+                <option key={inst.value} value={inst.value}>
+                  {inst.label}
+                </option>
+              ))}
+            </select>
+
+            {/* Role Filter */}
+            <select
+              value={selectedRole}
+              onChange={(e) => {
+                setSelectedRole(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#3a4480] focus:border-transparent bg-white dark:bg-gray-800 order-4 w-full sm:w-[130px]"
+            >
+              <option value="all">All Roles</option>
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
+            </select>
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-4 py-2.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#3a4480] focus:border-transparent bg-white dark:bg-gray-800 order-5 w-full sm:w-[130px]"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
 
-          {/* Institution Filter */}
-      <select
-  value={selectedInstitution}
-  onChange={(e) => {
-    setSelectedInstitution(e.target.value);
-    setCurrentPage(1);
-  }}
-  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-[160px] sm:w-[160px] md:w-[160px] lg:w-[160px]"
->
-  <option value="all">All Institutions</option>
-  {institutions.map((inst) => (
-    <option key={inst.value} value={inst.value}>
-      {inst.label}
-    </option>
-  ))}
-</select>
+          {/* Right side - Action Buttons Group */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 lg:ml-auto order-last">
+            {/* Export Button */}
+            <button
+              onClick={() => setExportOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all shadow-sm bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white whitespace-nowrap"
+            >
+              <FileDown className="w-4 h-4" />
+              <span>Export</span>
+            </button>
 
-          {/* Role Filter */}
-          <select
-            value={selectedRole}
-            onChange={(e) => {
-              setSelectedRole(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">All Roles</option>
-            {/* <option value="superadmin">Super Admin</option> */}
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-
-          {/* Export */}
-          <button
-            onClick={() => setExportOpen(true)}
-            className="flex items-center gap-1 bg-green-700 hover:bg-green-800 text-white px-3 py-2 text-sm rounded-md"
-          >
-            <FileDown className="w-4 h-4" /> Export
-          </button>
-
-          {/* Add User */}
-          <Link
-            href={"/users/adduser" as any}
-            className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
-          >
-            <Plus className="w-4 h-4" /> Add New
-          </Link>
+            {/* Add User Button */}
+            <Link
+              href="/users/adduser"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all shadow-sm bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] hover:from-[#2a3970] hover:to-[#4a5d9e] text-white whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add New</span>
+            </Link>
+          </div>
         </div>
         {/*  Export Modal */}
         <ExportModal
