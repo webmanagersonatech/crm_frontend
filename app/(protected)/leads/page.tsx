@@ -17,6 +17,7 @@ import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import { Country, State, City } from "country-state-city";
 import Select from "react-select";
 import BulkLeadGenerator from "@/components/oko";
+import DuplicatePopup from "@/components/DuplicatePopup";
 
 interface OptionType {
   value: string;
@@ -99,6 +100,9 @@ export default function LeadsPage() {
   const [exportData, setExportData] = useState<any[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [selectedDuplicate, setSelectedDuplicate] = useState("all");
+  const [duplicatePopupOpen, setDuplicatePopupOpen] = useState(false);
+  const [duplicateData, setDuplicateData] = useState<Lead | null>(null);
 
   const toggleFilter = (value: string) => {
     if (!value) return;
@@ -133,7 +137,8 @@ export default function LeadsPage() {
   };
 
   const filterOptions = [
-    { value: "institution", label: "Institution" },
+    ...(userpermission === "superadmin"
+      ? [{ value: "institution", label: "Institution" }] : []),
     { value: "user", label: "User" },
     { value: "leadSource", label: "Lead Source" },
     { value: "country", label: "Country" },
@@ -145,6 +150,7 @@ export default function LeadsPage() {
     { value: "phone", label: "Phone" },
     { value: "leadId", label: "Lead ID" },
     { value: "date", label: "Date Range" },
+    { value: "duplicate", label: "Duplicate" },
   ];
   const resetFilterState = (filter: string) => {
     switch (filter) {
@@ -253,6 +259,7 @@ export default function LeadsPage() {
     { key: "createdBy", label: "Created By" },
     { key: "status", label: "Status" },
     { key: "applicationStatus", label: "Application Status" },
+
   ];
 
 
@@ -280,12 +287,13 @@ export default function LeadsPage() {
 
 
   const handleStatusChange = (lead: Lead, status: string) => {
+
     setStatusUpdateData({
       lead,
       status,
-      communication: lead.communication || "",
-      followUpDate: lead.followUpDate || "",
-      description: lead.description || "",
+      communication: "",
+      followUpDate: "",
+      description: "",
     });
     setStatusUpdateOpen(true);
   };
@@ -404,6 +412,7 @@ export default function LeadsPage() {
         country: selectedCountry || undefined,   // 
         state: selectedState || undefined,       // 
         city: selectedCities.length ? selectedCities : undefined,
+        isduplicate: selectedDuplicate !== "all" ? selectedDuplicate : undefined,
       });
       setLeads(res.docs || []);
       setTotalPages(res.totalPages || 1);
@@ -413,7 +422,7 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, limit, selectedInstitution, selectedStatus, selectedCommunication, selectedCountry, selectedState, selectedCities, searchTerm, selectedLeadSource, startDate, endDate, selectedUserId, phoneSearch, leadIdSearch]);
+  }, [currentPage, limit, selectedDuplicate, selectedInstitution, selectedStatus, selectedCommunication, selectedCountry, selectedState, selectedCities, searchTerm, selectedLeadSource, startDate, endDate, selectedUserId, phoneSearch, leadIdSearch]);
 
 
   useEffect(() => {
@@ -515,64 +524,6 @@ export default function LeadsPage() {
       setExportLoading(false);
     }
   };
-
-
-
-  const filteredLeads = (leads || []).map((lead: any) => {
-    const obj: any = {};
-    if (columnVisibility.leadId) {
-      obj.LeadID = lead.leadId || "-"; // assuming _id is your lead ID
-    }
-
-
-
-    if (userpermission === "superadmin" && columnVisibility.instituteId) {
-      obj.Institute = lead.institute?.name || lead.instituteId || "-";
-    }
-
-    if (columnVisibility.candidateName) {
-      obj.Candidate = lead.candidateName || "-";
-    }
-
-    if (columnVisibility.program) {
-      obj.Program = lead.program || "-";
-    }
-
-    if (columnVisibility.phoneNumber) {
-      obj.Phone = lead.phoneNumber || "-";
-    }
-
-    if (columnVisibility.communication) {
-      obj.Communication = lead.communication || "-";
-    }
-
-    if (columnVisibility.followUp) {
-      obj.FollowUpDate = lead.followUpDate
-        ? new Date(lead.followUpDate).toLocaleString()
-        : "-";
-    }
-
-    if (columnVisibility.createdBy) {
-      obj.CreatedBy = lead.creator
-        ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`.trim()
-        : "-";
-    }
-
-    if (columnVisibility.status) {
-      obj.Status = lead.status || "-";
-    }
-
-    if (columnVisibility.applicationStatus) {
-      obj.ApplicationStatus = lead.applicationId
-        ? "Applied"
-        : lead.status === "Interested"
-          ? "Pending Application"
-          : "Pending";
-    }
-
-    return obj;
-  });
-
 
 
   // ------------------ CONFIRM ACTION ------------------
@@ -760,28 +711,20 @@ export default function LeadsPage() {
     {
       header: "Duplicate",
       render: (lead: Lead) => {
-        const [showPopup, setShowPopup] = useState(false); //  use imported hook
-
         if (!lead.isduplicate) return null;
 
         return (
-          <div className="relative flex items-center justify-center">
+          <div className="flex items-center justify-center">
             <button
-              onClick={() => setShowPopup(!showPopup)}
+              onClick={() => {
+                setDuplicateData(lead);
+                setDuplicatePopupOpen(true);
+              }}
               className="text-red-600 hover:text-red-700 cursor-pointer"
               title="Duplicate Lead"
             >
               ⚠️
             </button>
-
-            {showPopup && lead.duplicateReason && (
-              <div
-                className="absolute top-full mt-1 w-64 p-2 bg-white border border-red-400 text-sm text-red-700 rounded shadow-lg z-50"
-                onMouseLeave={() => setShowPopup(false)}
-              >
-                {lead.duplicateReason}
-              </div>
-            )}
           </div>
         );
       },
@@ -918,8 +861,8 @@ export default function LeadsPage() {
                     setCurrentPage(1);
                   }}
                   className={`px-3 py-1.5 text-xs font-medium transition-all ${limit === value
-                      ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
                 >
                   {value}
@@ -1151,6 +1094,18 @@ export default function LeadsPage() {
                       />
                     </div>
                   )}
+
+                  {activeFilter.includes("duplicate") && (
+                    <select
+                      value={selectedDuplicate}
+                      onChange={(e) => setSelectedDuplicate(e.target.value)}
+                      className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md"
+                    >
+                      <option value="all">All Leads</option>
+                      <option value="true">Duplicate Only</option>
+                      <option value="false">Non-Duplicate</option>
+                    </select>
+                  )}
                 </div>
               </>
             )}
@@ -1163,8 +1118,8 @@ export default function LeadsPage() {
                   onClick={handleExport}
                   disabled={exportLoading}
                   className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md transition-all shadow-sm ${exportLoading
-                      ? 'bg-green-400 text-white cursor-not-allowed opacity-75'
-                      : 'bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white'
+                    ? 'bg-green-400 text-white cursor-not-allowed opacity-75'
+                    : 'bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white'
                     }`}
                 >
                   {exportLoading ? (
@@ -1236,7 +1191,14 @@ export default function LeadsPage() {
         onConfirm={confirmAction}
         onCancel={() => setConfirmOpen(false)}
       />
-
+      <DuplicatePopup
+        open={duplicatePopupOpen}
+        onClose={() => setDuplicatePopupOpen(false)}
+        duplicateReason={duplicateData?.duplicateReason}
+        leadId={duplicateData?.leadId}
+        phoneNumber={duplicateData?.phoneNumber}
+        instituteId={duplicateData?.instituteId}
+      />
       <ColumnCustomizeDialog
         open={customizeOpen}
         title="Customize Lead Columns"
@@ -1299,7 +1261,7 @@ export default function LeadsPage() {
                 <X className="w-6 h-6" />
               </button>
 
-              <h2 className="text-lg font-semibold mb-4">Update Status</h2>
+              <h2 className="text-lg font-semibold mb-4">Update follow up Status</h2>
 
               {/* Communication */}
               <label className="block mb-2 text-sm font-medium">Communication</label>
@@ -1310,6 +1272,9 @@ export default function LeadsPage() {
                 }
                 className="w-full border rounded-md p-2 mb-4"
               >
+                <option value="" disabled>
+                  Select Communication
+                </option>
                 {communicationOptions.map((c) => (
                   <option key={c.value} value={c.value}>{c.label}</option>
                 ))}

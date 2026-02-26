@@ -57,6 +57,15 @@ export interface ExportResponse<T> {
   data: T[];
   totalCount: number;
 }
+export interface DuplicateLeadsResponse {
+  success: boolean;
+  message: string;
+  totalCount: number;
+  originalCount: number;
+  duplicateCount: number;
+  originalData: Lead[];
+  duplicateData: Lead[];
+}
 
 // ---------------- API Calls ----------------
 
@@ -106,6 +115,7 @@ export async function getLeads({
   country,
   state,
   city,
+  isduplicate,
 }: {
   page?: number;
   limit?: number;
@@ -121,6 +131,7 @@ export async function getLeads({
   leadSource?: string;
   country?: string;
   state?: string;
+  isduplicate?: string;
   city?: string | string[];
 }) {
   try {
@@ -138,6 +149,7 @@ export async function getLeads({
     if (userId) params.append("userId", userId);
     if (phoneNumber) params.append("phoneNumber", phoneNumber);
     if (leadId) params.append("leadId", leadId);
+    if (isduplicate) params.append("isduplicate", isduplicate);
     if (country) params.append("country", country);
     if (state) params.append("state", state);
     if (city) {
@@ -157,6 +169,29 @@ export async function getLeads({
     throw new Error(error.response?.data?.message || "Failed to fetch leads.");
   }
 }
+
+export async function getDuplicateLeads(
+  phoneNumber: string,
+  instituteId?: string
+) {
+  try {
+    const params = new URLSearchParams();
+
+    if (phoneNumber) params.append("phoneNumber", phoneNumber);
+    if (instituteId) params.append("instituteId", instituteId);
+
+    const response = await api.get<DuplicateLeadsResponse>(
+      `/leads/duplicates?${params.toString()}`
+    );
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch duplicate leads."
+    );
+  }
+}
+
 export async function exportLeads({
   instituteId,
   status,

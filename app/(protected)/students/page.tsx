@@ -622,238 +622,296 @@ export default function StudentsPage() {
           <h1 className="text-2xl font-semibold">Students</h1>
         </div>
 
-        <div className="flex flex-wrap p-4 bg-white rounded-lg items-center gap-2 sm:justify-end">
+        <div className="flex flex-col gap-3 p-4 bg-white rounded-lg">
+          {/* Top Row - Essential Controls */}
+          <div className="flex flex-wrap items-center gap-2 justify-between">
+            {/* Left side - Customize button */}
+            <button
+              onClick={() => setCustomizeOpen(true)}
+              className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md order-1"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Customize Columns</span>
+            </button>
 
-          <button
-            onClick={() => setCustomizeOpen(true)}
-            className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
-          >
-            <Settings className="w-4 h-4" /> Customize Columns
-          </button>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Show</span>
-            <div className="flex rounded-md border border-gray-200 dark:border-gray-700 divide-x divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-              {[10, 25, 50, 100, 250, 500].map((value) => (
-                <button
-                  key={value}
-                  onClick={() => {
-                    setLimit(value);
-                    setCurrentPage(1);
-                  }}
-                  className={`px-3 py-1.5 text-xs font-medium transition-all ${limit === value
-                    ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                >
-                  {value}
-                </button>
-              ))}
+            {/* Right side - Show entries and Export */}
+            <div className="flex items-center gap-2 order-2 ml-auto">
+              <div className="hidden sm:flex items-center gap-2">
+                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Show</span>
+                <div className="flex rounded-md border border-gray-200 divide-x divide-gray-200 bg-white">
+                  {[10, 25, 50, 100, 250, 500].map((value) => (
+                    <button
+                      key={value}
+                      onClick={() => {
+                        setLimit(value);
+                        setCurrentPage(1);
+                      }}
+                      className={`px-2 py-1.5 text-xs font-medium transition-all ${limit === value
+                        ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
+                        : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs font-medium text-gray-500">entries</span>
+              </div>
+
+              <button
+                onClick={handleExport}
+                disabled={exportLoading}
+                className={`flex items-center gap-1 px-3 py-2 text-sm rounded-md ${exportLoading
+                  ? 'bg-green-400 cursor-not-allowed'
+                  : 'bg-green-700 hover:bg-green-800'
+                  } text-white`}
+              >
+                {exportLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="hidden sm:inline">Fetching...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="w-4 h-4" />
+                    <span className="hidden sm:inline">Export</span>
+                  </>
+                )}
+              </button>
             </div>
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">entries</span>
           </div>
 
-          {/* Institution Filter */}
+          {/* Mobile Show Entries (visible only on mobile) */}
+          <div className="flex sm:hidden items-center gap-2">
+            <span className="text-xs font-medium text-gray-500">Show entries:</span>
+            <select
+              value={limit}
+              onChange={(e) => {
+                setLimit(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="border text-sm rounded-md py-1.5 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+            >
+              {[10, 25, 50, 100, 250, 500].map((value) => (
+                <option key={value} value={value}>{value}</option>
+              ))}
+            </select>
+          </div>
 
-          {(role === "superadmin" && <select
-            value={selectedInstitution}
-            onChange={(e) => {
-              setSelectedInstitution(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-[160px] sm:w-[160px] md:w-[160px] lg:w-[160px]"
-          >
-            <option value="all">All Institutions</option>
-            {institutions.map((inst) => (
-              <option key={inst.value} value={inst.value}>
-                {inst.label}
-              </option>
-            ))}
-          </select>)}
+          {/* Search Row - Full width on mobile */}
+          <div className="w-full">
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name, email, std ID,univ NO"
 
-          <div className="rounded-md w-fit border p-[3px] flex items-center gap-3">
-            <label className="text-sm font-semibold text-gray-700">
-              Academic Year:
-            </label>
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-8 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+              />
+            </div>
+          </div>
 
+          {/* Filters Grid - Responsive layout */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+
+            {/* Institution Filter - Superadmin only */}
+            {role === "superadmin" && (
+              <select
+                value={selectedInstitution}
+                onChange={(e) => {
+                  setSelectedInstitution(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+              >
+                <option value="all">All Institutions</option>
+                {institutions.map((inst) => (
+                  <option key={inst.value} value={inst.value}>
+                    {inst.label}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Academic Year */}
             <select
               value={selectedYear}
               onChange={(e) => {
                 setSelectedYear(e.target.value);
                 setCurrentPage(1);
               }}
-              className="border text-sm rounded-md py-2 px-3 w-40 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+              className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
             >
-              <option value="all">All</option>
-
+              <option value="all">Academic Year: All</option>
               {academicYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
+                <option key={year} value={year}>{year}</option>
               ))}
             </select>
-          </div>
 
-          {/* Search */}
-          <div className="relative w-full sm:w-auto">
-            <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="name, email, std ID,univ NO"
-              value={searchTerm}
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
               onChange={(e) => {
-                setSearchTerm(e.target.value);
+                setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full sm:w-56 pl-8 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-            />
+              className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+            >
+              <option value="all">Status: All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+
+            {/* Blood Group Filter */}
+            <select
+              value={bloodGroupFilter}
+              onChange={(e) => {
+                setBloodGroupFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+            >
+              <option value="all">Blood Group: All</option>
+              {bloodOptions.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+
+            {/* Blood Donate */}
+            <select
+              value={bloodDonateFilter}
+              onChange={(e) => {
+                setBloodDonateFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+            >
+              <option value="all">Blood Donate: All</option>
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
+
+            {/* Hostel Willing */}
+            <select
+              value={hostelWillingFilter}
+              onChange={(e) => {
+                setHostelWillingFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+            >
+              <option value="all">Hostel: All</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+
+            {/* Quota */}
+            <select
+              value={quotaFilter}
+              onChange={(e) => {
+                setQuotaFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+            >
+              <option value="all">Quota: All</option>
+              {quotaOptions.map((q) => (
+                <option key={q.value} value={q.value}>{q.label}</option>
+              ))}
+            </select>
+
+            {/* Feedback */}
+            <select
+              value={feedbackFilter}
+              onChange={(e) => {
+                setFeedbackFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+            >
+              <option value="all">Feedback: All</option>
+              {feedbackOptions.map(f => (
+                <option key={f.value} value={f.value}>{f.label}</option>
+              ))}
+            </select>
+
+            {/* Family Occupation */}
+            <select
+              value={familyOccupationFilter}
+              onChange={(e) => {
+                setFamilyOccupationFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+            >
+              <option value="all">Occupation: All</option>
+              {occupationOptions.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+
+            {/* Location Filters - These need more width, so they span full width on mobile */}
+            <div className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Select
+                  placeholder="Select Country"
+                  options={countryOptions}
+                  value={countryOptions.find(c => c.value === selectedCountry) || null}
+                  onChange={(opt) => {
+                    setSelectedCountry(opt?.value || "");
+                    setSelectedState("");
+                    setSelectedCities([]);
+                    setCurrentPage(1);
+                  }}
+                  isClearable
+                  className="w-full"
+                />
+                <Select
+                  placeholder="Select State"
+                  options={stateOptions}
+                  value={stateOptions.find(s => s.value === selectedState) || null}
+                  onChange={(opt) => {
+                    setSelectedState(opt?.value || "");
+                    setSelectedCities([]);
+                    setCurrentPage(1);
+                  }}
+                  isClearable
+                  isDisabled={!selectedCountry}
+                  className="w-full"
+                />
+                <Select
+                  placeholder="Select City"
+                  options={cityOptions}
+                  value={cityOptions.filter(c => selectedCities.includes(c.value))}
+                  onChange={(opts) => setSelectedCities(opts ? opts.map(o => o.value) : [])}
+                  isMulti
+                  isClearable
+                  isDisabled={!selectedState}
+                  className="w-full"
+                />
+              </div>
+            </div>
           </div>
 
-
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-
-          <select
-            value={bloodGroupFilter}
-            onChange={(e) => { setBloodGroupFilter(e.target.value); setCurrentPage(1); }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">All Blood Groups</option>
-            {bloodOptions.map((b) => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
-
-          {/* Blood Donate */}
-          <select
-            value={bloodDonateFilter}
-            onChange={(e) => { setBloodDonateFilter(e.target.value); setCurrentPage(1); }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">Blood Donate: All</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
-
-          {/* Hostel Willing */}
-          <select
-            value={hostelWillingFilter}
-            onChange={(e) => { setHostelWillingFilter(e.target.value); setCurrentPage(1); }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">Hostel: All</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </select>
-
-          {/* Quota */}
-          <select
-            value={quotaFilter}
-            onChange={(e) => {
-              setQuotaFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">Quota: All</option>
-            {quotaOptions.map((q) => (
-              <option key={q.value} value={q.value}>{q.label}</option>
-            ))}
-          </select>
-
-          <select
-            value={feedbackFilter}
-            onChange={(e) => { setFeedbackFilter(e.target.value); setCurrentPage(1); }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">All Feedback</option>
-            {feedbackOptions.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
-
-          <select
-            value={familyOccupationFilter}
-            onChange={(e) => { setFamilyOccupationFilter(e.target.value); setCurrentPage(1); }}
-            className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-          >
-            <option value="all">All Occupations</option>
-            {occupationOptions.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-
-
-          <Select
-            placeholder="Select Country"
-            options={countryOptions}
-            value={countryOptions.find(c => c.value === selectedCountry) || null}
-            onChange={(opt) => {
-              setSelectedCountry(opt?.value || "");
-              setSelectedState("");
-              setSelectedCities([]);
-              setCurrentPage(1);
-            }}
-            isClearable
-          />
-          <Select
-            placeholder="Select State"
-            options={stateOptions}
-            value={stateOptions.find(s => s.value === selectedState) || null}
-            onChange={(opt) => {
-              setSelectedState(opt?.value || "");
-              setSelectedCities([]);
-              setCurrentPage(1);
-            }}
-            isClearable
-            isDisabled={!selectedCountry}
-          />
-          <Select
-            placeholder="Select City"
-            options={cityOptions}
-            value={cityOptions.filter(c =>
-              selectedCities.includes(c.value)
+          {/* Active Filters Summary (optional) */}
+          <div className="flex flex-wrap gap-2 mt-2 text-xs">
+            {searchTerm && (
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                Search: {searchTerm}
+              </span>
             )}
-            onChange={(opts) =>
-              setSelectedCities(opts ? opts.map(o => o.value) : [])
-            }
-            isMulti
-            isClearable
-            isDisabled={!selectedState}
-          />
-
-          {/* Export */}
-          <button
-            onClick={handleExport}  // Change from setExportOpen(true) to handleExport
-            disabled={exportLoading}
-            className={`flex items-center gap-1 px-3 py-2 text-sm rounded-md ${exportLoading
-              ? 'bg-green-400 cursor-not-allowed'
-              : 'bg-green-700 hover:bg-green-800'
-              } text-white`}
-          >
-            {exportLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Fetching Data...
-              </>
-            ) : (
-              <>
-                <FileDown className="w-4 h-4" />
-                Export
-              </>
+            {selectedInstitution !== 'all' && (
+              <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
+                Institution: {institutions.find(i => i.value === selectedInstitution)?.label}
+              </span>
             )}
-          </button>
-
-
+            {/* Add more active filter indicators as needed */}
+          </div>
         </div>
       </div>
 
