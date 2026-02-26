@@ -55,7 +55,10 @@ export default function StudentViewDialog({
     onClose,
 }: StudentViewDialogProps) {
     // Base URL for images - change this to your server URL
-    const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
+
+    const [previewOpen, setPreviewOpen] = React.useState(false);
+
+     const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
 
     // Function to get full image URL
     const getImageUrl = () => {
@@ -100,27 +103,19 @@ export default function StudentViewDialog({
                             {/* Modal Title */}
                             <h2 className="text-2xl font-semibold mb-4">{title}</h2>
                             <div className="flex flex-col items-center mb-6">
-                                <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-blue-200 shadow-lg">
+                                <div
+                                    className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-blue-200 shadow-lg cursor-pointer"
+                                    onClick={() => imageUrl && setPreviewOpen(true)}
+                                >
                                     {imageUrl ? (
                                         <img
                                             src={imageUrl}
                                             alt={`${data.firstname} ${data.lastname}`}
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                // Fallback if image fails to load
-                                                e.currentTarget.style.display = 'none';
-                                                const parent = e.currentTarget.parentElement;
-                                                if (parent) {
-                                                    const fallbackDiv = document.createElement('div');
-                                                    fallbackDiv.className = 'w-full h-full flex items-center justify-center bg-blue-100 text-blue-600 text-3xl font-bold';
-                                                    fallbackDiv.innerText = data.firstname?.charAt(0).toUpperCase() || 'S';
-                                                    parent.appendChild(fallbackDiv);
-                                                }
-                                            }}
+                                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                                         />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center bg-blue-100 text-blue-600 text-3xl font-bold">
-                                            {data.firstname?.charAt(0).toUpperCase() || 'S'}
+                                            {data.firstname?.charAt(0).toUpperCase() || "S"}
                                         </div>
                                     )}
                                 </div>
@@ -248,6 +243,44 @@ export default function StudentViewDialog({
 
                         </div>
                     </motion.div>
+                    <AnimatePresence>
+                        {previewOpen && imageUrl && (
+                            <>
+                                {/* Overlay */}
+                                <motion.div
+                                    className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    onClick={() => setPreviewOpen(false)}
+                                >
+                                    {/* Image Container */}
+                                    <motion.div
+                                        initial={{ scale: 0.8, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        exit={{ scale: 0.8, opacity: 0 }}
+                                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                                        className="relative max-w-3xl w-full"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        {/* Close Button */}
+                                        <button
+                                            onClick={() => setPreviewOpen(false)}
+                                            className="absolute -top-10 right-0 text-white text-2xl"
+                                        >
+                                            ✕
+                                        </button>
+
+                                        <img
+                                            src={imageUrl}
+                                            alt="Student Full Preview"
+                                            className="w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
+                                        />
+                                    </motion.div>
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
                 </>
             )}
         </AnimatePresence>
