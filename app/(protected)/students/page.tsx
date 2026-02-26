@@ -717,7 +717,7 @@ export default function StudentsPage() {
           </div>
 
           {/* Filters Grid - Responsive layout */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
 
             {/* Institution Filter - Superadmin only */}
             {role === "superadmin" && (
@@ -855,47 +855,44 @@ export default function StudentsPage() {
               ))}
             </select>
 
-            {/* Location Filters - These need more width, so they span full width on mobile */}
-            <div className="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <Select
-                  placeholder="Select Country"
-                  options={countryOptions}
-                  value={countryOptions.find(c => c.value === selectedCountry) || null}
-                  onChange={(opt) => {
-                    setSelectedCountry(opt?.value || "");
-                    setSelectedState("");
-                    setSelectedCities([]);
-                    setCurrentPage(1);
-                  }}
-                  isClearable
-                  className="w-full"
-                />
-                <Select
-                  placeholder="Select State"
-                  options={stateOptions}
-                  value={stateOptions.find(s => s.value === selectedState) || null}
-                  onChange={(opt) => {
-                    setSelectedState(opt?.value || "");
-                    setSelectedCities([]);
-                    setCurrentPage(1);
-                  }}
-                  isClearable
-                  isDisabled={!selectedCountry}
-                  className="w-full"
-                />
-                <Select
-                  placeholder="Select City"
-                  options={cityOptions}
-                  value={cityOptions.filter(c => selectedCities.includes(c.value))}
-                  onChange={(opts) => setSelectedCities(opts ? opts.map(o => o.value) : [])}
-                  isMulti
-                  isClearable
-                  isDisabled={!selectedState}
-                  className="w-full"
-                />
-              </div>
-            </div>
+
+            <Select
+              placeholder="Select Country"
+              options={countryOptions}
+              value={countryOptions.find(c => c.value === selectedCountry) || null}
+              onChange={(opt) => {
+                setSelectedCountry(opt?.value || "");
+                setSelectedState("");
+                setSelectedCities([]);
+                setCurrentPage(1);
+              }}
+              isClearable
+              className="w-full"
+            />
+            <Select
+              placeholder="Select State"
+              options={stateOptions}
+              value={stateOptions.find(s => s.value === selectedState) || null}
+              onChange={(opt) => {
+                setSelectedState(opt?.value || "");
+                setSelectedCities([]);
+                setCurrentPage(1);
+              }}
+              isClearable
+              isDisabled={!selectedCountry}
+              className="w-full"
+            />
+            <Select
+              placeholder="Select City"
+              options={cityOptions}
+              value={cityOptions.filter(c => selectedCities.includes(c.value))}
+              onChange={(opts) => setSelectedCities(opts ? opts.map(o => o.value) : [])}
+              isMulti
+              isClearable
+              isDisabled={!selectedState}
+              className="w-full"
+            />
+
           </div>
 
           {/* Active Filters Summary (optional) */}
