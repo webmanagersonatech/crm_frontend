@@ -564,7 +564,7 @@ export default function DashboardPage() {
 
           {/* Apply Online Button */}
           <a
-            href="http://160.187.54.80:5000/api/institutions/apply/INS-ESTKLHCB"
+            href="https://hikabackend.sonastar.com/api/institutions/apply/INS-ESTKLHCB"
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-2 bg-green-600 text-white font-semibold rounded shadow hover:bg-green-700 transition"
@@ -574,7 +574,7 @@ export default function DashboardPage() {
 
           {/* Enquiry Button */}
           <a
-            href="http://160.187.54.80:5000/api/institutions/enquiry/INS-ESTKLHCB"
+            href="https://hikabackend.sonastar.com/api/institutions/enquiry/INS-ESTKLHCB"
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-2 border-2 border-gray-800 text-gray-800 font-semibold rounded shadow hover:bg-gray-100 transition"

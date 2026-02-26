@@ -42,7 +42,7 @@ export default function ApplicationDetailsPage() {
     if (isLoading) return <Spinner />;
 
     // const BASE_URL = "http://localhost:4000/uploads/";
-    const BASE_URL = "http://160.187.54.80:5000/uploads/";
+    const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
 
     const renderSubSections = (sections: any[]) =>
         sections.map((section: any) => (

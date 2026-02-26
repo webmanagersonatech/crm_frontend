@@ -342,7 +342,7 @@ export default function StudentCleanupForm({
 
     const labelClass = "block mb-1 font-medium text-gray-700";
     const getImageUrl = () => {
-        const baseUrl = "http://160.187.54.80:5000";
+        const baseUrl = "https://hikabackend.sonastar.com";
         if (studentImage) {
             // Clean the filename (remove any accidental double slashes)
             const cleanFilename = studentImage.replace(/^\/+/, '');
