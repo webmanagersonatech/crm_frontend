@@ -97,7 +97,7 @@ function SortableField({
           onClick={() => onRemove(field.id)}
           className="text-red-500 text-xs"
         >
-           Remove
+          Remove
         </button>
       </div>
 
@@ -205,7 +205,7 @@ export default function SettingsPage() {
         // ⚠️ No form exists yet
         if (!apiData) {
           setFields([])
-          toast.error('No form configuration found', )
+          toast.error('No form configuration found',)
           return
         }
 
@@ -313,7 +313,7 @@ export default function SettingsPage() {
         },
 
         { fieldName: 'Caste', fieldType: 'text', required: false, maxLength: 50 },
-        { fieldName: 'Community Certificate Number', fieldType: 'text', required: false, maxLength: 30 },
+        { fieldName: 'Community Certificate Number', fieldType: 'alphanumeric', required: false, maxLength: 30 },
         { fieldName: 'Nationality', fieldType: 'text', required: true, maxLength: 50 },
         { fieldName: 'Contact Number', fieldType: 'number', required: true },
         { fieldName: 'Alternate Contact Number', fieldType: 'number', required: false },
@@ -370,7 +370,7 @@ export default function SettingsPage() {
         { fieldName: "Mother Occupation", fieldType: "text", required: false, maxLength: 50 },
         { fieldName: "Mother Organization", fieldType: "text", required: false, maxLength: 50 },
         { fieldName: "Mother Designation", fieldType: "text", required: false, maxLength: 50 },
-        { fieldName: "Mother Aadhar No", fieldType: "text", required: false, maxLength: 12 },
+        { fieldName: "Mother Aadhar No", fieldType: "number", required: false, maxLength: 12 },
         { fieldName: "Mother Blood Group", fieldType: "text", required: false, maxLength: 3 },
 
         { fieldName: "Annual Income", fieldType: "number", required: false },
@@ -403,7 +403,7 @@ export default function SettingsPage() {
           required: true,
           options: ['State Board', 'CBSE', 'ICSE', 'Other'],
         },
-        { fieldName: '10th Exam Roll No', fieldType: 'text', required: true, maxLength: 20 },
+        { fieldName: '10th Exam Roll No', fieldType: 'alphanumeric', required: true, maxLength: 20 },
         { fieldName: 'School Place', fieldType: 'text', required: false, maxLength: 50 },
 
         { fieldName: 'English Marks', fieldType: 'number', required: true },
@@ -424,7 +424,7 @@ export default function SettingsPage() {
           required: true,
           options: ['State Board', 'CBSE', 'ICSE', 'Other'],
         },
-        { fieldName: '11th Exam Roll No', fieldType: 'text', required: true, maxLength: 20 },
+        { fieldName: '11th Exam Roll No', fieldType: 'alphanumeric', required: true, maxLength: 20 },
         { fieldName: '11th Medium', fieldType: 'text', required: true, maxLength: 50 },
         { fieldName: '11th Year of Passing', fieldType: 'number', required: true },
         { fieldName: '11th Institution Place', fieldType: 'text', required: false, maxLength: 50 },
@@ -452,7 +452,7 @@ export default function SettingsPage() {
           required: true,
           options: ['Science', 'Commerce', 'Arts', 'Vocational'],
         },
-        { fieldName: '12th Exam Roll No', fieldType: 'text', required: true, maxLength: 20 },
+        { fieldName: '12th Exam Roll No', fieldType: 'alphanumeric', required: true, maxLength: 20 },
         { fieldName: '12th Year of Passing', fieldType: 'number', required: true },
         { fieldName: '12th Institution Place', fieldType: 'text', required: false, maxLength: 50 },
         { fieldName: '12th Total Marks', fieldType: 'number', required: true },
@@ -729,7 +729,7 @@ export default function SettingsPage() {
 
       <BackButton />
 
-      
+
 
       <div className="border rounded">
         <div className=" bg-gradient-to-b from-[#2a3970] to-[#5667a8]
@@ -879,6 +879,8 @@ text-white px-4 py-2 font-semibold rounded-t">
                     <option value="">Select type</option>
                     <option value="text">Text</option>
                     <option value="number">Number</option>
+                    <option value="alphanumeric">Text + Number</option>
+                    <option value="any">Any (Allow All)</option> {/* NEW */}
                     <option value="email">Email</option>
                     <option value="date">Date</option>
                     <option value="textarea">Textarea</option>

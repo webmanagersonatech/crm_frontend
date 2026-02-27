@@ -19,6 +19,7 @@ import { getDashboardData, getNewAndFollowupLeads } from "@/app/lib/request/dash
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { toast } from "react-toastify";
 import { getaccesscontrol, } from "@/app/lib/request/permissionRequest";
+import DuplicatePopup from "@/components/DuplicatePopup";
 
 interface OptionType {
   value: string;
@@ -76,7 +77,8 @@ export default function DashboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalEntries, setTotalEntries] = useState(0);
-
+  const [duplicatePopupOpen, setDuplicatePopupOpen] = useState(false);
+  const [duplicateData, setDuplicateData] = useState<Lead | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean>(false);
   const [userpermission, setUserpermisssion] = useState<any | null>(null);
 
@@ -461,28 +463,20 @@ export default function DashboardPage() {
     {
       header: "Duplicate",
       render: (lead: Lead) => {
-        const [showPopup, setShowPopup] = useState(false); //  use imported hook
-
         if (!lead.isduplicate) return null;
 
         return (
-          <div className="relative flex items-center justify-center">
+          <div className="flex items-center justify-center">
             <button
-              onClick={() => setShowPopup(!showPopup)}
+              onClick={() => {
+                setDuplicateData(lead);
+                setDuplicatePopupOpen(true);
+              }}
               className="text-red-600 hover:text-red-700 cursor-pointer"
               title="Duplicate Lead"
             >
               ⚠️
             </button>
-
-            {showPopup && lead.duplicateReason && (
-              <div
-                className="absolute top-full mt-1 w-64 p-2 bg-white border border-red-400 text-sm text-red-700 rounded shadow-lg z-50"
-                onMouseLeave={() => setShowPopup(false)}
-              >
-                {lead.duplicateReason}
-              </div>
-            )}
           </div>
         );
       },
@@ -626,11 +620,6 @@ export default function DashboardPage() {
               </div>
 
 
-
-
-
-
-
               <div className="flex flex-col">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                   Start Date
@@ -731,6 +720,14 @@ export default function DashboardPage() {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
+              />
+              <DuplicatePopup
+                open={duplicatePopupOpen}
+                onClose={() => setDuplicatePopupOpen(false)}
+                duplicateReason={duplicateData?.duplicateReason}
+                leadId={duplicateData?.leadId}
+                phoneNumber={duplicateData?.phoneNumber}
+                instituteId={duplicateData?.instituteId}
               />
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
