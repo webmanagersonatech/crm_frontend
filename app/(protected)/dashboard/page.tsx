@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect, } from "react";
+import { MdDashboard } from "react-icons/md";
 import { DataTable } from "@/components/Tablecomponents";
 import { Building2, FileStack, Users2, PhoneCall, UserPlus } from "lucide-react";
 import {
   LineChart,
-  Line,
-  XAxis,
+  Line, XAxis,
   YAxis,
   Tooltip,
   PieChart,
@@ -548,9 +548,12 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 p-3 sm:p-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
-          Dashboard
-        </h1>
+        <div className="flex items-center gap-2">
+          <MdDashboard className="text-2xl text-blue-600" />
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
+            Dashboard
+          </h1>
+        </div>
       </div>
 
       {userRole === "superadmin" && (
