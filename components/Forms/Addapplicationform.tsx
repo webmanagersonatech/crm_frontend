@@ -808,8 +808,8 @@ export default function AddApplicationForm({
                 );
 
             /* ANY */
+
             case "any":
-            default:
                 return (
                     <input
                         type="text"
@@ -823,6 +823,22 @@ export default function AddApplicationForm({
                                 [field.fieldName]: e.target.value,
                             }))
                         }
+                    />
+                );
+            default:
+                return (
+                    <input
+                        type={field.type}   // <-- THIS IS IMPORTANT
+                        name={field.fieldName}
+                        value={value}
+                        onChange={(e) =>
+                            setFormData(p => ({
+                                ...p,
+                                [field.fieldName]: e.target.value,
+                            }))
+                        }
+                        className={inputClass}
+                        maxLength={field.maxLength || undefined}
                     />
                 );
         }
