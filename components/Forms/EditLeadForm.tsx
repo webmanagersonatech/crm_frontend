@@ -26,7 +26,7 @@ export default function EditLeadPage() {
   const [stateOptions, setStateOptions] = useState<OptionType[]>([]);
   const [cityOptions, setCityOptions] = useState<OptionType[]>([]);
   const [selectedInstitute, setSelectedInstitute] = useState<string>("");
-
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState<Partial<Lead>>({
     instituteId: "",
     program: "",
@@ -80,6 +80,39 @@ export default function EditLeadPage() {
     }
 
     return age >= 18;
+  };
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!form.program) newErrors.program = "Program is required";
+    if (!form.candidateName?.trim())
+      newErrors.candidateName = "Candidate name is required";
+    if (!form.counsellorName?.trim())
+      newErrors.counsellorName = "Counsellor name is required";
+    if (!form.phoneNumber) {
+      newErrors.phoneNumber = "Phone number is required";
+    } else if (!/^[0-9]{10}$/.test(form.phoneNumber)) {
+      newErrors.phoneNumber = "Enter valid 10 digit phone number";
+    }
+    if (!form.dateOfBirth)
+      newErrors.dateOfBirth = "Date of birth is required";
+    if (!form.country)
+      newErrors.country = "Country is required";
+    if (!form.state)
+      newErrors.state = "State is required";
+    if (!form.city)
+      newErrors.city = "City is required";
+    if (!form.communication)
+      newErrors.communication = "Communication is required";
+    if (!form.followUpDate)
+      newErrors.followUpDate = "Follow up date is required";
+
+    if (form.dateOfBirth && !isAtLeast18YearsOld(form.dateOfBirth)) {
+      newErrors.dateOfBirth = "Must be 18+ years old";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
   //  Load institutions & countries
   useEffect(() => {
@@ -173,9 +206,23 @@ export default function EditLeadPage() {
   }, [selectedInstitute]);
 
   //  Input handlers
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    let newValue = value;
+
+    if (name === "candidateName" || name === "counsellorName") {
+      newValue = value.replace(/[^a-zA-Z\s]/g, "");
+    }
+
+    if (name === "phoneNumber") {
+      newValue = value.replace(/[^0-9]/g, "").slice(0, 10);
+    }
+
+    setForm(prev => ({ ...prev, [name]: newValue }));
+
+    setErrors(prev => ({ ...prev, [name]: "" }));
   };
 
   const handleSelectChange = (name: keyof Lead, selected: SingleValue<OptionType>) => {
@@ -183,7 +230,7 @@ export default function EditLeadPage() {
     if (name === "country" || name === "state") newValue = selected?.label || "";
 
     setForm(prev => ({ ...prev, [name]: newValue }));
-
+    setErrors((prev) => ({ ...prev, [name]: "" }));
     if (name === "instituteId") setSelectedInstitute(selected?.value || "");
 
     if (name === "country" && selected?.value) {
@@ -206,52 +253,20 @@ export default function EditLeadPage() {
   //  Save updates
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    const requiredFields: { field: keyof Lead; label: string }[] = [
-      { field: "program", label: "Program" },
-      { field: "candidateName", label: "Candidate Name" },
-      { field: "status", label: "Status" },
-      { field: "communication", label: "Communication" },
-      { field: "followUpDate", label: "Follow Up Date" },
-      { field: "counsellorName", label: "Counsellor Name" },
-    ];
 
-    for (let { field, label } of requiredFields) {
-      if (!form[field] || (typeof form[field] === "string" && !form[field]?.trim())) {
-        toast.error(`${label} is required.`);
-        setLoading(false);
-        return;
-      }
-    }
-
-    if (form.dateOfBirth && !isAtLeast18YearsOld(form.dateOfBirth)) {
-      toast.error("You are under 18, you are not eligible for this lead.");
-      setLoading(false);
+    if (!validateForm()) {
+      toast.error("Please fill all required fields correctly.");
       return;
     }
-    try {
-      const payload = {
-        program: form.program,
-        candidateName: form.candidateName,
-        ugDegree: form.ugDegree,
-        phoneNumber: form.phoneNumber,
-        dateOfBirth: form.dateOfBirth,
-        country: form.country,
-        state: form.state,
-        city: form.city,
-        status: form.status,
-        communication: form.communication,
-        followUpDate: form.followUpDate,
-        counsellorName: form.counsellorName,
-        description: form.description,
-      };
 
-      await updateLead(id as string, payload);
+    setLoading(true);
+
+    try {
+      await updateLead(id as string, form);
       toast.success("Lead updated successfully!");
-      router.back();
-    } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "Failed to update lead.");
+      router.push("/leads");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update lead.");
     } finally {
       setLoading(false);
     }
@@ -259,24 +274,27 @@ export default function EditLeadPage() {
 
   const inputClass =
     "border border-gray-300 dark:border-neutral-700 p-2 rounded bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500";
-  const customSelectStyles = {
+
+  const customSelectStyles = (fieldName: string) => ({
     control: (provided: any) => ({
       ...provided,
-      borderColor: "#d1d5db",
+      borderColor: errors[fieldName] ? "red" : "#d1d5db",
       borderRadius: "0.375rem",
       minHeight: "38px",
       backgroundColor: "white",
-      "&:hover": { borderColor: "#3b82f6" },
+      "&:hover": {
+        borderColor: errors[fieldName] ? "red" : "#3b82f6",
+      },
     }),
     menu: (provided: any) => ({ ...provided, zIndex: 9999 }),
-  };
+  });
 
   if (loading)
     return <p className="p-6 text-gray-600">Loading lead details...</p>;
 
   return (
     <div className="p-6">
-      
+
       <div className="flex items-center gap-2 mb-6">
         <Edit3 className="w-6 h-6 text-blue-600" />
         <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
@@ -295,9 +313,15 @@ export default function EditLeadPage() {
             options={programOptions}
             value={programOptions.find(opt => opt.value === form.program) || null}
             onChange={selected => handleSelectChange("program", selected)}
-            styles={customSelectStyles}
+            styles={customSelectStyles("program")}
             isClearable
+            placeholder="Select Program"
           />
+          {errors.program && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.program}
+            </span>
+          )}
         </div>
 
         {/* Candidate Name */}
@@ -308,8 +332,13 @@ export default function EditLeadPage() {
             name="candidateName"
             value={form.candidateName || ""}
             onChange={handleChange}
-            className={inputClass}
+            className={`${inputClass} ${errors.candidateName ? "border-red-500 focus:ring-red-500" : ""}`}
           />
+          {errors.candidateName && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.candidateName}
+            </span>
+          )}
         </div>
 
         {/* Counsellor Name */}
@@ -321,8 +350,14 @@ export default function EditLeadPage() {
             value={form.counsellorName || ""}
             onChange={handleChange}
             placeholder="Enter counsellor name (or leave blank to use your name)"
-            className={inputClass}
+            className={`${inputClass} ${errors.counsellorName ? "border-red-500 focus:ring-red-500" : ""}`}
+
           />
+          {errors.counsellorName && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.counsellorName}
+            </span>
+          )}
         </div>
 
 
@@ -346,8 +381,13 @@ export default function EditLeadPage() {
             name="phoneNumber"
             value={form.phoneNumber || ""}
             onChange={handleChange}
-            className={inputClass}
+            className={`${inputClass} ${errors.phoneNumber ? "border-red-500 focus:ring-red-500" : ""}`}
           />
+          {errors.phoneNumber && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.phoneNumber}
+            </span>
+          )}
         </div>
 
         {/* DOB */}
@@ -369,9 +409,14 @@ export default function EditLeadPage() {
             options={countryOptions}
             value={countryOptions.find(opt => opt.label === form.country) || null}
             onChange={selected => handleSelectChange("country", selected)}
-            styles={customSelectStyles}
+            styles={customSelectStyles("country")}
             isClearable
           />
+          {errors.country && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.country}
+            </span>
+          )}
         </div>
 
         {/* State */}
@@ -381,9 +426,14 @@ export default function EditLeadPage() {
             options={stateOptions}
             value={stateOptions.find(opt => opt.label === form.state) || null}
             onChange={selected => handleSelectChange("state", selected)}
-            styles={customSelectStyles}
+            styles={customSelectStyles("state")}
             isClearable
           />
+          {errors.state && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.state}
+            </span>
+          )}
         </div>
 
         {/* City */}
@@ -393,9 +443,14 @@ export default function EditLeadPage() {
             options={cityOptions}
             value={cityOptions.find(opt => opt.label === form.city) || null}
             onChange={selected => handleSelectChange("city", selected)}
-            styles={customSelectStyles}
+            styles={customSelectStyles("city")}
             isClearable
           />
+          {errors.city && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.city}
+            </span>
+          )}
         </div>
 
         {/* Status */}
@@ -405,7 +460,7 @@ export default function EditLeadPage() {
             options={statusOptions}
             value={statusOptions.find(opt => opt.value === form.status)}
             onChange={selected => handleSelectChange("status", selected)}
-            styles={customSelectStyles}
+            styles={customSelectStyles("status")}
           />
         </div>
 
@@ -416,8 +471,13 @@ export default function EditLeadPage() {
             options={communicationOptions}
             value={communicationOptions.find(opt => opt.value === form.communication)}
             onChange={selected => handleSelectChange("communication", selected)}
-            styles={customSelectStyles}
+            styles={customSelectStyles("communication")}
           />
+          {errors.communication && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.communication}
+            </span>
+          )}
         </div>
 
         {/* Follow Up Date */}
@@ -430,8 +490,13 @@ export default function EditLeadPage() {
             value={form.followUpDate || ""}
             min={new Date().toISOString().split("T")[0]} // allow today & future
             onChange={handleChange}
-            className={inputClass}
+            className={`${inputClass} ${errors.followUpDate ? "border-red-500 focus:ring-red-500" : ""}`}
           />
+          {errors.followUpDate && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.followUpDate}
+            </span>
+          )}
         </div>
 
 

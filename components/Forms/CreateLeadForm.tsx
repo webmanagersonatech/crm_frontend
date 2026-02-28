@@ -40,7 +40,40 @@ export default function CreateLeadForm({
     const [cityOptions, setCityOptions] = useState<OptionType[]>([]);
     const [showInstituteDropdown, setShowInstituteDropdown] = useState(false);
     const [selectedInstitute, setSelectedInstitute] = useState<string>("");
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
+
+
+    const validateForm = () => {
+        const newErrors: Record<string, string> = {};
+
+        if (!form.instituteId) newErrors.instituteId = "Institute is required";
+        if (!form.program) newErrors.program = "Program is required";
+        if (!form.candidateName?.trim()) newErrors.candidateName = "Candidate name is required";
+        if (!form.counsellorName?.trim()) newErrors.counsellorName = "Counsellor name is required";
+
+        if (!form.phoneNumber) {
+            newErrors.phoneNumber = "Phone number is required";
+        } else if (!/^[0-9]{10}$/.test(form.phoneNumber)) {
+            newErrors.phoneNumber = "Enter valid 10 digit phone number";
+        }
+
+        if (!form.dateOfBirth) {
+            newErrors.dateOfBirth = "Date of birth is required";
+        } else if (!isAtLeast18YearsOld(form.dateOfBirth)) {
+            newErrors.dateOfBirth = "Must be 18+ years old";
+        }
+
+        if (!form.country) newErrors.country = "Country is required";
+        if (!form.state) newErrors.state = "State is required";
+        if (!form.city) newErrors.city = "City is required";
+        if (!form.communication) newErrors.communication = "Communication is required";
+        if (!form.followUpDate) newErrors.followUpDate = "Follow up date is required";
+
+        setErrors(newErrors);
+
+        return Object.keys(newErrors).length === 0;
+    };
     const [form, setForm] = useState<Partial<Lead>>({
         instituteId: "",
         program: "",
@@ -288,7 +321,25 @@ export default function CreateLeadForm({
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
         const { name, value } = e.target;
-        setForm((prev) => ({ ...prev, [name]: value }));
+
+        let newValue = value;
+
+        // Allow only letters and space for name fields
+        if (name === "candidateName" || name === "counsellorName") {
+            newValue = value.replace(/[^a-zA-Z\s]/g, "");
+        }
+
+        // Allow only numbers for phone
+        if (name === "phoneNumber") {
+            newValue = value.replace(/[^0-9]/g, "").slice(0, 10);
+        }
+
+        setForm((prev) => ({ ...prev, [name]: newValue }));
+
+        setErrors((prev) => ({
+            ...prev,
+            [name]: "",
+        }));
     };
 
     // --- Dropdown Change Handler (Fixed for country/state names) ---
@@ -301,7 +352,10 @@ export default function CreateLeadForm({
         }
 
         setForm((prev) => ({ ...prev, [name]: newValue }));
-
+        setErrors((prev) => ({
+            ...prev,
+            [name]: "",
+        }));
         if (name === "instituteId") {
             setSelectedInstitute(selected?.value || "");
         }
@@ -328,92 +382,33 @@ export default function CreateLeadForm({
 
     // --- Submit Handler ---
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+        e.preventDefault();  // ✅ MUST BE FIRST LINE
+
+        const isValid = validateForm();
+
+        if (!isValid) {
+            toast.error("Please fill all required fields correctly.");
+            return;
+        }
+
         setLoading(true);
-
-        if (!form.instituteId) {
-            toast.error("Institute is required.");
-            setLoading(false);
-            return;
-        }
-        if (!form.program) {
-            toast.error("Program is required.");
-            setLoading(false);
-            return;
-        }
-        if (!form.candidateName) {
-            toast.error("Candidate name is required.");
-            setLoading(false);
-            return;
-        }
-
-        if (!form.counsellorName) {
-            toast.error("Counsellor Name is required.");
-            setLoading(false);
-            return;
-        }
-
-        if (!form.phoneNumber) {
-            toast.error("Phone number is required.");
-            setLoading(false);
-            return;
-        }
-        if (!form.dateOfBirth) {
-            toast.error("Date of birth is required.");
-            setLoading(false);
-            return;
-        }
-
-        if (!isAtLeast18YearsOld(form.dateOfBirth)) {
-            toast.error("You are under 18, you are not eligible for this lead.");
-            setLoading(false);
-            return;
-        }
-
-        if (!form.country) {
-            toast.error("Country is required.");
-            setLoading(false);
-            return;
-        }
-        if (!form.state) {
-            toast.error("State is required.");
-            setLoading(false);
-            return;
-        }
-        if (!form.city) {
-            toast.error("City is required.");
-            setLoading(false);
-            return;
-        }
-        if (!form.communication) {
-            toast.error("Communication is required.");
-            setLoading(false);
-            return;
-        }
-        if (!form.followUpDate) {
-            toast.error("Follow-up date is required.");
-            setLoading(false);
-            return;
-        }
 
         try {
             await createLead({
                 ...form,
                 ...(applicationId ? { applicationId } : {}),
-                ...(leadSource
-                    ? { leadSource }
-                    : { leadSource: "offline" }),
+                ...(leadSource ? { leadSource } : { leadSource: "offline" }),
             });
+
             toast.success("Lead created successfully!");
 
             if (applicationId) {
                 router.push(`/applications`);
-                refetch?.()
-                onSuccess?.()
+                refetch?.();
+                onSuccess?.();
             } else {
                 router.push("/leads");
             }
-
 
         } catch (error: any) {
             console.error(error);
@@ -429,17 +424,19 @@ export default function CreateLeadForm({
     const inputClass =
         "border border-gray-300 dark:border-neutral-700 p-2 rounded bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-blue-500";
 
-    const customSelectStyles = {
+    const customSelectStyles = (fieldName: string) => ({
         control: (provided: any) => ({
             ...provided,
-            borderColor: "#d1d5db",
+            borderColor: errors[fieldName] ? "red" : "#d1d5db",
             borderRadius: "0.375rem",
             minHeight: "38px",
             backgroundColor: "white",
-            "&:hover": { borderColor: "#3b82f6" },
+            "&:hover": {
+                borderColor: errors[fieldName] ? "red" : "#3b82f6",
+            },
         }),
         menu: (provided: any) => ({ ...provided, zIndex: 9999 }),
-    };
+    });
 
     if (initLoading) {
         return (
@@ -451,7 +448,7 @@ export default function CreateLeadForm({
 
     return (
         <div className="p-6">
-            
+
             <div className="flex items-center gap-2 mb-6">
                 <UserPlus2 className="w-6 h-6 text-blue-600" />
                 <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
@@ -473,7 +470,7 @@ export default function CreateLeadForm({
                             options={institutions}
                             value={institutions.find((opt) => opt.value === form.instituteId) || null}
                             onChange={(selected) => handleSelectChange("instituteId", selected)}
-                            styles={customSelectStyles}
+                            styles={customSelectStyles("instituteId")}
                             isClearable
                         />
                     </div>
@@ -487,10 +484,15 @@ export default function CreateLeadForm({
                         options={programOptions}
                         value={programOptions.find((opt) => opt.value === form.program) || null}
                         onChange={(selected) => handleSelectChange("program", selected)}
-                        styles={customSelectStyles}
+                        styles={customSelectStyles("program")}
                         isClearable
                         placeholder="Select Program"
                     />
+                      {errors.program && (
+                        <span className="text-red-500 text-xs mt-1">
+                            {errors.program}
+                        </span>
+                    )}
                 </div>
 
                 {/* Candidate Name */}
@@ -501,8 +503,13 @@ export default function CreateLeadForm({
                         name="candidateName"
                         value={form.candidateName}
                         onChange={handleChange}
-                        className={inputClass}
+                        className={`${inputClass} ${errors.candidateName ? "border-red-500 focus:ring-red-500" : ""}`}
                     />
+                    {errors.candidateName && (
+                        <span className="text-red-500 text-xs mt-1">
+                            {errors.candidateName}
+                        </span>
+                    )}
                 </div>
                 {/* Counsellor Name */}
                 <div className="flex flex-col">
@@ -514,9 +521,14 @@ export default function CreateLeadForm({
                         onChange={(e) =>
                             setForm((prev) => ({ ...prev, counsellorName: e.target.value }))
                         }
-                        className={inputClass}
+                        className={`${inputClass} ${errors.counsellorName ? "border-red-500 focus:ring-red-500" : ""}`}
                         placeholder="Enter counsellor name"
                     />
+                    {errors.counsellorName && (
+                        <span className="text-red-500 text-xs mt-1">
+                            {errors.counsellorName}
+                        </span>
+                    )}
                 </div>
 
 
@@ -540,8 +552,13 @@ export default function CreateLeadForm({
                         name="phoneNumber"
                         value={form.phoneNumber}
                         onChange={handleChange}
-                        className={inputClass}
+                        className={`${inputClass} ${errors.phoneNumber ? "border-red-500 focus:ring-red-500" : ""}`}
                     />
+                    {errors.phoneNumber && (
+                        <span className="text-red-500 text-xs mt-1">
+                            {errors.phoneNumber}
+                        </span>
+                    )}
                 </div>
 
                 {/* Date of Birth */}
@@ -552,8 +569,13 @@ export default function CreateLeadForm({
                         name="dateOfBirth"
                         value={form.dateOfBirth?.toString() || ""}
                         onChange={handleChange}
-                        className={inputClass}
+                        className={`${inputClass} ${errors.dateOfBirth ? "border-red-500 focus:ring-red-500" : ""}`}
                     />
+                    {errors.dateOfBirth && (
+                        <span className="text-red-500 text-xs mt-1">
+                            {errors.dateOfBirth}
+                        </span>
+                    )}
                 </div>
 
                 {/* Country */}
@@ -563,9 +585,14 @@ export default function CreateLeadForm({
                         options={countryOptions}
                         value={countryOptions.find((opt) => opt.label === form.country) || null}
                         onChange={(selected) => handleSelectChange("country", selected)}
-                        styles={customSelectStyles}
+                        styles={customSelectStyles("country")}
                         isClearable
                     />
+                    {errors.country && (
+                        <span className="text-red-500 text-xs mt-1">
+                            {errors.country}
+                        </span>
+                    )}
                 </div>
 
                 {/* State */}
@@ -575,9 +602,14 @@ export default function CreateLeadForm({
                         options={stateOptions}
                         value={stateOptions.find((opt) => opt.label === form.state) || null}
                         onChange={(selected) => handleSelectChange("state", selected)}
-                        styles={customSelectStyles}
+                        styles={customSelectStyles("state")}
                         isClearable
                     />
+                    {errors.state && (
+                        <span className="text-red-500 text-xs mt-1">
+                            {errors.state}
+                        </span>
+                    )}
                 </div>
 
                 {/* City */}
@@ -587,9 +619,15 @@ export default function CreateLeadForm({
                         options={cityOptions}
                         value={cityOptions.find((opt) => opt.label === form.city) || null}
                         onChange={(selected) => handleSelectChange("city", selected)}
-                        styles={customSelectStyles}
+                        styles={customSelectStyles("city")}
                         isClearable
+
                     />
+                    {errors.city && (
+                        <span className="text-red-500 text-xs mt-1">
+                            {errors.city}
+                        </span>
+                    )}
                 </div>
 
                 {/* Status */}
@@ -599,7 +637,7 @@ export default function CreateLeadForm({
                         options={statusOptions}
                         value={statusOptions.find((opt) => opt.value === form.status)}
                         onChange={(selected) => handleSelectChange("status", selected)}
-                        styles={customSelectStyles}
+                        styles={customSelectStyles("status")}
                     />
                 </div>
 
@@ -612,8 +650,15 @@ export default function CreateLeadForm({
                             (opt) => opt.value === form.communication
                         )}
                         onChange={(selected) => handleSelectChange("communication", selected)}
-                        styles={customSelectStyles}
+                        styles={customSelectStyles("communication")}
+
+
                     />
+                    {errors.communication && (
+                        <span className="text-red-500 text-xs mt-1">
+                            {errors.communication}
+                        </span>
+                    )}
                 </div>
 
                 {/* Follow Up Date */}
@@ -628,8 +673,13 @@ export default function CreateLeadForm({
                         value={form.followUpDate || ""}
                         min={new Date().toISOString().split("T")[0]} // today + future allowed
                         onChange={handleChange}
-                        className={inputClass}
+                        className={`${inputClass} ${errors.followUpDate ? "border-red-500 focus:ring-red-500" : ""}`}
                     />
+                    {errors.followUpDate && (
+                        <span className="text-red-500 text-xs mt-1">
+                            {errors.followUpDate}
+                        </span>
+                    )}
                 </div>
 
 

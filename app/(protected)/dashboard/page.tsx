@@ -3,7 +3,8 @@
 import { useState, useEffect, } from "react";
 import { MdDashboard } from "react-icons/md";
 import { DataTable } from "@/components/Tablecomponents";
-import { Building2, FileStack, Users2, PhoneCall, UserPlus } from "lucide-react";
+import { Building2, Pencil, FileStack, Users2, PhoneCall, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   LineChart,
   Line, XAxis,
@@ -62,6 +63,7 @@ export interface Lead {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const [dateRange, setDateRange] = useState("");
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [selectedInstitution, setSelectedInstitution] = useState("all");
@@ -506,7 +508,33 @@ export default function DashboardPage() {
       },
     },
 
+    {
+      header: "Actions",
+      render: (lead: Lead) => (
+        <div className="flex  gap-2">
 
+
+
+
+
+
+          {(userRole === "superadmin" || userpermission?.edit) && (
+            <button
+              onClick={() => router.push(`/leads/editlead/${lead._id}`)}
+              disabled={!!lead?.applicationId}
+              className={`flex items-center justify-center px-3 py-1 rounded-md text-white transition-all duration-200
+      ${lead?.applicationId
+                  ? "bg-gray-400 cursor-not-allowed opacity-60"
+                  : "bg-blue-600 hover:bg-blue-700"
+                }`}
+            >
+              <Pencil className="w-4 h-4" />
+            </button>)}
+
+
+        </div>
+      ),
+    },
 
     // Always visible (actions etc.)
 
@@ -561,7 +589,7 @@ export default function DashboardPage() {
 
           {/* Apply Online Button */}
           <a
-            href="https://hikabackend.sonastar.com/api/institutions/apply/INS-ESTKLHCB"
+            href="http://localhost:4000/api/institutions/apply/INS-ESTKLHCB"
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-2 bg-green-600 text-white font-semibold rounded shadow hover:bg-green-700 transition"
@@ -571,7 +599,7 @@ export default function DashboardPage() {
 
           {/* Enquiry Button */}
           <a
-            href="https://hikabackend.sonastar.com/api/institutions/enquiry/INS-ESTKLHCB"
+            href="http://localhost:4000/api/institutions/enquiry/INS-ESTKLHCB"
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-2 border-2 border-gray-800 text-gray-800 font-semibold rounded shadow hover:bg-gray-100 transition"
