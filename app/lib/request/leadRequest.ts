@@ -206,6 +206,7 @@ export async function exportLeads({
   country,
   state,
   city,
+  isduplicate,
 }: {
   instituteId?: string;
   status?: string;
@@ -219,6 +220,7 @@ export async function exportLeads({
   leadSource?: string;
   country?: string;
   state?: string;
+  isduplicate?: string;
   city?: string | string[];
 }) {
   try {
@@ -232,6 +234,7 @@ export async function exportLeads({
     if (endDate) params.append("endDate", endDate);
     if (userId) params.append("userId", userId);
     if (phoneNumber) params.append("phoneNumber", phoneNumber);
+    if (isduplicate) params.append("isduplicate", isduplicate);
     if (leadId) params.append("leadId", leadId);
     if (country) params.append("country", country);
     if (state) params.append("state", state);

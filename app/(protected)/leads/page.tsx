@@ -449,6 +449,7 @@ export default function LeadsPage() {
         country: selectedCountry || undefined,
         state: selectedState || undefined,
         city: selectedCities.length ? selectedCities : undefined,
+        isduplicate: selectedDuplicate !== "all" ? selectedDuplicate : undefined,
       });
 
       // Check if we have data
@@ -815,7 +816,7 @@ export default function LeadsPage() {
         </div>
 
         {/* FILTERS */}
-        {/* 
+
         <div className="p-6 bg-white shadow rounded-xl max-w-md">
           <h2 className="text-lg font-semibold mb-4">
             Bulk Upload Leads (CSV)
@@ -843,9 +844,9 @@ export default function LeadsPage() {
               <p>Duplicates: {result.duplicates}</p>
             </div>
           )}
-        </div> */}
+        </div>
 
-        {/* <BulkLeadGenerator /> */}
+        <BulkLeadGenerator />
 
         <div className="flex flex-wrap items-center gap-4 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
 
