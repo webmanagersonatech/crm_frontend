@@ -817,7 +817,7 @@ export default function LeadsPage() {
 
         {/* FILTERS */}
 
-        <div className="p-6 bg-white shadow rounded-xl max-w-md">
+        {/* <div className="p-6 bg-white shadow rounded-xl max-w-md">
           <h2 className="text-lg font-semibold mb-4">
             Bulk Upload Leads (CSV)
           </h2>
@@ -846,7 +846,7 @@ export default function LeadsPage() {
           )}
         </div>
 
-        <BulkLeadGenerator />
+        <BulkLeadGenerator /> */}
 
         <div className="flex flex-wrap items-center gap-4 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
 
