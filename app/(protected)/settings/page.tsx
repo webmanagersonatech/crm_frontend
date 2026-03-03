@@ -21,7 +21,7 @@ interface PaymentData {
   apiKey: string
   merchantId: string
 }
-
+type PaymentMethod = 'razorpay' | 'instamojo' | ''
 export default function SettingsPage() {
   const [institutions, setInstitutions] = useState<OptionType[]>([])
   const [selectedInstitute, setSelectedInstitute] = useState<OptionType | null>(null)
@@ -39,11 +39,16 @@ export default function SettingsPage() {
   })
   const [courseInput, setCourseInput] = useState('')
   const [customCourses, setCustomCourses] = useState<string[]>([])
-
-  const [paymentData, setPaymentData] = useState<PaymentData>({
-    authToken: '',
-    apiKey: '',
-    merchantId: ''
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('')
+  const [paymentData, setPaymentData] = useState({
+    razorpay: {
+      keyId: '',
+      keySecret: ''
+    },
+    instamojo: {
+      apiKey: '',
+      authToken: ''
+    }
   })
 
   const inputClass =
@@ -73,39 +78,53 @@ export default function SettingsPage() {
     const fetchSettings = async () => {
       try {
         const data = await getSettingsByInstitute(selectedInstitute.value)
-        console.log('Fetched settings:', data)
 
         setFormData({ image: data.logo || '' })
         setCustomCourses(data.courses || [])
         setBatchName(data.batchName || '')
         setIsApplicationOpen(data.isApplicationOpen ?? false)
-
-        setPaymentData({
-          authToken: data.authToken || '',
-          apiKey: data.apiKey || '',
-          merchantId: data.merchantId || ''
-        })
         setApplicationFee(data.applicationFee || '')
         setApplicantAge(data.applicantAge || '')
+
         if (data.academicYear) {
           const [start, end] = data.academicYear.split('-')
           setStartYear({ value: start, label: start })
           setEndYear({ value: end, label: end })
         }
 
+        // ✅ Payment Handling
+        if (data.paymentMethod) {
+          setPaymentMethod(data.paymentMethod)
+
+          if (data.paymentMethod === 'razorpay') {
+            setPaymentData({
+              razorpay: {
+                keyId: data.paymentCredentials?.keyId || '',
+                keySecret: data.paymentCredentials?.keySecret || ''
+              },
+              instamojo: {
+                apiKey: '',
+                authToken: ''
+              }
+            })
+          }
+
+          if (data.paymentMethod === 'instamojo') {
+            setPaymentData({
+              razorpay: {
+                keyId: '',
+                keySecret: ''
+              },
+              instamojo: {
+                apiKey: data.paymentCredentials?.apiKey || '',
+                authToken: data.paymentCredentials?.authToken || ''
+              }
+            })
+          }
+        }
 
       } catch (error: any) {
-        if (error.message.includes('Settings not found')) {
-          setFormData({ image: '' })
-          setCustomCourses([])
-          setStartYear(null)
-          setEndYear(null)
-
-          setPaymentData({ authToken: '', apiKey: '', merchantId: '' })
-          toast.error('No settings found. You can create new settings.')
-        } else {
-          toast.error(error.message)
-        }
+        toast.error(error.message)
       }
     }
 
@@ -175,30 +194,45 @@ export default function SettingsPage() {
 
     if (applicantAge === '' || applicantAge < 1)
       return toast.error('Please enter valid applicant age')
+
     if (!startYear || !endYear)
       return toast.error('Please select application academic year')
 
     if (Number(endYear.value) <= Number(startYear.value))
       return toast.error('End year must be greater than start year')
 
+    if (customCourses.length === 0)
+      return toast.error('Please add at least one course')
 
-    if (customCourses.length === 0) return toast.error('Please add at least one course')
-    if (!paymentData.authToken || !paymentData.apiKey || !paymentData.merchantId)
-      return toast.error('Please fill all payment details')
+    if (!paymentMethod)
+      return toast.error('Please select payment method')
+
+    if (paymentMethod === 'razorpay') {
+      if (!paymentData.razorpay.keyId || !paymentData.razorpay.keySecret)
+        return toast.error('Please fill Razorpay keys')
+    }
+
+    if (paymentMethod === 'instamojo') {
+      if (!paymentData.instamojo.apiKey || !paymentData.instamojo.authToken)
+        return toast.error('Please fill Instamojo keys')
+    }
+
     const academicYear = `${startYear.value}-${endYear.value}`
 
     const payload: SettingsType = {
       instituteId: selectedInstitute.value,
       logo: formData.image,
       courses: customCourses,
-      authToken: paymentData.authToken,
-      apiKey: paymentData.apiKey,
-      merchantId: paymentData.merchantId,
       applicationFee,
       applicantAge,
       academicYear,
       batchName,
-      isApplicationOpen
+      isApplicationOpen,
+      paymentMethod,
+      paymentCredentials:
+        paymentMethod === 'razorpay'
+          ? paymentData.razorpay
+          : paymentData.instamojo
     }
 
     try {
@@ -212,7 +246,7 @@ export default function SettingsPage() {
   // ------------------- Render -------------------
   return (
     <div className="p-6 space-y-8">
-      
+
 
       {/* ---------- General Settings ---------- */}
       <div className="border rounded-lg shadow-sm overflow-hidden">
@@ -413,33 +447,132 @@ export default function SettingsPage() {
       </div>
 
       {/* ---------- Payment Settings ---------- */}
+      {/* ---------- Payment Settings ---------- */}
       <div className="border rounded-lg shadow-sm overflow-hidden">
-        <div className="bg-green-600 text-white px-4 py-2 font-semibold">Payment Settings</div>
+        <div className="bg-green-600 text-white px-4 py-2 font-semibold">
+          Payment Settings
+        </div>
 
-        <div className="p-4 bg-white grid grid-cols-1 md:grid-cols-3 gap-4">
-          {['authToken', 'apiKey', 'merchantId'].map((field, idx) => (
-            <div key={idx} className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-600 mb-1 capitalize">
-                {field === 'authToken'
-                  ? 'Auth Token'
-                  : field === 'apiKey'
-                    ? 'API Key'
-                    : 'Merchant ID'}{' '}
-                <span className="text-red-500">*</span>
+        <div className="p-4 bg-white space-y-6">
+
+          {/* Payment Method Selection */}
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-gray-700 mb-2">
+              Select Payment Method <span className="text-red-500">*</span>
+            </label>
+
+            <div className="flex space-x-6">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  value="razorpay"
+                  checked={paymentMethod === 'razorpay'}
+                  onChange={() => setPaymentMethod('razorpay')}
+                />
+                <span>Razorpay</span>
               </label>
-              <input
-                type="text"
-                className={inputClass}
-                value={paymentData[field as keyof PaymentData]}
-                onChange={(e) =>
-                  setPaymentData((prev) => ({
-                    ...prev,
-                    [field]: e.target.value
-                  }))
-                }
-              />
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  value="instamojo"
+                  checked={paymentMethod === 'instamojo'}
+                  onChange={() => setPaymentMethod('instamojo')}
+                />
+                <span>Instamojo</span>
+              </label>
             </div>
-          ))}
+          </div>
+
+          {/* Razorpay Fields */}
+          {paymentMethod === 'razorpay' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <label className="text-sm font-semibold text-gray-600 mb-1">
+                  Razorpay Key ID <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={paymentData.razorpay.keyId}
+                  onChange={(e) =>
+                    setPaymentData((prev) => ({
+                      ...prev,
+                      razorpay: {
+                        ...prev.razorpay,
+                        keyId: e.target.value
+                      }
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-sm font-semibold text-gray-600 mb-1">
+                  Razorpay Key Secret <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={paymentData.razorpay.keySecret}
+                  onChange={(e) =>
+                    setPaymentData((prev) => ({
+                      ...prev,
+                      razorpay: {
+                        ...prev.razorpay,
+                        keySecret: e.target.value
+                      }
+                    }))
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Instamojo Fields */}
+          {paymentMethod === 'instamojo' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <label className="text-sm font-semibold text-gray-600 mb-1">
+                  Instamojo API Key <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={paymentData.instamojo.apiKey}
+                  onChange={(e) =>
+                    setPaymentData((prev) => ({
+                      ...prev,
+                      instamojo: {
+                        ...prev.instamojo,
+                        apiKey: e.target.value
+                      }
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-sm font-semibold text-gray-600 mb-1">
+                  Instamojo Auth Token <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={paymentData.instamojo.authToken}
+                  onChange={(e) =>
+                    setPaymentData((prev) => ({
+                      ...prev,
+                      instamojo: {
+                        ...prev.instamojo,
+                        authToken: e.target.value
+                      }
+                    }))
+                  }
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

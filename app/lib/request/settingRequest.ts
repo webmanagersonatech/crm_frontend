@@ -24,15 +24,26 @@ api.interceptors.request.use(
 );
 
 // ---------------- Types ----------------
+export type PaymentMethod = 'razorpay' | 'instamojo'
+
+export interface RazorpayCredentials {
+  keyId: string
+  keySecret: string
+}
+
+export interface InstamojoCredentials {
+  apiKey: string
+  authToken: string
+}
+
 export interface Settings {
   _id?: string;
   instituteId: string;
   logo?: string; // Base64 string
   courses?: string[];
-  merchantId?: string;
-  apiKey?: string;
-  authToken?: string;
-  isApplicationOpen?:boolean;
+  paymentMethod: PaymentMethod
+  paymentCredentials: RazorpayCredentials | InstamojoCredentials
+  isApplicationOpen?: boolean;
   batchName?: string;
   contactEmail?: string;
   contactNumber?: string;
