@@ -237,6 +237,7 @@ export default function LeadsPage() {
     candidateName: true,
     program: true,
     phoneNumber: true,
+    city: true,
     communication: true,
     followUp: true,
     createdBy: true,
@@ -254,6 +255,7 @@ export default function LeadsPage() {
     { key: "candidateName", label: "Candidate" },
     { key: "program", label: "Program" },
     { key: "phoneNumber", label: "Phone" },
+    { key: "city", label: "city" },
     { key: "communication", label: "Communication" },
     { key: "followUp", label: "Follow Up" },
     { key: "createdBy", label: "Created By" },
@@ -483,6 +485,10 @@ export default function LeadsPage() {
           obj.Phone = lead.phoneNumber || "-";
         }
 
+        if (columnVisibility.city) {
+          obj.city = lead.city || "-";
+        }
+
         if (columnVisibility.communication) {
           obj.Communication = lead.communication || "-";
         }
@@ -589,6 +595,10 @@ export default function LeadsPage() {
     columnVisibility.phoneNumber && {
       header: "Phone",
       accessor: "phoneNumber",
+    },
+    columnVisibility.city && {
+      header: "City",
+      accessor: "city",
     },
 
     columnVisibility.communication && {

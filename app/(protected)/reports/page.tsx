@@ -153,6 +153,7 @@ export default function ReportsPage() {
     instituteId: true,
     candidateName: true,
     program: true,
+    city: true,
     phoneNumber: true,
     communication: true,
     followUp: true,
@@ -317,6 +318,7 @@ export default function ReportsPage() {
     { key: "candidateName", label: "Candidate" },
     { key: "program", label: "Program" },
     { key: "phoneNumber", label: "Phone" },
+    { key: "city", label: "city" },
     { key: "communication", label: "Communication" },
     { key: "followUp", label: "Follow Up" },
     { key: "createdBy", label: "Created By" },
@@ -621,6 +623,9 @@ export default function ReportsPage() {
     if (columnVisibilityreport.phoneNumber) {
       obj.Phone = lead.phoneNumber || "-";
     }
+     if (columnVisibilityreport.city) {
+      obj.city = lead.city || "-";
+    }
 
     if (columnVisibilityreport.communication) {
       obj.Communication = lead.communication || "-";
@@ -851,6 +856,10 @@ export default function ReportsPage() {
     columnVisibilityreport.phoneNumber && {
       header: "Phone",
       accessor: "phoneNumber",
+    },
+    columnVisibilityreport.city && {
+      header: "City",
+      accessor: "city",
     },
 
     columnVisibilityreport.communication && {
