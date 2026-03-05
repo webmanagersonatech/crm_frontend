@@ -104,8 +104,9 @@ export default function EditLeadPage() {
       newErrors.city = "City is required";
     if (!form.communication)
       newErrors.communication = "Communication is required";
-    if (!form.followUpDate)
-      newErrors.followUpDate = "Follow up date is required";
+
+    // if (!form.followUpDate)
+    //   newErrors.followUpDate = "Follow up date is required";
 
     if (form.dateOfBirth && !isAtLeast18YearsOld(form.dateOfBirth)) {
       newErrors.dateOfBirth = "Must be 18+ years old";
@@ -482,7 +483,7 @@ export default function EditLeadPage() {
 
         {/* Follow Up Date */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">Follow Up Date <span className="text-red-500">* </span></label>
+          <label className="text-sm font-semibold mb-1">Follow Up Date </label>
 
           <input
             type="date"
@@ -492,11 +493,7 @@ export default function EditLeadPage() {
             onChange={handleChange}
             className={`${inputClass} ${errors.followUpDate ? "border-red-500 focus:ring-red-500" : ""}`}
           />
-          {errors.followUpDate && (
-            <span className="text-red-500 text-xs mt-1">
-              {errors.followUpDate}
-            </span>
-          )}
+
         </div>
 
 

@@ -68,8 +68,7 @@ export default function CreateLeadForm({
         if (!form.state) newErrors.state = "State is required";
         if (!form.city) newErrors.city = "City is required";
         if (!form.communication) newErrors.communication = "Communication is required";
-        if (!form.followUpDate) newErrors.followUpDate = "Follow up date is required";
-
+        
         setErrors(newErrors);
 
         return Object.keys(newErrors).length === 0;
@@ -664,7 +663,7 @@ export default function CreateLeadForm({
                 {/* Follow Up Date */}
                 <div className="flex flex-col">
                     <label className="text-sm font-semibold mb-1">
-                        Follow Up Date <span className="text-red-500">*</span>
+                        Follow Up Date 
                     </label>
 
                     <input
@@ -675,11 +674,7 @@ export default function CreateLeadForm({
                         onChange={handleChange}
                         className={`${inputClass} ${errors.followUpDate ? "border-red-500 focus:ring-red-500" : ""}`}
                     />
-                    {errors.followUpDate && (
-                        <span className="text-red-500 text-xs mt-1">
-                            {errors.followUpDate}
-                        </span>
-                    )}
+                
                 </div>
 
 

@@ -1293,9 +1293,9 @@ export default function LeadsPage() {
               <label className="block mb-2 text-sm font-medium">Follow-up Date</label>
 
               <input
-                type="datetime-local"
-                value={statusUpdateData.followUpDate}
-                min={new Date().toISOString().slice(0, 16)}
+                type="date"
+                value={statusUpdateData.followUpDate || ""}
+                min={new Date().toISOString().split("T")[0]}
                 onChange={(e) =>
                   setStatusUpdateData(prev => ({
                     ...prev,
@@ -1335,10 +1335,7 @@ export default function LeadsPage() {
                         toast.error("Communication is required");
                         return;
                       }
-                      if (!statusUpdateData.followUpDate) {
-                        toast.error("Follow-up date is required");
-                        return;
-                      }
+
                       if (!statusUpdateData.description) {
                         toast.error("Description is required");
                         return;
@@ -1346,7 +1343,7 @@ export default function LeadsPage() {
                       await updateLead(statusUpdateData.lead._id, {
                         status: statusUpdateData.status,
                         communication: statusUpdateData.communication,
-                        followUpDate: statusUpdateData.followUpDate,
+                        followUpDate: statusUpdateData.followUpDate || "",
                         description: statusUpdateData.description,
                       });
                       toast.success("Lead updated successfully");
