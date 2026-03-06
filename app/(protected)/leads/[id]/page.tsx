@@ -9,7 +9,7 @@ import BackButton from "@/components/BackButton";
 // Icons
 import { FaWhatsapp, FaRegClock, FaEdit, FaPhone, FaGlobe, FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
 import { MdOfflineBolt } from "react-icons/md";
-
+import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 
 const COMMUNICATION_TYPES = [
     { label: "WhatsApp", color: "bg-green-500 text-white", border: "border-green-500", icon: <FaWhatsapp /> },
@@ -32,7 +32,8 @@ export default function ApplicationDetailsPage() {
     const [data, setData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [activeComm, setActiveComm] = useState<string>("All");
-
+    const [userpermission, setUserpermisssion] = useState<any | null>(null);
+    const [hasPermission, setHasPermission] = useState<boolean>(true);
     useEffect(() => {
         if (!id) return;
 
@@ -49,6 +50,61 @@ export default function ApplicationDetailsPage() {
         };
         load();
     }, [id]);
+
+    useEffect(() => {
+        const fetchPermissions = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.log("No token found, skipping API call");
+                setHasPermission(false);
+                return;
+            }
+
+            try {
+                const payload = token.split(".")[1];
+                const decoded: any = JSON.parse(atob(payload));
+
+                if ((decoded.role === "admin" || decoded.role === "user") && decoded.instituteId && decoded.id) {
+                    const data = await getaccesscontrol({
+                        userId: decoded.id,
+                        instituteId: decoded.instituteId
+                    });
+                    const leadPermission = data.permissions?.find(
+                        (p: any) => p.moduleName === "Lead Manager"
+                    );
+                    if (
+                        leadPermission &&
+                        (leadPermission.view ||
+                            leadPermission.create ||
+                            leadPermission.edit ||
+                            leadPermission.delete ||
+                            leadPermission.filter ||
+                            leadPermission.download)
+                    ) {
+
+                        setUserpermisssion(leadPermission);
+                        setHasPermission(true);
+                    } else {
+
+                        setUserpermisssion(null);
+                        setHasPermission(false);
+                    }
+                } else if (decoded.role === "superadmin") {
+
+                    setUserpermisssion("superadmin");
+                    setHasPermission(true);
+                } else {
+
+                    setHasPermission(false);
+                }
+            } catch (error) {
+                console.error("Failed to decode token or fetch permissions:", error);
+                setHasPermission(false);
+            }
+        };
+
+        fetchPermissions();
+    }, []);
 
     const followups = data?.followups || [];
 
@@ -128,14 +184,15 @@ export default function ApplicationDetailsPage() {
                     </h2>
 
                     {/* Update Lead Button */}
-
-                    <Link
-                        href={`/leads/editlead/${data._id}`} // pass the lead ID in URL
-                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
-                    >
-                        <FaEdit className="text-sm" />
-                        Update Followups
-                    </Link>
+                    {(userpermission?.edit || userpermission === "superadmin") && (
+                        <Link
+                            href={`/leads/editlead/${data._id}`}
+                            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+                        >
+                            <FaEdit className="text-sm" />
+                            Update Followups
+                        </Link>
+                    )}
                 </div>
                 {filteredFollowups.length === 0 ? (
                     <p className="text-gray-500 text-sm">No followups found</p>

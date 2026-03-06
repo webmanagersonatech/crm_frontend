@@ -620,13 +620,13 @@ export default function LeadsPage() {
     },
 
 
-    // columnVisibility.createdBy && {
-    //   header: "Created By",
-    //   render: (lead: any) =>
-    //     lead.creator
-    //       ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
-    //       : "—",
-    // },
+    columnVisibility.createdBy && {
+      header: "Created By",
+      render: (lead: any) =>
+        lead.creator
+          ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
+          : "—",
+    },
 
     columnVisibility.status && {
       header: "Status",
@@ -684,7 +684,6 @@ export default function LeadsPage() {
       },
     },
 
-
     columnVisibility.applicationStatus && {
       header: "Application Status",
       render: (lead: Lead) => {
@@ -694,25 +693,29 @@ export default function LeadsPage() {
           <div>
             {applicationMongoId ? (
               // View Application
-              <div
-                onClick={() => router.push(`/applications/${applicationMongoId}`)}
-                className="flex items-center gap-2 text-emerald-600 cursor-pointer hover:text-emerald-700 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                <span className="font-medium">View</span>
-              </div>
+              (userpermission?.view || userpermission === "superadmin") && (
+                <div
+                  onClick={() => router.push(`/applications/${applicationMongoId}`)}
+                  className="flex items-center gap-2 text-emerald-600 cursor-pointer hover:text-emerald-700 transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="font-medium">View</span>
+                </div>
+              )
             ) : (
               // Create Application
-              <div
-                onClick={() => {
-                  setSelectedLead(lead);
-                  setIsOpen(true);
-                }}
-                className="flex items-center gap-2 text-indigo-600 cursor-pointer hover:text-indigo-700 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                <span className="font-medium">Apply</span>
-              </div>
+              (userpermission?.edit || userpermission === "superadmin") && (
+                <div
+                  onClick={() => {
+                    setSelectedLead(lead);
+                    setIsOpen(true);
+                  }}
+                  className="flex items-center gap-2 text-indigo-600 cursor-pointer hover:text-indigo-700 transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="font-medium">Apply</span>
+                </div>
+              )
             )}
           </div>
         );
@@ -1351,7 +1354,7 @@ export default function LeadsPage() {
                         return;
                       }
 
-                    
+
                       await updateLead(statusUpdateData.lead._id, {
                         status: statusUpdateData.status,
                         communication: statusUpdateData.communication,

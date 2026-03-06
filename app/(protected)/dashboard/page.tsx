@@ -326,10 +326,9 @@ export default function DashboardPage() {
         setError(null);
 
         const params: any = {};
-        if (startDate && endDate) {
-          params.startDate = startDate;
-          params.endDate = endDate;
-        }
+        // Always send startDate/endDate if present
+        if (startDate) params.startDate = startDate;
+        if (endDate) params.endDate = endDate;
         if (selectedInstitution !== "all") {
           params.instituteId = selectedInstitution;
         }
@@ -344,7 +343,7 @@ export default function DashboardPage() {
     };
 
     fetchDashboard();
-  }, [permissionsLoaded, institutionsLoaded, hasPermission, startDate, endDate, selectedInstitution]);
+  }, [permissionsLoaded, institutionsLoaded,dateRange, hasPermission, startDate, endDate, selectedInstitution]);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -430,14 +429,13 @@ export default function DashboardPage() {
     },
 
 
-
-    // columnVisibility.createdBy && {
-    //   header: "Created By",
-    //   render: (lead: any) =>
-    //     lead.creator
-    //       ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
-    //       : "—",
-    // },
+    {
+      header: "Created By",
+      render: (lead: any) =>
+        lead.creator
+          ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
+          : "—",
+    },
 
     {
       header: "Status",
