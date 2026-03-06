@@ -122,9 +122,7 @@ export default function AddApplicationForm({
         }
     }
 
-    const DEFAULT_COUNTRY_CODE = "IN"; // India
-
-
+  
     const [showInstituteDropdown, setShowInstituteDropdown] = useState(true)
     const [newField, setNewField] = useState({
         tab: "personal" as Tab,
@@ -134,7 +132,7 @@ export default function AddApplicationForm({
         options: "",
         required: false,
     })
-    
+
     // const BASE_URL = "http://localhost:4000/uploads/";
     const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
 
@@ -580,31 +578,59 @@ export default function AddApplicationForm({
     }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        const fieldName = e.target.name
+        const file = e.target.files?.[0];
+        const fieldName = e.target.name;
 
-        if (file) {
-            setFiles(p => ({ ...p, [fieldName]: file }))
-            setFormData(p => ({ ...p, [fieldName]: file.name }))
+        if (!file) return;
 
-            // Find field config for validation
-            let fieldConfig = null;
-            ['personal', 'education'].forEach(tab => {
-                formConfig?.[`${tab}Details`]?.forEach((section: any) => {
-                    const found = section.fields.find((f: any) => f.fieldName === fieldName);
-                    if (found) fieldConfig = found;
-                });
-            });
+        const MAX_SIZE = 2 * 1024 * 1024; // 2MB
 
-            if (fieldConfig) {
-                const error = validateField(fieldConfig, file.name);
-                setFieldErrors(prev => ({
-                    ...prev,
-                    [fieldName]: error
-                }));
-            }
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ];
+
+        // File size validation
+        if (file.size > MAX_SIZE) {
+            toast.error("File size must be less than 2MB");
+            e.target.value = "";
+            return;
         }
-    }
+
+        // File type validation
+        if (!allowedTypes.includes(file.type)) {
+            toast.error("Invalid file type. Only images and documents allowed.");
+            e.target.value = "";
+            return;
+        }
+
+        // Save file
+        setFiles(prev => ({ ...prev, [fieldName]: file }));
+        setFormData(prev => ({ ...prev, [fieldName]: file.name }));
+
+        // Find field config for validation
+        let fieldConfig: any = null;
+
+        ["personal", "education"].forEach(tab => {
+            formConfig?.[`${tab}Details`]?.forEach((section: any) => {
+                const found = section.fields.find((f: any) => f.fieldName === fieldName);
+                if (found) fieldConfig = found;
+            });
+        });
+
+        // Run existing validation
+        if (fieldConfig) {
+            const error = validateField(fieldConfig, file.name);
+            setFieldErrors(prev => ({
+                ...prev,
+                [fieldName]: error
+            }));
+        }
+    };
 
 
 
@@ -616,37 +642,36 @@ export default function AddApplicationForm({
         /* =========================
            COUNTRY
         ========================= */
-        if (field.fieldName === "Country") {
+        if (field.fieldName === "Country" || field.fieldName === "Permanent  Country") {
+
+            const isPermanent = field.fieldName.includes("Permanent");
+
+            const countryField = isPermanent ? "Permanent  Country" : "Country";
+            const stateField = isPermanent ? "Permanent  State" : "State";
+            const cityField = isPermanent ? "Permanent City" : "City";
+
             return (
                 <div>
                     <Select
                         options={countryOptions}
-                        value={countryOptions.find(o => o.label === formData.Country) || null}
+                        value={countryOptions.find(o => o.label === formData[countryField]) || null}
                         onChange={(val) => {
                             setFormData(p => ({
                                 ...p,
-                                Country: val?.label || "",
-                                State: "",
-                                City: "",
+                                [countryField]: val?.label || "",
+                                [stateField]: "",
+                                [cityField]: "",
                             }));
-                            setFieldErrors(prev => ({ ...prev, Country: '' }));
+
+                            setFieldErrors(prev => ({ ...prev, [countryField]: '' }));
                         }}
                         onBlur={() => {
-                            // Validate on blur
-                            const error = validateField(field, formData.Country);
-                            setFieldErrors(prev => ({ ...prev, Country: error }));
+                            const error = validateField(field, formData[countryField]);
+                            setFieldErrors(prev => ({ ...prev, [countryField]: error }));
                         }}
                         placeholder="Select Country"
-                        styles={{
-                            control: (base) => ({
-                                ...base,
-                                borderColor: hasError ? '#ef4444' : base.borderColor,
-                                '&:hover': {
-                                    borderColor: hasError ? '#ef4444' : base.borderColor,
-                                }
-                            })
-                        }}
                     />
+
                     {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
                 </div>
             );
@@ -655,74 +680,73 @@ export default function AddApplicationForm({
         /* =========================
            STATE
         ========================= */
-        if (field.fieldName === "State") {
+        if (field.fieldName === "State" || field.fieldName === "Permanent  State") {
+
+            const isPermanent = field.fieldName.includes("Permanent");
+
+            const countryField = isPermanent ? "Permanent  Country" : "Country";
+            const stateField = isPermanent ? "Permanent  State" : "State";
+            const cityField = isPermanent ? "Permanent City" : "City";
+
             let options: any[] = [];
 
-            if (hasPersonalField("Country") && formData.Country) {
-                const countryCode = Country.getAllCountries()
-                    .find(c => c.name === formData.Country)?.isoCode;
+            const countryCode = Country.getAllCountries()
+                .find(c => c.name === formData[countryField])?.isoCode;
 
-                options = countryCode
-                    ? State.getStatesOfCountry(countryCode).map(s => ({
-                        value: s.isoCode,
-                        label: s.name,
-                    }))
-                    : [];
-            } else {
-                options = State.getStatesOfCountry(DEFAULT_COUNTRY_CODE).map(s => ({
+            options = countryCode
+                ? State.getStatesOfCountry(countryCode).map(s => ({
                     value: s.isoCode,
-                    label: s.name,
-                }));
-            }
+                    label: s.name
+                }))
+                : [];
 
             return (
                 <div>
                     <Select
                         options={options}
-                        value={options.find(o => o.label === formData.State) || null}
+                        value={options.find(o => o.label === formData[stateField]) || null}
                         onChange={(val) => {
-                            setFormData(p => ({ ...p, State: val?.label || "", City: "" }));
-                            setFieldErrors(prev => ({ ...prev, State: '' }));
+                            setFormData(p => ({
+                                ...p,
+                                [stateField]: val?.label || "",
+                                [cityField]: ""
+                            }));
+
+                            setFieldErrors(prev => ({ ...prev, [stateField]: '' }));
                         }}
-                        onBlur={() => {
-                            const error = validateField(field, formData.State);
-                            setFieldErrors(prev => ({ ...prev, State: error }));
-                        }}
-                        isDisabled={hasPersonalField("Country") && !formData.Country}
+                        isDisabled={!formData[countryField]}
                         placeholder="Select State"
-                        styles={{
-                            control: (base) => ({
-                                ...base,
-                                borderColor: hasError ? '#ef4444' : base.borderColor,
-                                '&:hover': {
-                                    borderColor: hasError ? '#ef4444' : base.borderColor,
-                                }
-                            })
-                        }}
                     />
+
                     {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
                 </div>
             );
         }
-
         /* =========================
            CITY
         ========================= */
-        if (field.fieldName === "City") {
+        if (field.fieldName === "City" || field.fieldName === "Permanent City") {
+
+            const isPermanent = field.fieldName.includes("Permanent");
+
+            const countryField = isPermanent ? "Permanent  Country" : "Country";
+            const stateField = isPermanent ? "Permanent  State" : "State";
+            const cityField = isPermanent ? "Permanent City" : "City";
+
             let options: any[] = [];
 
             const countryCode =
-                Country.getAllCountries().find(c => c.name === formData.Country)
-                    ?.isoCode || DEFAULT_COUNTRY_CODE;
+                Country.getAllCountries().find(c => c.name === formData[countryField])
+                    ?.isoCode;
 
             const stateCode =
-                State.getStatesOfCountry(countryCode)
-                    .find(s => s.name === formData.State)?.isoCode;
+                State.getStatesOfCountry(countryCode || "")
+                    .find(s => s.name === formData[stateField])?.isoCode;
 
             if (stateCode) {
-                options = City.getCitiesOfState(countryCode, stateCode).map(c => ({
+                options = City.getCitiesOfState(countryCode!, stateCode).map(c => ({
                     value: c.name,
-                    label: c.name,
+                    label: c.name
                 }));
             }
 
@@ -730,27 +754,19 @@ export default function AddApplicationForm({
                 <div>
                     <Select
                         options={options}
-                        value={options.find(o => o.label === formData.City) || null}
+                        value={options.find(o => o.label === formData[cityField]) || null}
                         onChange={(val) => {
-                            setFormData(p => ({ ...p, City: val?.label || "" }));
-                            setFieldErrors(prev => ({ ...prev, City: '' }));
+                            setFormData(p => ({
+                                ...p,
+                                [cityField]: val?.label || ""
+                            }));
+
+                            setFieldErrors(prev => ({ ...prev, [cityField]: '' }));
                         }}
-                        onBlur={() => {
-                            const error = validateField(field, formData.City);
-                            setFieldErrors(prev => ({ ...prev, City: error }));
-                        }}
-                        isDisabled={!formData.State}
+                        isDisabled={!formData[stateField]}
                         placeholder="Select City"
-                        styles={{
-                            control: (base) => ({
-                                ...base,
-                                borderColor: hasError ? '#ef4444' : base.borderColor,
-                                '&:hover': {
-                                    borderColor: hasError ? '#ef4444' : base.borderColor,
-                                }
-                            })
-                        }}
                     />
+
                     {hasError && <p className="text-red-500 text-xs mt-1">{error}</p>}
                 </div>
             );

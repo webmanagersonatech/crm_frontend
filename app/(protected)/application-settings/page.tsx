@@ -314,7 +314,28 @@ export default function SettingsPage() {
 
         { fieldName: 'Caste', fieldType: 'text', required: false, maxLength: 50 },
         { fieldName: 'Community Certificate Number', fieldType: 'alphanumeric', required: false, maxLength: 30 },
-        { fieldName: 'Nationality', fieldType: 'text', required: true, maxLength: 50 },
+        {
+          fieldName: 'Nationality',
+          fieldType: 'select',
+          required: true,
+          options: [
+            'Indian',
+            'American',
+            'British',
+            'Canadian',
+            'Australian',
+            'German',
+            'French',
+            'Chinese',
+            'Japanese',
+            'Sri Lankan',
+            'Nepalese',
+            'Bangladeshi',
+            'Malaysian',
+            'Singaporean',
+            'Other'
+          ]
+        },
         { fieldName: 'Contact Number', fieldType: 'number', required: true },
         { fieldName: 'Alternate Contact Number', fieldType: 'number', required: false },
 
