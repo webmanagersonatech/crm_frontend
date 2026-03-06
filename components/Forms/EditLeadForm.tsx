@@ -105,8 +105,10 @@ export default function EditLeadPage() {
     if (!form.communication)
       newErrors.communication = "Communication is required";
 
-    // if (!form.followUpDate)
-    //   newErrors.followUpDate = "Follow up date is required";
+    // Followup date required only when status = Followup
+    if (form.status === "Followup" && !form.followUpDate) {
+      newErrors.followUpDate = "Follow up date is required";
+    }
 
     if (form.dateOfBirth && !isAtLeast18YearsOld(form.dateOfBirth)) {
       newErrors.dateOfBirth = "Must be 18+ years old";
@@ -493,7 +495,11 @@ export default function EditLeadPage() {
             onChange={handleChange}
             className={`${inputClass} ${errors.followUpDate ? "border-red-500 focus:ring-red-500" : ""}`}
           />
-
+          {errors.followUpDate && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.followUpDate}
+            </span>
+          )}
         </div>
 
 

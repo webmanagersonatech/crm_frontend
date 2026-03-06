@@ -596,6 +596,7 @@ export default function LeadsPage() {
       header: "Phone",
       accessor: "phoneNumber",
     },
+
     columnVisibility.city && {
       header: "City",
       accessor: "city",
@@ -1345,11 +1346,12 @@ export default function LeadsPage() {
                         toast.error("Communication is required");
                         return;
                       }
-
-                      if (!statusUpdateData.description) {
-                        toast.error("Description is required");
+                      if (statusUpdateData.status === "Followup" && !statusUpdateData.followUpDate) {
+                        toast.error("Follow up date is required");
                         return;
                       }
+
+                    
                       await updateLead(statusUpdateData.lead._id, {
                         status: statusUpdateData.status,
                         communication: statusUpdateData.communication,
