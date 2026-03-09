@@ -43,6 +43,7 @@ interface FieldConfig {
   options?: string[]
   maxLength?: number
   acceptedFileTypes?: string[]
+  declarationText?: string
 }
 
 
@@ -101,7 +102,16 @@ function SortableField({
         </button>
       </div>
 
-      {field.fieldType === 'textarea' ? (
+      {field.fieldType === 'declaration' ? (
+        <div className="border p-2 rounded mb-3 bg-white">
+
+          <div className="bg-gray-50 p-3 rounded border border-gray-200">
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">
+              {field.declarationText || 'No declaration text provided'}
+            </p>
+          </div>
+        </div>
+      ) : field.fieldType === 'textarea' ? (
         <textarea disabled className={inputClass} />
       ) : field.fieldType === 'select' ? (
         <select disabled className={inputClass}>
@@ -155,6 +165,7 @@ const buildSectionPayload = (
         options: f.options,
         maxLength: f.maxLength,
         multiple: false,
+        declarationText: f.declarationText,
       })
     })
 
@@ -185,6 +196,11 @@ export default function SettingsPage() {
   const [fieldType, setFieldType] = useState('')
   const [required, setRequired] = useState(false)
   const [options, setOptions] = useState('')
+  const [showDeclarationModal, setShowDeclarationModal] = useState(false)
+  const [declarationFor, setDeclarationFor] = useState<'Personal' | 'Education'>('Personal')
+  const [declarationSectionName, setDeclarationSectionName] = useState('')
+  const [declarationFieldName, setDeclarationFieldName] = useState('') // NEW - for field name
+  const [declarationText, setDeclarationText] = useState('')
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -252,6 +268,56 @@ export default function SettingsPage() {
     }
 
     return true
+  }
+
+  const handleAddDeclaration = () => {
+    if (!declarationSectionName.trim()) {
+      return toast.error('Please enter section name')
+    }
+
+    if (!declarationFieldName.trim()) { // New validation
+      return toast.error('Please enter declaration field name')
+    }
+
+    if (!declarationText.trim()) {
+      return toast.error('Please enter declaration text')
+    }
+
+    // Check if declaration already exists in this section with same field name
+    const existingDeclaration = fields.find(
+      (f) =>
+        f.fieldFor === declarationFor &&
+        f.sectionName === declarationSectionName.trim() &&
+        f.fieldName === declarationFieldName.trim() // Check by field name too
+    )
+
+    if (existingDeclaration) {
+      return toast.error('Declaration with this name already exists in this section')
+    }
+
+    setFields((prev) => [
+      ...prev,
+      {
+        id: uid(),
+        instituteId: selectedInstitute!.id,
+        fieldFor: declarationFor,
+        sectionName: declarationSectionName.trim(),
+        fieldName: declarationFieldName.trim(), // Use the custom field name
+        fieldType: 'declaration',
+        required: false,
+        visibility: 'Yes',
+        options: [],
+        maxLength: undefined,
+        declarationText: declarationText.trim()
+      },
+    ])
+
+    // Reset and close modal
+    setDeclarationSectionName('')
+    setDeclarationFieldName('') // Reset new field
+    setDeclarationText('')
+    setShowDeclarationModal(false)
+    toast.success('Declaration added successfully')
   }
 
 
@@ -522,7 +588,9 @@ export default function SettingsPage() {
             required: field.required ?? false,
             visibility: 'Yes',
             options: field.options ?? [],
+
             maxLength: field.maxLength,
+            declarationText: field.declarationText,
           })
         })
       })
@@ -937,7 +1005,15 @@ text-white px-4 py-2 font-semibold rounded-t">
                   </button>
                 </div>
               )}
-
+              {/* DECLARATION BUTTON */}
+              <div className="pt-2">
+                <button
+                  onClick={() => setShowDeclarationModal(true)}
+                  className="bg-purple-600 text-white py-2 rounded w-full hover:bg-purple-700 transition"
+                >
+                  + Add Declaration
+                </button>
+              </div>
               {/* SAVE */}
               <button
                 onClick={handleSubmit}
@@ -1036,6 +1112,94 @@ text-white px-4 py-2 font-semibold rounded-t">
           </div>
 
 
+        </div>
+      )}
+      {/* DECLARATION MODAL */}
+      {/* DECLARATION MODAL */}
+      {showDeclarationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Add Declaration</h3>
+
+            {/* Category Selection */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category
+              </label>
+              <select
+                className={inputClass}
+                value={declarationFor}
+                onChange={(e) => setDeclarationFor(e.target.value as 'Personal' | 'Education')}
+              >
+                <option value="Personal">Personal</option>
+                <option value="Education">Education</option>
+              </select>
+            </div>
+
+            {/* Section Name */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Section Name
+              </label>
+              <input
+                type="text"
+                className={inputClass}
+                placeholder="e.g., Declaration Section, Terms Section"
+                value={declarationSectionName}
+                onChange={(e) => setDeclarationSectionName(e.target.value)}
+              />
+              <p className="text-xs text-gray-500 mt-1">The section where this declaration will appear</p>
+            </div>
+
+            {/* Declaration Field Name - NEW */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Declaration Field Name
+              </label>
+              <input
+                type="text"
+                className={inputClass}
+                placeholder="e.g., Terms & Conditions, Declaration, Agreement"
+                value={declarationFieldName}
+                onChange={(e) => setDeclarationFieldName(e.target.value)}
+              />
+              <p className="text-xs text-gray-500 mt-1">The name/label for this declaration field</p>
+            </div>
+
+            {/* Declaration Text */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Declaration Text
+              </label>
+              <textarea
+                className={`${inputClass} h-32 resize-none`}
+                placeholder="I hereby declare that all the information provided is true and correct..."
+                value={declarationText}
+                onChange={(e) => setDeclarationText(e.target.value)}
+              />
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowDeclarationModal(false)
+                  setDeclarationSectionName('')
+                  setDeclarationFieldName('') // Reset new field
+                  setDeclarationText('')
+                }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddDeclaration}
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              >
+                Add Declaration
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

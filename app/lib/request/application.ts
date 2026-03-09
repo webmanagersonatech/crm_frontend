@@ -32,22 +32,20 @@ api.interceptors.response.use(
       const status = error?.response?.status;
       const message = error?.response?.data?.message;
 
-      // 🔴 Session expired / Unauthorized
-      if (status === 401 || message === "SESSION_EXPIRED") {
+      if (status === 401) {
 
-        alert("Session expired. Please login again.");
+        // remove token
+        localStorage.removeItem("token");
+
+        // redirect login
+        window.location.href = "/";
+      }
+
+      if (message === "SESSION_EXPIRED") {
 
         localStorage.removeItem("token");
 
         window.location.href = "/";
-      }
-
-      // 🔴 Other API errors
-      else if (message) {
-        alert(message);
-      }
-      else {
-        alert("Something went wrong");
       }
     }
 

@@ -122,7 +122,7 @@ export default function AddApplicationForm({
         }
     }
 
-  
+
     const [showInstituteDropdown, setShowInstituteDropdown] = useState(true)
     const [newField, setNewField] = useState({
         tab: "personal" as Tab,
@@ -962,6 +962,21 @@ export default function AddApplicationForm({
                         </div>
                     );
 
+                /* DECLARATION */
+                case "declaration":
+                    return (
+                        <div>
+                            <textarea
+                                name={field.fieldName}
+                                value={field.declarationText || "No declaration text provided"}
+                                readOnly
+                                disabled
+                                className={`${inputClass} bg-gray-100 cursor-not-allowed'}`}
+                                rows={4}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">This is a declaration field and cannot be edited</p>
+                        </div>
+                    );
                 /* NUMBER */
                 case "number":
                     return (
@@ -1085,6 +1100,10 @@ export default function AddApplicationForm({
                     // Preserve old file if no new file uploaded
                     sectionObj.fields[field.fieldName] =
                         files[field.fieldName]?.name || formData[field.fieldName] || ""
+                }
+                else if (field.type === "declaration") {
+                    // For declaration fields, send the declarationText from config
+                    sectionObj.fields[field.fieldName] = field.declarationText || ""
                 } else {
                     sectionObj.fields[field.fieldName] = formData[field.fieldName] || ""
                 }
