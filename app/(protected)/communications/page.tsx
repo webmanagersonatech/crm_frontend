@@ -279,6 +279,7 @@ export default function CommunicationsPage() {
   // 🔹 Load Institutions
   useEffect(() => {
     const loadInstitutions = async () => {
+      if (userpermission !== "superadmin") return;
       try {
         const activeInstitutions = await getActiveInstitutions();
         setInstitutions(
@@ -292,7 +293,7 @@ export default function CommunicationsPage() {
       }
     };
     loadInstitutions();
-  }, []);
+  }, [userpermission]);
 
   const handleBulkMail = () => {
     if (selectedApplicants.length === 0) {

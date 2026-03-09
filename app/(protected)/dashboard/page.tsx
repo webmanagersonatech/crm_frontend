@@ -297,6 +297,12 @@ export default function DashboardPage() {
   // 🏫 Load Institutions
   useEffect(() => {
     const loadInstitutions = async () => {
+      // Only load institutions if user is superadmin
+      if (userRole !== "superadmin") {
+        setInstitutionsLoaded(true);
+        return;
+      }
+
       try {
         const activeInstitutions = await getActiveInstitutions();
         setInstitutions(
@@ -312,8 +318,11 @@ export default function DashboardPage() {
       }
     };
 
-    loadInstitutions();
-  }, []);
+    // Wait for userRole to be set first
+    if (userRole !== null) {
+      loadInstitutions();
+    }
+  }, [userRole]); // Depend on userRole
 
   // 📊 Fetch Dashboard Data
   useEffect(() => {

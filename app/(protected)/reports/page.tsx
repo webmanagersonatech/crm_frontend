@@ -623,7 +623,7 @@ export default function ReportsPage() {
     if (columnVisibilityreport.phoneNumber) {
       obj.Phone = lead.phoneNumber || "-";
     }
-     if (columnVisibilityreport.city) {
+    if (columnVisibilityreport.city) {
       obj.city = lead.city || "-";
     }
 

@@ -361,18 +361,30 @@ export default function EventsPageClient() {
 
 
     /* ---------------- Institutions ---------------- */
+    /* ---------------- Institutions ---------------- */
     useEffect(() => {
-        getActiveInstitutions()
-            .then((res) => {
+        const loadInstitutions = async () => {
+            // Only load institutions if user is superadmin
+            if (userpermission !== "superadmin") return;
+
+            try {
+                const res = await getActiveInstitutions();
                 setInstitutions(
                     res.map((i: any) => ({
                         value: i.instituteId,
                         label: i.name,
                     }))
                 );
-            })
-            .catch(() => toast.error("Failed to load institutions"));
-    }, []);
+            } catch {
+                toast.error("Failed to load institutions");
+            }
+        };
+
+        // Wait for userpermission to be set
+        if (userpermission !== null) {
+            loadInstitutions();
+        }
+    }, [userpermission]); // Depend on userpermission
 
     /* ---------------- Import Submit ---------------- */
     const handleImportSubmit = async () => {
@@ -958,7 +970,7 @@ John Doe,9876543210,john@example.com,Chennai,React Workshop,2025-01-05`;
                                             importErrors.duplicatesInDB.length === 0 && (
                                                 <tr>
                                                     <td colSpan={4} className="text-center py-4 text-green-600 font-medium">
-                                                         No validation errors found
+                                                        No validation errors found
                                                     </td>
                                                 </tr>
                                             )}
