@@ -186,7 +186,10 @@ export default function StudentsPage() {
           obj.ApplicationID = student.applicationId || "-";
         }
 
-        if (columnVisibility.UniversityRegNo) {
+        if (
+          columnVisibility.UniversityRegNo &&
+          (student.instituteId === "INS-ESTKLHCB")
+        ) {
           obj.UniversityRegNo = student.admissionUniversityRegNo || "-";
         }
 
@@ -273,7 +276,10 @@ export default function StudentsPage() {
     { key: "name", label: "Name" },
     { key: "applicationId", label: "Application ID" },
     { key: "studentId", label: "Student ID" },
-    { key: "UniversityRegNo", label: "University Reg No" },
+    ...(selectedInstitution === "INS-ESTKLHCB"
+      ? [{ key: "UniversityRegNo", label: "University Reg No" }]
+      : []),
+
     { key: "academicYear", label: "Academic Year" },
     { key: "email", label: "Email" },
     { key: "mobile", label: "Mobile" },
@@ -460,6 +466,7 @@ export default function StudentsPage() {
       accessor: "applicationId",
     },
 
+    (selectedInstitution === "INS-ESTKLHCB") &&
     columnVisibility.UniversityRegNo && {
       header: "University Reg No",
       accessor: "admissionUniversityRegNo",
@@ -561,57 +568,7 @@ export default function StudentsPage() {
     },
   ].filter(Boolean) as Column<Student>[];
 
-  const filteredStudents = (students || []).map((student: any) => {
-    const obj: any = {};
 
-    if (columnVisibility.name) {
-      obj.Name = `${student.firstname || ""} ${student.lastname || ""}`.trim() || "-";
-    }
-
-    if (columnVisibility.studentId) {
-      obj.StudentID = student.studentId || "-";
-    }
-    if (columnVisibility.applicationId) {
-      obj.ApplicationID = student.applicationId || "-"; // ✅ added
-    }
-
-    if (columnVisibility.UniversityRegNo) {
-      obj.UniversityRegNo = student.admissionUniversityRegNo || "-";
-    }
-    if (columnVisibility.academicYear) {
-      obj.AcademicYear = student.academicYear || "-";
-    }
-    if (columnVisibility.bloodGroup) {
-      obj.BloodGroup = student.bloodGroup || "-";
-    }
-
-
-    if (columnVisibility.email) {
-      obj.Email = student.email || "-";
-    }
-
-    if (columnVisibility.mobile) {
-      obj.Mobile = student.mobileNo || "-";
-    }
-
-
-    if (
-      role === "superadmin" &&
-      columnVisibility.instituteName
-    ) {
-      obj.Institute =
-        student.institute?.name ||
-        student.instituteId ||
-        "-";
-    }
-
-
-    if (columnVisibility.status) {
-      obj.Status = student.status || "-";
-    }
-
-    return obj;
-  });
 
   return (
     <div className="p-6 space-y-6">
@@ -704,7 +661,7 @@ export default function StudentsPage() {
               <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name, email, std ID,univ NO"
+                placeholder="Search by name, email, std ID,univ NO, State, City"
 
                 value={searchTerm}
                 onChange={(e) => {
