@@ -134,8 +134,8 @@ export default function ForgotPasswordPage() {
         <div className="flex flex-col items-center mb-6">
           <div className="bg-blue-600 text-white p-3 rounded-full mb-3">
             {step === 1 ? <Mail className="w-6 h-6" /> :
-             step === 2 ? <KeyRound className="w-6 h-6" /> :
-             <Lock className="w-6 h-6" />}
+              step === 2 ? <KeyRound className="w-6 h-6" /> :
+                <Lock className="w-6 h-6" />}
           </div>
 
           <h1 className="text-2xl font-semibold text-gray-800">
@@ -246,7 +246,7 @@ export default function ForgotPasswordPage() {
         )}
 
         <div className="text-center mt-5">
-          <a href="/login" className="text-blue-600 hover:underline text-sm font-medium">
+          <a href="/" className="text-blue-600 hover:underline text-sm font-medium">
             Back to Login
           </a>
         </div>

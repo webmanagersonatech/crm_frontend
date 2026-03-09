@@ -41,6 +41,37 @@ api.interceptors.request.use(
     },
     (error) => Promise.reject(error)
 );
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+
+        if (typeof window !== "undefined") {
+
+            const status = error?.response?.status;
+            const message = error?.response?.data?.message;
+
+            // 🔴 Session expired / Unauthorized
+            if (status === 401 || message === "SESSION_EXPIRED") {
+
+                alert("Session expired. Please login again.");
+
+                localStorage.removeItem("token");
+
+                window.location.href = "/";
+            }
+
+            // 🔴 Other API errors
+            else if (message) {
+                alert(message);
+            }
+            else {
+                alert("Something went wrong");
+            }
+        }
+
+        return Promise.reject(error);
+    }
+);
 
 
 export async function loginRequest(email: string, password: string) {
@@ -66,7 +97,16 @@ export async function forgotPasswordRequest(email: string) {
         );
     }
 }
-
+export async function toggleTempAdminRequest(userId: string) {
+    try {
+        const response = await api.patch(`/auth/${userId}/temp-admin`);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(
+            error.response?.data?.message || "Failed to toggle admin access."
+        );
+    }
+}
 export async function createUserRequest(data: CreateUserData) {
     try {
         const response = await api.post("/auth/register", data);
@@ -105,6 +145,8 @@ export async function listUsersRequest({
         );
     }
 }
+
+
 export async function listAllUsers(instituteId?: string) {
     try {
         let url = "/auth/list-all";
@@ -120,7 +162,16 @@ export async function listAllUsers(instituteId?: string) {
     }
 }
 
-
+export async function getTempAdminAccessRequest() {
+    try {
+        const response = await api.get("/auth/temp-access");
+        return response.data;
+    } catch (error: any) {
+        throw new Error(
+            error.response?.data?.message || "Failed to fetch temp admin access."
+        );
+    }
+}
 export async function deleteUserRequest(userId: string) {
     try {
         const response = await api.delete(`/auth/${userId}`);

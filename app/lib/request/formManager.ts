@@ -23,6 +23,39 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+
+    if (typeof window !== "undefined") {
+
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message;
+
+      // 🔴 Session expired / Unauthorized
+      if (status === 401 || message === "SESSION_EXPIRED") {
+
+        alert("Session expired. Please login again.");
+
+        localStorage.removeItem("token");
+
+        window.location.href = "/";
+      }
+
+      // 🔴 Other API errors
+      else if (message) {
+        alert(message);
+      }
+      else {
+        alert("Something went wrong");
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+
 // ============================
 // TYPES (SECTION BASED)
 // ============================
@@ -63,7 +96,7 @@ export async function saveFormConfiguration(
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message ||
-        "Failed to save form configuration."
+      "Failed to save form configuration."
     );
   }
 }
@@ -75,7 +108,7 @@ export async function getAllFormConfigurations() {
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message ||
-        "Failed to fetch form configurations."
+      "Failed to fetch form configurations."
     );
   }
 }
@@ -100,7 +133,7 @@ export async function deleteFormConfiguration(id: string) {
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message ||
-        "Failed to delete form configuration."
+      "Failed to delete form configuration."
     );
   }
 }

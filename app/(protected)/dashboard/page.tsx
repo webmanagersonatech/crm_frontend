@@ -343,7 +343,7 @@ export default function DashboardPage() {
     };
 
     fetchDashboard();
-  }, [permissionsLoaded, institutionsLoaded,dateRange, hasPermission, startDate, endDate, selectedInstitution]);
+  }, [permissionsLoaded, institutionsLoaded, dateRange, hasPermission, startDate, endDate, selectedInstitution]);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -593,32 +593,32 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-3 sm:space-y-0 mt-4">
 
           {/* Apply Online Button */}
-          <a
+          {/* <a
             href="http://localhost:4000/api/institutions/apply/INS-ESTKLHCB"
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-2 bg-green-600 text-white font-semibold rounded shadow hover:bg-green-700 transition"
           >
             Apply Online
-          </a>
+          </a> */}
 
           {/* Enquiry Button */}
-          <a
+          {/* <a
             href="http://localhost:4000/api/institutions/enquiry/INS-ESTKLHCB"
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-2 border-2 border-gray-800 text-gray-800 font-semibold rounded shadow hover:bg-gray-100 transition"
           >
             Enquiry
-          </a>
+          </a> */}
 
           {/* Generate CSV Button */}
-          <button
+          {/* <button
             onClick={generateCSV1}
             className="px-6 py-2 bg-blue-600 text-white font-semibold rounded shadow hover:bg-blue-700 transition"
           >
             Generate CSV
-          </button>
+          </button> */}
 
         </div>
       )}
@@ -632,6 +632,25 @@ export default function DashboardPage() {
           {/* Date Range */}
           {(userRole === "superadmin" || userpermission?.filter) && (
             <>
+              {userRole === "superadmin" && (
+                <div className="flex flex-col">
+                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    Institution
+                  </label>
+                  <select
+                    value={selectedInstitution}
+                    onChange={(e) => setSelectedInstitution(e.target.value)}
+                    className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480]  transition"
+                  >
+                    <option value="all">All Institutions</option>
+                    {institutions.map((inst) => (
+                      <option key={inst.value} value={inst.value}>
+                        {inst.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="flex flex-col">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                   Date Range
@@ -682,25 +701,7 @@ export default function DashboardPage() {
             </>
           )}
 
-          {userRole === "superadmin" && (
-            <div className="flex flex-col">
-              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                Institution
-              </label>
-              <select
-                value={selectedInstitution}
-                onChange={(e) => setSelectedInstitution(e.target.value)}
-                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480]  transition"
-              >
-                <option value="all">All Institutions</option>
-                {institutions.map((inst) => (
-                  <option key={inst.value} value={inst.value}>
-                    {inst.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+
         </div>
       </div>
 

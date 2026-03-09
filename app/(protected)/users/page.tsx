@@ -14,6 +14,7 @@ import {
 import {
   listUsersRequest,
   deleteUserRequest,
+  toggleTempAdminRequest,
   toggleUserStatusRequest,
 } from "@/app/lib/request/authRequest";
 import { DataTable } from "@/components/Tablecomponents";
@@ -39,6 +40,8 @@ interface User {
   createdAt: string;
   updatedAt: string;
   lastLoginTimeDate?: string;
+  userType?: string;
+  tempAdminAccess?: boolean;
 }
 
 export default function UsersPage() {
@@ -53,6 +56,11 @@ export default function UsersPage() {
   const [selectedRole, setSelectedRole] = useState("all");
   const [selected, setSelected] = useState<User | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [adminConfirmOpen, setAdminConfirmOpen] = useState(false);
+
+  const [selectedAdminUser, setSelectedAdminUser] = useState<User | null>(null);
+  const [tempAdminAccess, setTempAdminAccess] = useState(false);
+  const [rowTempAdmin, setRowTempAdmin] = useState<Record<string, boolean>>({});
   const [viewOpen, setViewOpen] = useState(false);
   const [totalEntries, setTotalEntries] = useState(0);
   const [customizeOpen, setCustomizeOpen] = useState(false);
@@ -134,9 +142,20 @@ export default function UsersPage() {
         instituteId: selectedInstitution,
       });
 
-      setUsers(res.users.docs || []);
+      const fetchedUsers = res.users.docs || [];
+
+      setUsers(fetchedUsers);
       setTotalPages(res.users.totalPages || 1);
       setTotalEntries(res.users?.totalDocs || 0);
+
+      // ✅ Sync toggle state with DB
+      const tempState: Record<string, boolean> = {};
+      fetchedUsers.forEach((user: User) => {
+        tempState[user._id] = user.tempAdminAccess ?? false;
+      });
+
+      setRowTempAdmin(tempState);
+
     } catch (err: any) {
       console.error("Error fetching users:", err.message);
     } finally {
@@ -168,8 +187,42 @@ export default function UsersPage() {
 
     loadInstitutions();
   }, []);
+  const handleAdminToggle = (user: User) => {
+    setSelectedAdminUser(user);
+    setAdminConfirmOpen(true);
+  };
 
+  const confirmAdminToggle = async () => {
+    if (!selectedAdminUser) return;
 
+    try {
+      const newValue = !rowTempAdmin[selectedAdminUser._id];
+
+      // 🔥 Call backend API
+      await toggleTempAdminRequest(selectedAdminUser._id);
+
+      // Update UI
+      setRowTempAdmin((prev) => ({
+        ...prev,
+        [selectedAdminUser._id]: newValue,
+      }));
+
+      toast.success(
+        newValue
+          ? "Admin privileges granted"
+          : "Admin privileges removed"
+      );
+
+      // refresh table
+      await fetchUsers();
+
+    } catch (err) {
+      toast.error("Failed to update admin access");
+    } finally {
+      setAdminConfirmOpen(false);
+      setSelectedAdminUser(null);
+    }
+  };
   /** 🔹 Confirm Actions */
   const handleDelete = (user: User) => {
     setSelected(user);
@@ -249,7 +302,57 @@ export default function UsersPage() {
         </span>
       ),
     },
+    {
+      header: "Act as Admin",
+      accessor: "tempAdminAccess",
+      render: (user: User) =>
+        user.role === "user" && user.userType === "our_user" || user.tempAdminAccess === true ? (
+          <div className="flex items-center gap-2">
 
+            {/* Toggle */}
+            <button
+              onClick={() => handleAdminToggle(user)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition 
+          ${rowTempAdmin[user._id] ? "bg-red-600" : "bg-gray-300"}`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition
+            ${rowTempAdmin[user._id] ? "translate-x-6" : "translate-x-1"}`}
+              />
+            </button>
+
+            {/* Responsive Text */}
+            <div className="text-xs sm:text-sm md:text-base font-medium text-gray-700">
+              {/* Mobile */}
+              <span className="sm:hidden">
+                {rowTempAdmin[user._id] ? "Admin" : "User"}
+              </span>
+
+              {/* Tablet */}
+              <span className="hidden sm:inline md:hidden">
+                {rowTempAdmin[user._id] ? "Admin Mode" : "User Mode"}
+              </span>
+
+              {/* Desktop */}
+              <span className="hidden md:inline">
+                {rowTempAdmin[user._id]
+                  ? "Admin Privileges Active"
+                  : "Grant Admin Access"}
+              </span>
+            </div>
+
+            {/* Active indicator */}
+            {rowTempAdmin[user._id] && (
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+            )}
+          </div>
+        ) : (
+          <span className="text-gray-400 text-xs sm:text-sm">Not available</span>
+        ),
+    },
     // ❗ Always visible — cannot be hidden
     {
       header: "Actions",
@@ -290,6 +393,7 @@ export default function UsersPage() {
           >
             <Eye className="w-4 h-4" />
           </button>
+
 
           {user.role !== "superadmin" && (
             <button
@@ -453,6 +557,18 @@ export default function UsersPage() {
         }
         onConfirm={confirmAction}
         onCancel={() => setConfirmOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={adminConfirmOpen}
+        title="Admin Access"
+        message={
+          rowTempAdmin[selectedAdminUser?._id || ""]
+            ? `Remove admin access for "${selectedAdminUser?.firstname} ${selectedAdminUser?.lastname}"?`
+            : `Grant temporary admin access for "${selectedAdminUser?.firstname} ${selectedAdminUser?.lastname}"?`
+        }
+        onConfirm={confirmAdminToggle}
+        onCancel={() => setAdminConfirmOpen(false)}
       />
 
       <ColumnCustomizeDialog

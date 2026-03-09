@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getTempAdminAccessRequest } from "@/app/lib/request/authRequest";
 import { toast } from "react-toastify";
 import {
   X,
@@ -75,6 +76,23 @@ export default function Sidebar({
 }) {
   const pathname = usePathname();
   const [role, setRole] = useState<string>("");
+  const [tempAdmin, setTempAdmin] = useState(false);
+
+  useEffect(() => {
+    const fetchTempAccess = async () => {
+      try {
+        const res = await getTempAdminAccessRequest();
+
+        if (res?.tempAdminAccess) {
+          setTempAdmin(true);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchTempAccess();
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -103,7 +121,9 @@ export default function Sidebar({
   }, []);
 
   const items =
-    roleMenus[role as keyof typeof roleMenus] || []; // fallback empty if role unknown
+    role === "admin" && tempAdmin
+      ? roleMenus["user"]
+      : roleMenus[role as keyof typeof roleMenus] || [];
 
   return (
     <aside
