@@ -242,7 +242,16 @@ export default function ApplicationDetailsPage() {
                     .no-print {
                         display: none !important;
                     }
+                        @page {
+        margin-top: 5mm; /* gap from top */
+        margin-bottom: 10mm; /* optional bottom margin */
+      
+    }
+
+    
+        
                     .a4-page {
+                     page-break-after: always;
                         border: none !important;
                         box-shadow: none !important;
                         padding: 30px !important;

@@ -467,68 +467,16 @@ export default function ApplicationsPage() {
   };
 
 
-
-
-
-
-
-
-
   useEffect(() => {
     fetchApplications();
   }, [fetchApplications]);
 
-  const filteredApplications = (applications || []).map((app: any) => {
-    const obj: any = {};
 
-    if (columnVisibility.applicationId) {
-      obj.ApplicationId = app.applicationId || "-";
-    }
-
-    if (userpermission === "superadmin" && columnVisibility.institute) {
-      obj.Institute = app.institute?.name || app.instituteId || "-";
-    }
-
-    if (columnVisibility.applicantName) {
-      obj.ApplicantName =
-        app.applicantName ||
-        app.personalData?.["Full Name"] ||
-        "-";
-    }
-
-    // if (columnVisibility.program) {
-    //   obj.Program = app.program || "-";
-    // }
-
-    if (columnVisibility.academicYear) {
-      obj.AcademicYear = app.academicYear || "-";
-    }
-    if (columnVisibility.city) {
-      obj.City =
-        app.city ||
-        app?.City ||
-        "-";
-    }
-
-    if (columnVisibility.paymentStatus) {
-      obj.PaymentStatus = app.paymentStatus || "-";
-    }
-    if (columnVisibility.formStatus) {
-      obj.FormStatus = app.formStatus || "-";
-    }
-
-    if (columnVisibility.createdAt) {
-      obj.CreatedAt = app.createdAt
-        ? new Date(app.createdAt).toLocaleDateString()
-        : "-";
-    }
-
-    return obj;
-  });
 
   /** 🔹 Load Institutions */
   useEffect(() => {
     const loadInstitutions = async () => {
+      if (userpermission !== "superadmin") return;
       try {
         const activeInstitutions = await getActiveInstitutions();
         const options = activeInstitutions.map((inst: any) => ({
@@ -894,8 +842,8 @@ export default function ApplicationsPage() {
                       setCurrentPage(1);
                     }}
                     className={`px-2 sm:px-3 py-1.5 text-xs font-medium transition-all ${limit === value
-                        ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                   >
                     {value}
@@ -913,8 +861,8 @@ export default function ApplicationsPage() {
                   onClick={handleExport}
                   disabled={exportLoading}
                   className={`inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2 text-xs font-medium rounded-md transition-all shadow-sm whitespace-nowrap flex-1 sm:flex-initial ${exportLoading
-                      ? 'bg-green-400 text-white cursor-not-allowed opacity-75'
-                      : 'bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white'
+                    ? 'bg-green-400 text-white cursor-not-allowed opacity-75'
+                    : 'bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white'
                     }`}
                 >
                   {exportLoading ? (
