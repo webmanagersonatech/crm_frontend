@@ -78,7 +78,7 @@ export default function ApplicationDetailsPage() {
                                     </span>
 
                                     {/* VALUE */}
-                                    <span className="text-gray-700">
+                                    <span className="text-gray-700  whitespace-pre-wrap">
                                         {isImage ? (
                                             <a
                                                 href={`${BASE_URL}${value}`}
