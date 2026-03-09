@@ -143,7 +143,10 @@ export default function ApplicationDetailsPage() {
                     />
 
                     <h1 className="text-xl font-bold text-center flex-1">
-                        APPLICATION FORM
+                        APPLICATION FORM <span >| </span>
+                        <span >
+                            {data?.academicYear}
+                        </span>
                     </h1>
 
                     <div className="text-right text-sm text-gray-600">
