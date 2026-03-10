@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import { DataTable } from "@/components/Tablecomponents";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
-import { importOthers, getOthers, deleteOther, createLeadFromOther } from "@/app/lib/request/othersRequest";
+import { importOthers, getOthers, deleteOther, exportOthers, createLeadFromOther } from "@/app/lib/request/othersRequest";
 import ViewDialog from "@/components/ViewDialog";
 import { Column } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -55,9 +55,10 @@ export default function Otherspages() {
     const [others, setOthers] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [leadConfirmOpen, setLeadConfirmOpen] = useState(false);
-    const [leadLoading, setLeadLoading] = useState(false);
-
-
+    // Add this state near your other useState declarations
+    const [filteredExportData, setFilteredExportData] = useState<any[]>([]);
+    const [searchName, setSearchName] = useState("");
+    const [searchPhone, setSearchPhone] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
@@ -273,6 +274,8 @@ export default function Otherspages() {
                     userpermission === "superadmin" && selectedInstitution !== "all"
                         ? selectedInstitution
                         : undefined,
+                name: searchName || undefined,
+                phone: searchPhone || undefined,
                 dataSource: filterDataSource || undefined,
                 startDate: startDate || undefined,
                 endDate: endDate || undefined,
@@ -306,6 +309,8 @@ export default function Otherspages() {
         filterDataSource,
         startDate,
         endDate,
+        searchName,
+        searchPhone
     ]);
 
 
@@ -349,56 +354,93 @@ export default function Otherspages() {
         }
     }, []);
 
-    const filteredOthers = (others || []).map((o: any) => {
-        const obj: any = {};
-        if (
-            userpermission === "superadmin" &&
-            columnVisibility.institute
-        ) {
-            obj.Institute = o.institute?.name || o.instituteId || "-";
+
+    // In your Otherspages component, add this handler function
+    const handleExport = async () => {
+        try {
+            // Show loading toast
+            const loadingToast = toast.loading("Preparing export...");
+
+            const params: any = {
+                name: searchName || undefined,
+                phone: searchPhone || undefined,
+                dataSource: filterDataSource || undefined,
+                startDate: startDate || undefined,
+                endDate: endDate || undefined,
+            };
+
+            // Add instituteId for superadmin
+            if (userpermission === "superadmin" && selectedInstitution !== "all") {
+                params.instituteId = selectedInstitution;
+            }
+
+            // Call export API without pagination
+            const response = await exportOthers(params);
+
+            // Update loading toast
+            toast.update(loadingToast, {
+                render: "Export ready!",
+                type: "success",
+                isLoading: false,
+                autoClose: 2000
+            });
+
+            // Open export modal with the data
+            // Transform the data for ExportModal format
+            const exportData = response.data.map((item: any) => {
+                const obj: any = {};
+
+                if (userpermission === "superadmin" && columnVisibility.institute) {
+                    obj.Institute = item.institute?.name || item.instituteId || "-";
+                }
+
+                if (columnVisibility.dataSource) {
+                    obj["Data Source"] = item.dataSource || "-";
+                }
+
+                if (columnVisibility.name) {
+                    obj.Name = item.name || "-";
+                }
+
+                if (columnVisibility.phone) {
+                    obj.Phone = item.phone || "-";
+                }
+
+                if (columnVisibility.date) {
+                    obj.Date = item.date || "-";
+                }
+
+                if (columnVisibility.extraFields) {
+                    obj["Extra Fields"] = item.extraFields && Object.keys(item.extraFields).length > 0
+                        ? Object.entries(item.extraFields)
+                            .map(([k, v]) => `${k}: ${String(v)}`)
+                            .join(" | ")
+                        : "-";
+                }
+
+                if (columnVisibility.createdBy) {
+                    obj["Created By"] = item.creator
+                        ? `${item.creator.firstname} ${item.creator.lastname}`
+                        : "-";
+                }
+
+                if (columnVisibility.createdAt) {
+                    obj["Created At"] = item.createdAt
+                        ? new Date(item.createdAt).toLocaleDateString()
+                        : "-";
+                }
+
+                return obj;
+            });
+
+            // Set the data and open modal
+            setFilteredExportData(exportData);
+            setOpen(true);
+
+        } catch (err: any) {
+            toast.error(err.message || "Failed to export data");
         }
-
-
-        if (columnVisibility.dataSource) {
-            obj["Data Source"] = o.dataSource || "-";
-        }
-
-        if (columnVisibility.name) {
-            obj.Name = o.name || "-";
-        }
-
-        if (columnVisibility.phone) {
-            obj.Phone = o.phone || "-";
-        }
-
-        if (columnVisibility.date) {
-            obj.Date = o.date || "-";
-        }
-
-        if (columnVisibility.extraFields) {
-            obj["Extra Fields"] =
-                o.extraFields && Object.keys(o.extraFields).length > 0
-                    ? Object.entries(o.extraFields)
-                        .map(([k, v]) => `${k}: ${String(v)}`)
-                        .join(" | ")
-                    : "-";
-        }
-
-        if (columnVisibility.createdBy) {
-            obj["Created By"] = o.creator
-                ? `${o.creator.firstname} ${o.creator.lastname}`
-                : "-";
-        }
-
-        if (columnVisibility.createdAt) {
-            obj["Created At"] = o.createdAt
-                ? new Date(o.createdAt).toLocaleDateString()
-                : "-";
-        }
-
-        return obj;
-    });
-
+    };
 
 
 
@@ -602,12 +644,12 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                 <div className="flex items-center gap-3">
                     {(userpermission === "superadmin" || userpermission?.filter) && (
                         <button
-                            onClick={() => setOpen(true)}
+                            onClick={handleExport}  // Changed from setOpen(true) to handleExport
                             className="flex items-center gap-2
-                           bg-white border border-indigo-300
-                           text-indigo-700 px-4 py-2 text-sm
-                           rounded-lg shadow-sm
-                           hover:bg-indigo-50 transition"
+               bg-white border border-indigo-300
+               text-indigo-700 px-4 py-2 text-sm
+               rounded-lg shadow-sm
+               hover:bg-indigo-50 transition"
                         >
                             <FileUp className="w-4 h-4" />
                             Export
@@ -631,31 +673,26 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
 
 
             {/* ---------------- Filters ---------------- */}
+            {/* ---------------- Filters ---------------- */}
             {(userpermission === "superadmin" || userpermission?.filter) && (
-
                 <div className="
     bg-white 
     border border-slate-200 
     rounded-2xl 
     px-6 py-5
-">
-
+  ">
                     {/* FILTER ROW */}
                     <div className="
-        flex flex-col lg:flex-row 
-        lg:items-end lg:justify-between 
-        gap-6
+      flex flex-col lg:flex-row 
+      lg:items-end lg:justify-between 
+      gap-6
     ">
-
                         {/* LEFT FILTERS */}
                         <div className="
-            flex flex-col sm:flex-row 
-            flex-wrap gap-5
-        ">
-
+        flex flex-col sm:flex-row 
+        flex-wrap gap-4
+      ">
                             {userpermission === "superadmin" && (
-
-
                                 <div className="flex flex-col w-full sm:w-56">
                                     <label className="text-xs font-medium text-slate-500 mb-1">
                                         Institution
@@ -664,12 +701,12 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                                         value={selectedInstitution}
                                         onChange={(e) => setSelectedInstitution(e.target.value)}
                                         className="
-                            h-10 px-3 rounded-lg
-                            border border-slate-300
-                            text-sm text-slate-700
-                            focus:outline-none
-                            focus:ring-1 focus:ring-slate-400
-                        "
+                h-10 px-3 rounded-lg
+                border border-slate-300
+                text-sm text-slate-700
+                focus:outline-none
+                focus:ring-1 focus:ring-slate-400
+              "
                                     >
                                         <option value="all">All Institutions</option>
                                         {institutions.map((i) => (
@@ -689,12 +726,12 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                                     value={filterDataSource}
                                     onChange={(e) => setFilterDataSource(e.target.value)}
                                     className="
-                        h-10 px-3 rounded-lg
-                        border border-slate-300
-                        text-sm text-slate-700
-                        focus:outline-none
-                        focus:ring-1 focus:ring-slate-400
-                    "
+              h-10 px-3 rounded-lg
+              border border-slate-300
+              text-sm text-slate-700
+              focus:outline-none
+              focus:ring-1 focus:ring-slate-400
+            "
                                 >
                                     <option value="">All</option>
                                     {dataSources.map((src) => (
@@ -703,6 +740,89 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                                         </option>
                                     ))}
                                 </select>
+                            </div>
+
+                            {/* Search Name - Improved Design */}
+                            <div className="flex flex-col w-full sm:w-48">
+                                <label className="text-xs font-medium text-slate-500 mb-1">
+                                    Search Name
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Enter name..."
+                                        value={searchName}
+                                        onChange={(e) => setSearchName(e.target.value)}
+                                        className="
+                w-full h-10 pl-3 pr-8 rounded-lg
+                border border-slate-300
+                text-sm text-slate-700
+                placeholder:text-slate-400
+                focus:outline-none
+                focus:ring-1 focus:ring-indigo-400
+                focus:border-indigo-400
+                transition duration-150
+              "
+                                    />
+                                    {searchName && (
+                                        <button
+                                            onClick={() => setSearchName("")}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Search Phone - Only Numbers Accepted */}
+                            <div className="flex flex-col w-full sm:w-48">
+                                <label className="text-xs font-medium text-slate-500 mb-1">
+                                    Search Phone
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="tel"
+                                        placeholder="Enter phone no..."
+                                        value={searchPhone}
+                                        onChange={(e) => {
+                                            // Only allow numbers
+                                            const value = e.target.value.replace(/\D/g, '');
+                                            setSearchPhone(value);
+                                        }}
+                                        onKeyPress={(e) => {
+                                            // Prevent non-numeric input
+                                            if (!/[0-9]/.test(e.key)) {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                        maxLength={10}
+                                        className="
+                w-full h-10 pl-3 pr-8 rounded-lg
+                border border-slate-300
+                text-sm text-slate-700
+                placeholder:text-slate-400
+                focus:outline-none
+                focus:ring-1 focus:ring-indigo-400
+                focus:border-indigo-400
+                transition duration-150
+                font-mono
+              "
+                                    />
+                                    {searchPhone && (
+                                        <button
+                                            onClick={() => setSearchPhone("")}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                                {searchPhone && searchPhone.length < 10 && searchPhone.length > 0 && (
+                                    <p className="text-xs text-amber-600 mt-1">
+                                        {10 - searchPhone.length} digits remaining
+                                    </p>
+                                )}
                             </div>
 
                             <div className="flex flex-col w-full sm:w-40">
@@ -714,12 +834,12 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
                                     className="
-                        h-10 px-3 rounded-lg
-                        border border-slate-300
-                        text-sm text-slate-700
-                        focus:outline-none
-                        focus:ring-1 focus:ring-slate-400
-                    "
+              h-10 px-3 rounded-lg
+              border border-slate-300
+              text-sm text-slate-700
+              focus:outline-none
+              focus:ring-1 focus:ring-slate-400
+            "
                                 />
                             </div>
 
@@ -732,26 +852,25 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
                                     className="
-                        h-10 px-3 rounded-lg
-                        border border-slate-300
-                        text-sm text-slate-700
-                        focus:outline-none
-                        focus:ring-1 focus:ring-slate-400
-                    "
+              h-10 px-3 rounded-lg
+              border border-slate-300
+              text-sm text-slate-700
+              focus:outline-none
+              focus:ring-1 focus:ring-slate-400
+            "
                                 />
                             </div>
-
                         </div>
 
                         {/* RIGHT TOTAL */}
                         <div className="
-            flex items-center justify-between
-            min-w-[180px]
-            px-5 py-3
-            rounded-xl
-            border border-slate-200
-            bg-slate-50
-        ">
+        flex items-center justify-between
+        min-w-[180px]
+        px-5 py-3
+        rounded-xl
+        border border-slate-200
+        bg-slate-50
+      ">
                             <p className="text-xs uppercase tracking-wide text-slate-500">
                                 Total Records
                             </p>
@@ -759,9 +878,9 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                                 {totalCount}
                             </p>
                         </div>
-
                     </div>
-                </div>)}
+                </div>
+            )}
 
 
             <DataTable
@@ -828,9 +947,12 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
             />
             <ExportModal
                 open={open}
-                title={"Othersdata"}
-                onClose={() => setOpen(false)}
-                data={filteredOthers}
+                title={filterDataSource ? filterDataSource : "Othersdata"}
+                onClose={() => {
+                    setOpen(false);
+                    setFilteredExportData([]); // Clear data when closing
+                }}
+                data={filteredExportData}  // Use the filtered export data
             />
 
             {/* ---------------- Import Modal ---------------- */}

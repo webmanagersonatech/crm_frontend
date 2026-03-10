@@ -149,7 +149,38 @@ export async function getOthers({
         throw new Error(error.response?.data?.message || "Failed to fetch records.");
     }
 }
+// Add this new export function
+export async function exportOthers({
+    instituteId,
+    name,
+    phone,
+    dataSource,
+    startDate,
+    endDate,
+}: {
+    instituteId?: string;
+    name?: string;
+    phone?: string;
+    dataSource?: string;
+    startDate?: string;
+    endDate?: string;
+}) {
+    try {
+        const params = new URLSearchParams();
 
+        if (instituteId) params.append("instituteId", instituteId);
+        if (name) params.append("name", name);
+        if (phone) params.append("phone", phone);
+        if (dataSource) params.append("dataSource", dataSource);
+        if (startDate) params.append("startDate", startDate);
+        if (endDate) params.append("endDate", endDate);
+
+        const response = await api.get(`/others/export?${params.toString()}`);
+        return response.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || "Failed to export records.");
+    }
+}
 // Get a single record by ID
 export async function getOtherById(id: string) {
     try {
