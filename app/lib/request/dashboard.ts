@@ -22,6 +22,30 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (typeof window !== "undefined") {
+      if (error.response?.status === 401) {
+        const message = error.response?.data?.message;
+
+        if (
+          message === "Session expired. Please login again." ||
+          message === "Token invalid" ||
+          message === "Not authorized"
+        ) {
+          localStorage.removeItem("token");
+
+          alert("Session expired. Please login again.");
+
+          window.location.href = "/";
+        }
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // ---------------- Types ----------------
 export interface DashboardData {
