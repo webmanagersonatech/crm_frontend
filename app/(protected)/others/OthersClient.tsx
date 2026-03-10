@@ -61,8 +61,8 @@ export default function Otherspages() {
     const [searchPhone, setSearchPhone] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [limit, setLimit] = useState(10);
 
-    const limit = 10;
 
     const PREVIEW_LIMIT = 3;
 
@@ -269,7 +269,7 @@ export default function Otherspages() {
 
             const res = await getOthers({
                 page: currentPage,
-                limit,
+                limit: limit,
                 instituteId:
                     userpermission === "superadmin" && selectedInstitution !== "all"
                         ? selectedInstitution
@@ -308,6 +308,7 @@ export default function Otherspages() {
         selectedInstitution,
         filterDataSource,
         startDate,
+        limit,
         endDate,
         searchName,
         searchPhone
@@ -620,6 +621,7 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
     return (
         <div className="p-4 sm:p-6 space-y-6">
             {/* Header */}
+            {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-4">
                 {/* LEFT SIDE */}
                 <div className="flex items-center gap-3">
@@ -628,43 +630,71 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                         Others
                     </h1>
 
-                    {(userpermission === "superadmin" || userpermission?.filter) && (<button
-                        onClick={() => setCustomizeOpen(true)}
-                        className="flex items-center gap-2
-                       bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91]
-                       text-white px-4 py-2 text-sm
-                       rounded-lg shadow-sm transition"
-                    >
-                        <Settings className="w-4 h-4" />
-                        Customize Columns
-                    </button>)}
+                    {(userpermission === "superadmin" || userpermission?.filter) && (
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                                onClick={() => setCustomizeOpen(true)}
+                                className="flex items-center gap-2
+                        bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91]
+                        text-white px-3 sm:px-4 py-[6px] text-xs sm:text-sm
+                        rounded-lg shadow-sm transition whitespace-nowrap"
+                            >
+                                <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+                                <span >Customize Columns</span>
+                             
+                            </button>
+
+                            {/* Show entries selector - Right side of customize button */}
+                            <div className="flex items-center gap-1 sm:gap-2 ml-1 sm:ml-2">
+                                <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap hidden sm:inline">Show:</span>
+                                <div className="flex rounded-md border border-gray-200 divide-x divide-gray-200 bg-white">
+                                    {[10, 50, 100, 250, 500].map((value) => (
+                                        <button
+                                            key={value}
+                                            onClick={() => {
+                                                setLimit(value);
+                                                setCurrentPage(1);
+                                            }}
+                                            className={`px-1.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium transition-all ${limit === value
+                                                    ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
+                                                    : 'text-gray-600 hover:bg-gray-50'
+                                                }`}
+                                            title={value === 500 ? "Show 500 entries" : `Show ${value} entries`}
+                                        >
+                                            {value}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* RIGHT SIDE */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 ml-auto">
                     {(userpermission === "superadmin" || userpermission?.filter) && (
                         <button
-                            onClick={handleExport}  // Changed from setOpen(true) to handleExport
-                            className="flex items-center gap-2
-               bg-white border border-indigo-300
-               text-indigo-700 px-4 py-2 text-sm
-               rounded-lg shadow-sm
-               hover:bg-indigo-50 transition"
+                            onClick={handleExport}
+                            className="flex items-center gap-1 sm:gap-2
+                    bg-white border border-indigo-300
+                    text-indigo-700 px-3 sm:px-4 py-2 text-xs sm:text-sm
+                    rounded-lg shadow-sm
+                    hover:bg-indigo-50 transition whitespace-nowrap"
                         >
-                            <FileUp className="w-4 h-4" />
-                            Export
+                            <FileUp className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="hidden xs:inline">Export</span>
                         </button>
                     )}
                     {(userpermission === "superadmin" || userpermission?.create) && (
                         <button
                             onClick={() => setShowImportModal(true)}
-                            className="flex items-center gap-2
-                       bg-emerald-300 border border-emerald-600 hover:bg-emerald-600 hover:text-white
-                       text-emerald-600 px-4 py-2 text-sm
-                       rounded-lg shadow-sm transition"
+                            className="flex items-center gap-1 sm:gap-2
+                    bg-emerald-300 border border-emerald-600 hover:bg-emerald-600 hover:text-white
+                    text-emerald-600 px-3 sm:px-4 py-2 text-xs sm:text-sm
+                    rounded-lg shadow-sm transition whitespace-nowrap"
                         >
-                            <FileDown className="w-4 h-4" />
-                            Import Data
+                            <FileDown className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span className="hidden xs:inline">Import</span>
                         </button>
                     )}
                 </div>
@@ -692,6 +722,7 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
         flex flex-col sm:flex-row 
         flex-wrap gap-4
       ">
+
                             {userpermission === "superadmin" && (
                                 <div className="flex flex-col w-full sm:w-56">
                                     <label className="text-xs font-medium text-slate-500 mb-1">
@@ -881,7 +912,6 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                     </div>
                 </div>
             )}
-
 
             <DataTable
                 columns={columns}
