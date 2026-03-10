@@ -636,6 +636,15 @@ export default function ApplicationsPage() {
                     return;
                   }
 
+                  // 🚨 Prevent payment if form incomplete
+                  if (newStatus === "Paid" && a.formStatus !== "Complete") {
+                    toast.warning("Form is incomplete. Please complete the form before marking payment as Paid.");
+
+                    // reset dropdown back to original value
+                    e.target.value = a.paymentStatus;
+                    return;
+                  }
+
                   setSelectedPaymentApp(a);
                   setSelectedNewStatus(newStatus);
                   setConfirmPaymentOpen(true);
