@@ -18,6 +18,7 @@ import { Country, State, City } from "country-state-city";
 import Select from "react-select";
 import BulkLeadGenerator from "@/components/oko";
 import DuplicatePopup from "@/components/DuplicatePopup";
+import LeadFunnel from "@/components/LeadFunnel";
 
 interface OptionType {
   value: string;
@@ -103,7 +104,8 @@ export default function LeadsPage() {
   const [selectedDuplicate, setSelectedDuplicate] = useState("all");
   const [duplicatePopupOpen, setDuplicatePopupOpen] = useState(false);
   const [duplicateData, setDuplicateData] = useState<Lead | null>(null);
-
+  const [statusCounts, setStatusCounts] = useState<any[]>([]);
+  const [selectedFunnelStatus, setSelectedFunnelStatus] = useState<string | null>(null);
   const toggleFilter = (value: string) => {
     if (!value) return;
 
@@ -419,6 +421,7 @@ export default function LeadsPage() {
       setLeads(res.docs || []);
       setTotalPages(res.totalPages || 1);
       setTotalEntries(res?.totalDocs || 0);
+      setStatusCounts(res.statusCounts || []);
     } catch {
       toast.error("Failed to load leads");
     } finally {
@@ -1179,6 +1182,20 @@ export default function LeadsPage() {
         />
 
       </div>
+
+      {statusCounts.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <LeadFunnel
+            statusCounts={statusCounts}
+            totalLeads={totalEntries}
+            className="mb-6"
+          />
+        </motion.div>
+      )}
 
       {/* TABLE */}
       <DataTable
