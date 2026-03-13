@@ -490,7 +490,7 @@ export default function ApplicationsPage() {
       }
     };
     loadInstitutions();
-  }, []);
+  }, [userpermission]);
 
   /** 🗑 Handle Delete */
   const handleDelete = async () => {

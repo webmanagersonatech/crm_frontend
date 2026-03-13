@@ -135,6 +135,7 @@ export default function ApplicationDetailsPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-gray-600">
                     <div><span className="font-medium">program:</span> {data.program.toUpperCase()}</div>
                     <div><span className="font-medium">phoneNumber:</span> {data.phoneNumber}</div>
+                    <div><span className="font-medium">Email:</span> {data.email||'-'}</div>
                     <div><span className="font-medium">UG Degree:</span> {data.ugDegree}</div>
                     <div>
                         <span className="font-medium">DOB:</span>{" "}
