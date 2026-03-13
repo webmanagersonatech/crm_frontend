@@ -234,71 +234,79 @@ export default function ApplicationDetailsPage() {
 
             {/* PRINT STYLES */}
             <style jsx global>{`
-                .section-title {
-                    font-size: 1rem;
-                    font-weight: 700;
-                    margin-bottom: 8px;
-                    padding-bottom: 4px;
-                    border-bottom: 2px solid #4a4a4a;
-                }
-                .sub-section-title {
-                    font-size: 0.9rem;
-                    font-weight: 600;
-                    margin-bottom: 4px;
-                }
-                .form-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                }
-                .form-table td {
-                    border: 1px solid #d1d1d1;
-                    padding: 8px 10px;
-                    font-size: 14px;
-                }
-                .label {
-                    background: #f5f5f5;
-                    width: 35%;
-                    font-weight: 600;
-                    text-transform: capitalize;
-                }
-                @media print {
-                    .no-print {
-                        display: none !important;
-                    }
-                        @page {
-        margin-top: 5mm; /* gap from top */
-        margin-bottom: 10mm; /* optional bottom margin */
-      
+    .section-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        padding-bottom: 4px;
+        border-bottom: 2px solid #4a4a4a;
     }
-
     
+    @media print {
+        .no-print {
+            display: none !important;
+        }
         
-                    .a4-page {
-                     page-break-after: always;
-                        border: none !important;
-                        box-shadow: none !important;
-                        padding: 30px !important;
-                    }
-                    .grid {
-                        display: grid !important;
-                        grid-template-columns: repeat(3, 1fr) !important;
-                        gap: 6px !important;
-                    }
-                    img {
-                        max-width: 60px !important;
-                        max-height: 60px !important;
-                    }
-                    span {
-                        font-size: 12px !important;
-                    }
-                    .flex {
-                        flex-wrap: wrap !important;
-                    }
-                    .break-inside-avoid {
-                        break-inside: avoid !important;
-                    }
-                }
-            `}</style>
+        @page {
+            margin-top: 5mm;
+            margin-bottom: 10mm;
+        }
+        
+        .a4-page {
+            page-break-after: always;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 30px !important;
+            background: white !important;
+        }
+        
+        /* Ensure grid layouts work in print */
+        .grid {
+            display: grid !important;
+        }
+        
+        .grid-cols-\\[160px_1fr\\] {
+            grid-template-columns: 160px 1fr !important;
+        }
+        
+        /* Prevent flex wrapping */
+        .flex {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+        }
+        
+        /* Ensure key column doesn't wrap text */
+        .font-semibold.bg-gray-100 {
+            white-space: normal !important;
+            word-break: break-word !important;
+        }
+        
+        /* Keep images contained */
+        img {
+            max-width: 60px !important;
+            max-height: 60px !important;
+        }
+        
+        /* Prevent page breaks inside entries */
+        .break-inside-avoid {
+            break-inside: avoid !important;
+        }
+        
+        /* Ensure borders print properly */
+        .border {
+            border: 1px solid #d1d1d1 !important;
+        }
+        
+        .border-r {
+            border-right: 1px solid #d1d1d1 !important;
+        }
+        
+        /* Fix any potential overflow issues */
+        .overflow-hidden {
+            overflow: visible !important;
+        }
+    }
+`}</style>
         </div>
     );
 }
