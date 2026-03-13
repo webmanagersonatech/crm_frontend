@@ -71,14 +71,17 @@ export default function ApplicationDetailsPage() {
                                 /\.(pdf|doc|docx|xls|xlsx)$/i.test(value);
 
                             return (
-                                <div key={key} className="flex gap-1 break-inside-avoid">
-                                    {/* LABEL */}
-                                    <span className="font-semibold text-gray-800">
-                                        {key.replace(/_/g, " ")} :
+                                <div
+                                    key={key}
+                                    className="flex border border-gray-300  overflow-hidden break-inside-avoid"
+                                >
+                                    {/* KEY */}
+                                    <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 w-[160px]">
+                                        {key.replace(/_/g, " ")}
                                     </span>
 
                                     {/* VALUE */}
-                                    <span className="text-gray-700  whitespace-pre-wrap">
+                                    <span className="text-gray-700 px-2 py-1 whitespace-pre-wrap w-[220px] break-words">
                                         {isImage ? (
                                             <a
                                                 href={`${BASE_URL}${value}`}
@@ -88,7 +91,7 @@ export default function ApplicationDetailsPage() {
                                                 <img
                                                     src={`${BASE_URL}${value}`}
                                                     alt={key}
-                                                    className="mt-1 max-h-[60px] max-w-[60px] object-contain border cursor-pointer hover:opacity-80 transition"
+                                                    className="max-h-[60px] max-w-[60px] object-contain cursor-pointer hover:opacity-80 transition"
                                                 />
                                             </a>
                                         ) : isDocument ? (
@@ -103,7 +106,7 @@ export default function ApplicationDetailsPage() {
                                         ) : value !== undefined && value !== null && value !== "" ? (
                                             String(value)
                                         ) : (
-                                            "nil"
+                                            ""
                                         )}
                                     </span>
                                 </div>
@@ -172,20 +175,40 @@ export default function ApplicationDetailsPage() {
                     <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
                         Program Details
                     </div>
+
                     <div className="p-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2 text-sm print:grid-cols-3 print:gap-2">
-                            <div className="flex gap-1">
-                                <span className="font-semibold text-gray-800">Program Applied For :</span>
-                                <span className="text-gray-700">{data?.program || "nil"}</span>
+
+                            {/* Program */}
+                            <div className="flex border border-gray-300 rounded overflow-hidden">
+                                <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r w-[160px]">
+                                    Program Applied For
+                                </span>
+                                <span className="text-gray-700 px-2 py-1 w-[220px] break-words">
+                                    {data?.program || ""}
+                                </span>
                             </div>
-                            <div className="flex gap-1">
-                                <span className="font-semibold text-gray-800">Academic Year :</span>
-                                <span className="text-gray-700">{data?.academicYear || "nil"}</span>
+
+                            {/* Academic Year */}
+                            <div className="flex border border-gray-300 rounded overflow-hidden">
+                                <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r w-[160px]">
+                                    Academic Year
+                                </span>
+                                <span className="text-gray-700 px-2 py-1 w-[220px] break-words">
+                                    {data?.academicYear || ""}
+                                </span>
                             </div>
-                            <div className="flex gap-1">
-                                <span className="font-semibold text-gray-800">Payment Status :</span>
-                                <span className="text-gray-700">{data?.paymentStatus || "nil"}</span>
+
+                            {/* Payment Status */}
+                            <div className="flex border border-gray-300 rounded overflow-hidden">
+                                <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r w-[160px]">
+                                    Payment Status
+                                </span>
+                                <span className="text-gray-700 px-2 py-1 w-[220px] break-words">
+                                    {data?.paymentStatus || ""}
+                                </span>
                             </div>
+
                         </div>
                     </div>
                 </section>

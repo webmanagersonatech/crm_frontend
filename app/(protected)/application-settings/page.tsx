@@ -42,6 +42,7 @@ interface FieldConfig {
   visibility: 'Yes' | 'No'
   options?: string[]
   maxLength?: number
+  minLength?: number
   acceptedFileTypes?: string[]
   declarationText?: string
 }
@@ -102,9 +103,17 @@ function SortableField({
         </button>
       </div>
 
+      {/* Show validation info for number/text fields */}
+      {(field.fieldType === 'number' || field.fieldType === 'text' || field.fieldType === 'email') &&
+        (field.minLength !== undefined || field.maxLength !== undefined) && (
+          <div className="text-xs text-gray-500 mb-2">
+            {field.minLength !== undefined && `Min: ${field.minLength} `}
+            {field.maxLength !== undefined && `Max: ${field.maxLength}`}
+          </div>
+        )}
+
       {field.fieldType === 'declaration' ? (
         <div className="border p-2 rounded mb-3 bg-white">
-
           <div className="bg-gray-50 p-3 rounded border border-gray-200">
             <p className="text-sm text-gray-700 whitespace-pre-wrap">
               {field.declarationText || 'No declaration text provided'}
@@ -163,6 +172,7 @@ const buildSectionPayload = (
         type: f.fieldType,
         required: f.required,
         options: f.options,
+        minLength: f.minLength,
         maxLength: f.maxLength,
         multiple: false,
         declarationText: f.declarationText,
@@ -193,6 +203,7 @@ export default function SettingsPage() {
   const [customMode, setCustomMode] = useState(false)
   const [fieldName, setFieldName] = useState('')
   const [maxLength, setMaxLength] = useState<number | ''>('')
+  const [minLength, setMinLength] = useState<number | ''>('')
   const [fieldType, setFieldType] = useState('')
   const [required, setRequired] = useState(false)
   const [options, setOptions] = useState('')
@@ -588,7 +599,7 @@ export default function SettingsPage() {
             required: field.required ?? false,
             visibility: 'Yes',
             options: field.options ?? [],
-
+            minLength: field.minLength,
             maxLength: field.maxLength,
             declarationText: field.declarationText,
           })
@@ -706,6 +717,10 @@ export default function SettingsPage() {
     if (fieldExists(fieldName))
       return toast.error('Field already exists')
 
+    if (minLength && maxLength && Number(minLength) > Number(maxLength)) {
+      return toast.error('Min length cannot be greater than max length')
+    }
+
     setFields((prev) => [
       ...prev,
       {
@@ -717,10 +732,12 @@ export default function SettingsPage() {
         fieldType,
         required,
         visibility: 'Yes',
-        maxLength:
-          ['text', 'number', 'email'].includes(fieldType) && maxLength
-            ? maxLength
-            : undefined,
+        minLength: ['text', 'number', 'email'].includes(fieldType) && minLength
+          ? Number(minLength)
+          : undefined,
+        maxLength: ['text', 'number', 'email'].includes(fieldType) && maxLength
+          ? Number(maxLength)
+          : undefined,
         options:
           ['select', 'checkbox', 'radiobutton'].includes(fieldType)
             ? options.split(',').map((o) => o.trim())
@@ -730,8 +747,8 @@ export default function SettingsPage() {
 
     setFieldName('')
     setFieldType('')
+    setMinLength('')  // Reset minLength
     setMaxLength('')
-
     setOptions('')
     setRequired(false)
     setCustomMode(false)
@@ -947,16 +964,28 @@ text-white px-4 py-2 font-semibold rounded-t">
                   />
 
                   {['text', 'number', 'email'].includes(fieldType) && (
-                    <input
-                      type="number"
-                      className={inputClass}
-                      placeholder="Max length"
-                      value={maxLength}
-                      onChange={(e) =>
-                        setMaxLength(e.target.value ? Number(e.target.value) : '')
-                      }
-                      min={1}
-                    />
+                    <div className="space-y-2">
+                      <input
+                        type="number"
+                        className={inputClass}
+                        placeholder="Min length"
+                        value={minLength}
+                        onChange={(e) =>
+                          setMinLength(e.target.value ? Number(e.target.value) : '')
+                        }
+                        min={0}
+                      />
+                      <input
+                        type="number"
+                        className={inputClass}
+                        placeholder="Max length"
+                        value={maxLength}
+                        onChange={(e) =>
+                          setMaxLength(e.target.value ? Number(e.target.value) : '')
+                        }
+                        min={1}
+                      />
+                    </div>
                   )}
 
 

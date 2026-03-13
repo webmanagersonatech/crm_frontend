@@ -80,19 +80,32 @@ export default function AddApplicationForm({
 
     // Add this function after your existing validation functions
     const validateField = (field: any, value: any): string => {
+        // Required field validation
         if (field.required && (!value || value.toString().trim() === "")) {
             return `${field.fieldName} is required`;
         }
 
         if (value && value.toString().trim() !== "") {
+            // Email validation
             if (field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
                 return "Invalid email format";
             }
 
+            // Date of birth validation
             if (field.type === "date" && field.fieldName.toLowerCase().includes("date of birth")) {
                 if (!isValidDOB(value)) {
                     return `Student must be at least ${minApplicantAge ?? 16} years old and DOB cannot be in the future`;
                 }
+            }
+
+            // MIN LENGTH VALIDATION - NEW
+            if (field.minLength && value.toString().length < field.minLength) {
+                return `${field.fieldName} must be at least ${field.minLength} characters`;
+            }
+
+            // MAX LENGTH VALIDATION (already exists in your inputs)
+            if (field.maxLength && value.toString().length > field.maxLength) {
+                return `${field.fieldName} cannot exceed ${field.maxLength} characters`;
             }
         }
 
@@ -786,10 +799,10 @@ export default function AddApplicationForm({
                             onChange={handleChange}
                             onBlur={handleBlur}
                             className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+                            minLength={field.minLength} // Add this
                             maxLength={field.maxLength ?? 500}
                         />
                     );
-
                 /* SELECT */
                 case "select":
                     return (
@@ -978,6 +991,7 @@ export default function AddApplicationForm({
                         </div>
                     );
                 /* NUMBER */
+                /* NUMBER */
                 case "number":
                     return (
                         <input
@@ -988,15 +1002,52 @@ export default function AddApplicationForm({
                             inputMode="numeric"
                             maxLength={field.maxLength ?? 15}
                             onChange={(e) => {
-                                const numericValue = e.target.value.replace(/\D/g, "");
+                                let numericValue = e.target.value.replace(/\D/g, "");
+
+                                // PREVENT STARTING WITH ZERO
+                                if (numericValue.length > 1 && numericValue.startsWith('0')) {
+                                    numericValue = numericValue.replace(/^0+/, '');
+                                }
+                                // If it's a single zero, don't allow
+                                if (numericValue === '0') {
+                                    numericValue = '';
+                                }
+
                                 setFormData(p => ({ ...p, [field.fieldName]: numericValue }));
                                 setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
                             }}
-                            onBlur={handleBlur}
+                            onBlur={(e) => {
+                                const val = e.target.value;
+
+                                // Check if starts with zero
+                                if (val.length > 0 && val.startsWith('0')) {
+                                    setFieldErrors(prev => ({
+                                        ...prev,
+                                        [field.fieldName]: `${field.fieldName} cannot start with zero`
+                                    }));
+                                }
+                                // Check min length if specified
+                                else if (field.minLength && val.length < field.minLength) {
+                                    setFieldErrors(prev => ({
+                                        ...prev,
+                                        [field.fieldName]: `${field.fieldName} must be at least ${field.minLength} digits`
+                                    }));
+                                }
+                                // Check max length if specified
+                                else if (field.maxLength && val.length > field.maxLength) {
+                                    setFieldErrors(prev => ({
+                                        ...prev,
+                                        [field.fieldName]: `${field.fieldName} cannot exceed ${field.maxLength} digits`
+                                    }));
+                                }
+                                // Run the main validation
+                                else {
+                                    handleBlur(e);
+                                }
+                            }}
                         />
                     );
-
-                /* TEXT ONLY */
+                /* TEXT */
                 case "text":
                     return (
                         <input
@@ -1004,6 +1055,7 @@ export default function AddApplicationForm({
                             name={field.fieldName}
                             value={value}
                             className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+                            minLength={field.minLength} // Add this
                             maxLength={field.maxLength ?? 100}
                             onChange={(e) => {
                                 const textValue = e.target.value.replace(/[^a-zA-Z\s]/g, "");
@@ -1022,6 +1074,7 @@ export default function AddApplicationForm({
                             name={field.fieldName}
                             value={value}
                             className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+                            minLength={field.minLength} // Add this
                             maxLength={field.maxLength ?? 100}
                             onChange={(e) => {
                                 const alphanumericValue = e.target.value.replace(/[^a-zA-Z0-9\s]/g, "");
@@ -1031,7 +1084,6 @@ export default function AddApplicationForm({
                             onBlur={handleBlur}
                         />
                     );
-
                 /* ANY */
                 case "any":
                     return (
@@ -1040,6 +1092,7 @@ export default function AddApplicationForm({
                             name={field.fieldName}
                             value={value}
                             className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+                            minLength={field.minLength} // Add this
                             maxLength={field.maxLength ?? 300}
                             onChange={handleChange}
                             onBlur={handleBlur}

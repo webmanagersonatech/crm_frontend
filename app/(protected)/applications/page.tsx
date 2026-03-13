@@ -114,8 +114,8 @@ export default function ApplicationsPage() {
     institute: true,
     applicantName: true,
 
-    // program: true,
-    academicYear: true,
+    program: true,
+    // academicYear: true,
     city: true,
     paymentStatus: true,
     formStatus: true,
@@ -171,9 +171,9 @@ export default function ApplicationsPage() {
       ? [{ key: "institute", label: "Institute" }]
       : []),
     { key: "applicantName", label: "Applicant Name" },
-    // { key: "program", label: "Program" },
+    { key: "program", label: "Program" },
     { key: "city", label: "City" },
-    { key: "academicYear", label: "Academic Year" },
+    // { key: "academicYear", label: "Academic Year" },
     { key: "formStatus", label: "Form Status" },
     { key: "paymentStatus", label: "Payment Status" },
     { key: "createdAt", label: "Created At" },
@@ -360,9 +360,9 @@ export default function ApplicationsPage() {
           obj.ApplicantName = app.applicantName || app.personalData?.["Full Name"] || "-";
         }
 
-        if (columnVisibility.academicYear) {
-          obj.AcademicYear = app.academicYear || "-";
-        }
+        // if (columnVisibility.academicYear) {
+        //   obj.AcademicYear = app.academicYear || "-";
+        // }
 
         if (columnVisibility.city) {
           obj.City = app.city || app?.City || "-";
@@ -529,15 +529,15 @@ export default function ApplicationsPage() {
       render: (a: any) => a.applicantName || "—",
     },
 
-    // columnVisibility.program && {
-    //   header: "Program",
-    //   render: (a: any) => a.program || "—",
-    // },
-
-    columnVisibility.academicYear && {
-      header: "Academic Year",
-      accessor: "academicYear",
+    columnVisibility.program && {
+      header: "Program",
+      render: (a: any) => a.program || "—",
     },
+
+    // columnVisibility.academicYear && {
+    //   header: "Academic Year",
+    //   accessor: "academicYear",
+    // },
 
     columnVisibility.createdAt && {
       header: "Created At",

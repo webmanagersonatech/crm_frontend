@@ -141,9 +141,9 @@ export default function ReportsPage() {
     applicationId: true,
     institute: true,
     applicantName: true,
-    // program: true,
+    program: true,
     city: true,
-    academicYear: true,
+    // academicYear: true,
     formStatus: true,
     paymentStatus: true,
     createdAt: true,
@@ -570,10 +570,13 @@ export default function ReportsPage() {
     }
 
 
+    if (columnVisibility.program) {
+      obj.Program = app.program ||
+        "-";
+    }
 
+    {
 
-    if (columnVisibility.academicYear) {
-      obj.AcademicYear = app.academicYear || "-";
       if (columnVisibility.city) {
         obj.City =
           app.city ||
@@ -724,15 +727,15 @@ export default function ReportsPage() {
       render: (a: any) => a.applicantName || "—",
     },
 
-    // columnVisibility.program && {
-    //   header: "Program",
-    //   render: (a: any) => a.program || "—",
-    // },
-
-    columnVisibility.academicYear && {
-      header: "Academic Year",
-      accessor: "academicYear",
+    columnVisibility.program && {
+      header: "Program",
+      render: (a: any) => a.program || "—",
     },
+
+    // columnVisibility.academicYear && {
+    //   header: "Academic Year",
+    //   accessor: "academicYear",
+    // },
     columnVisibility.city && {
       header: "City",
       render: (a: any) =>

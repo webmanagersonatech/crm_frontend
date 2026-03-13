@@ -103,6 +103,12 @@ export async function getActiveInstitutions() {
   }
 }
 
+
+export async function getInstitutionName() {
+  const response = await api.get("/institutions/getname");
+  return response.data.data;
+}
+
 // frontend: institutionRequest.ts
 export async function getActivedata(instituteId?: string) {
   try {
