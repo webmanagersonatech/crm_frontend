@@ -54,7 +54,7 @@ export default function ApplicationDetailsPage() {
 
                 {/* CONTENT */}
                 <div className="p-3">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2 text-sm print:grid-cols-3 print:gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm print:grid-cols-3 print:gap-1">
                         {Object.entries(section.fields as Record<string, any>).map(([key, rawValue]) => {
                             let value = rawValue;
 
@@ -73,15 +73,15 @@ export default function ApplicationDetailsPage() {
                             return (
                                 <div
                                     key={key}
-                                    className="flex border border-gray-300  overflow-hidden break-inside-avoid"
+                                    className="grid grid-cols-[160px_1fr] border border-gray-300 overflow-hidden break-inside-avoid print:grid-cols-[160px_1fr] print:border print:border-gray-300"
                                 >
-                                    {/* KEY */}
-                                    <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 w-[160px]">
+                                    {/* KEY - Fixed width column */}
+                                    <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
                                         {key.replace(/_/g, " ")}
                                     </span>
 
-                                    {/* VALUE */}
-                                    <span className="text-gray-700 px-2 py-1 whitespace-pre-wrap w-[220px] break-words">
+                                    {/* VALUE - Flexible column */}
+                                    <span className="text-gray-700 px-2 py-1 whitespace-pre-wrap break-words">
                                         {isImage ? (
                                             <a
                                                 href={`${BASE_URL}${value}`}
@@ -114,7 +114,6 @@ export default function ApplicationDetailsPage() {
                         })}
                     </div>
                 </div>
-
             </div>
         ));
 
@@ -177,38 +176,36 @@ export default function ApplicationDetailsPage() {
                     </div>
 
                     <div className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2 text-sm print:grid-cols-3 print:gap-2">
-
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm print:grid-cols-3 print:gap-1">
                             {/* Program */}
-                            <div className="flex border border-gray-300 rounded overflow-hidden">
-                                <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r w-[160px]">
+                            <div className="grid grid-cols-[160px_1fr] border border-gray-300 overflow-hidden print:grid-cols-[160px_1fr] print:border print:border-gray-300">
+                                <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
                                     Program Applied For
                                 </span>
-                                <span className="text-gray-700 px-2 py-1 w-[220px] break-words">
+                                <span className="text-gray-700 px-2 py-1 break-words">
                                     {data?.program || ""}
                                 </span>
                             </div>
 
                             {/* Academic Year */}
-                            <div className="flex border border-gray-300 rounded overflow-hidden">
-                                <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r w-[160px]">
+                            <div className="grid grid-cols-[160px_1fr] border border-gray-300 overflow-hidden print:grid-cols-[160px_1fr] print:border print:border-gray-300">
+                                <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
                                     Academic Year
                                 </span>
-                                <span className="text-gray-700 px-2 py-1 w-[220px] break-words">
+                                <span className="text-gray-700 px-2 py-1 break-words">
                                     {data?.academicYear || ""}
                                 </span>
                             </div>
 
                             {/* Payment Status */}
-                            <div className="flex border border-gray-300 rounded overflow-hidden">
-                                <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r w-[160px]">
+                            <div className="grid grid-cols-[160px_1fr] border border-gray-300 overflow-hidden print:grid-cols-[160px_1fr] print:border print:border-gray-300">
+                                <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
                                     Payment Status
                                 </span>
-                                <span className="text-gray-700 px-2 py-1 w-[220px] break-words">
+                                <span className="text-gray-700 px-2 py-1 break-words">
                                     {data?.paymentStatus || ""}
                                 </span>
                             </div>
-
                         </div>
                     </div>
                 </section>
@@ -260,28 +257,33 @@ export default function ApplicationDetailsPage() {
             background: white !important;
         }
         
-        /* Ensure grid layouts work in print */
+        /* Use Grid for print */
         .grid {
             display: grid !important;
         }
         
+        /* Ensure consistent column widths */
         .grid-cols-\\[160px_1fr\\] {
             grid-template-columns: 160px 1fr !important;
         }
         
-        /* Prevent flex wrapping */
+        /* Override any flex properties */
         .flex {
             display: flex !important;
             flex-wrap: nowrap !important;
         }
         
-        /* Ensure key column doesn't wrap text */
-        .font-semibold.bg-gray-100 {
-            white-space: normal !important;
-            word-break: break-word !important;
+        /* Consistent borders in print */
+        .border, .border-r, .border-gray-300 {
+            border-color: #d1d1d1 !important;
         }
         
-        /* Keep images contained */
+        .border-r {
+            border-right-width: 1px !important;
+            border-right-style: solid !important;
+        }
+        
+        /* Keep images sized properly */
         img {
             max-width: 60px !important;
             max-height: 60px !important;
@@ -292,18 +294,9 @@ export default function ApplicationDetailsPage() {
             break-inside: avoid !important;
         }
         
-        /* Ensure borders print properly */
-        .border {
-            border: 1px solid #d1d1d1 !important;
-        }
-        
-        .border-r {
-            border-right: 1px solid #d1d1d1 !important;
-        }
-        
-        /* Fix any potential overflow issues */
-        .overflow-hidden {
-            overflow: visible !important;
+        /* Ensure text doesn't overflow */
+        .break-words {
+            word-break: break-word !important;
         }
     }
 `}</style>
