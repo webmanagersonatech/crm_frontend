@@ -7,8 +7,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
 import { getInstitutionName } from "@/app/lib/request/institutionRequest";
+type HeaderProps = {
+  onMenuOpen: () => void;
+  tempAdmin: any; // you can replace with proper type
+};
 
-export default function Header({ onMenuOpen }: { onMenuOpen: () => void }) {
+export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [role, setRole] = useState<string>("");
@@ -140,7 +144,7 @@ export default function Header({ onMenuOpen }: { onMenuOpen: () => void }) {
                 <h1 className="text-base sm:text-lg font-semibold tracking-wide">
                   {institutionName || "Institution"}
                 </h1>
-                <p className="text-xs text-white/70">{role} Portal</p>
+                <p className="text-xs text-white/70"> {tempAdmin ? "User" : role} Portal </p>
               </div>
             </div>
           </div>
@@ -223,7 +227,7 @@ export default function Header({ onMenuOpen }: { onMenuOpen: () => void }) {
                 </p>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-0.5 rounded-full border ${getRoleBadgeColor()}`}>
-                    {role}
+                   {tempAdmin ? "User" : role}
                   </span>
                 </div>
               </div>

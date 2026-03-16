@@ -69,30 +69,15 @@ const roleMenus = {
 
 export default function Sidebar({
   open,
+  tempAdmin,
   onClose,
 }: {
   open: boolean;
+  tempAdmin: boolean;
   onClose: () => void;
 }) {
   const pathname = usePathname();
   const [role, setRole] = useState<string>("");
-  const [tempAdmin, setTempAdmin] = useState(false);
-
-  useEffect(() => {
-    const fetchTempAccess = async () => {
-      try {
-        const res = await getTempAdminAccessRequest();
-
-        if (res?.tempAdminAccess) {
-          setTempAdmin(true);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    fetchTempAccess();
-  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
