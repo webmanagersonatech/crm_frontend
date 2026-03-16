@@ -31,7 +31,7 @@ export default function SettingsPage() {
   const [endYear, setEndYear] = useState<OptionType | null>(null)
   const [batchName, setBatchName] = useState('')
   const [isApplicationOpen, setIsApplicationOpen] = useState<boolean>(false)
-
+  const [gstPercentage, setGstPercentage] = useState<number | ''>('')
 
 
   const [formData, setFormData] = useState({
@@ -85,7 +85,7 @@ export default function SettingsPage() {
         setIsApplicationOpen(data.isApplicationOpen ?? false)
         setApplicationFee(data.applicationFee || '')
         setApplicantAge(data.applicantAge || '')
-
+        setGstPercentage(data.gstPercentage || '')
         if (data.academicYear) {
           const [start, end] = data.academicYear.split('-')
           setStartYear({ value: start, label: start })
@@ -200,6 +200,8 @@ export default function SettingsPage() {
 
     if (Number(endYear.value) <= Number(startYear.value))
       return toast.error('End year must be greater than start year')
+    if (gstPercentage === '' || gstPercentage < 0)
+      return toast.error('Please enter valid GST percentage')
 
     if (customCourses.length === 0)
       return toast.error('Please add at least one course')
@@ -226,6 +228,7 @@ export default function SettingsPage() {
       applicationFee,
       applicantAge,
       academicYear,
+      gstPercentage,
       batchName,
       isApplicationOpen,
       paymentMethod,
@@ -249,9 +252,11 @@ export default function SettingsPage() {
 
 
       {/* ---------- General Settings ---------- */}
+      {/* ---------- General Settings ---------- */}
       <div className="border rounded-lg shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-b from-[#2a3970] to-[#5667a8]
- text-white px-4 py-2 font-semibold">General Settings</div>
+        <div className="bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white px-4 py-2 font-semibold">
+          General Settings
+        </div>
 
         <div className="p-4 md:p-6 bg-white grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Institute */}
@@ -290,19 +295,41 @@ export default function SettingsPage() {
               />
             </div>
           </div>
-          {/* Application Fee */}
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">
-              Application Fee <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              min="0"
-              className={inputClass}
-              placeholder="Enter application fee"
-              value={applicationFee}
-              onChange={(e) => setApplicationFee(Number(e.target.value))}
-            />
+
+          {/* Application Fee and GST - Side by side */}
+          <div className="flex flex-col md:col-span-2">
+            <div className="flex items-center justify-between gap-4">
+              {/* Application Fee */}
+              <div className="flex-1">
+                <label className="text-sm font-semibold text-gray-700 mb-1 block">
+                  Application Fee <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full border rounded px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Enter application fee"
+                  value={applicationFee}
+                  onChange={(e) => setApplicationFee(Number(e.target.value))}
+                />
+              </div>
+
+              {/* GST Percentage */}
+              <div className="flex-1">
+                <label className="text-sm font-semibold text-gray-700 mb-1 block">
+                  GST Percentage <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  className="w-full border rounded px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Enter GST %"
+                  value={gstPercentage}
+                  onChange={(e) => setGstPercentage(Number(e.target.value))}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Applicant Age */}
@@ -313,7 +340,7 @@ export default function SettingsPage() {
             <input
               type="number"
               min="1"
-              className={inputClass}
+              className="border rounded px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="Enter minimum applicant age"
               value={applicantAge}
               onChange={(e) => setApplicantAge(Number(e.target.value))}
@@ -359,7 +386,7 @@ export default function SettingsPage() {
             </label>
             <input
               type="text"
-              className={inputClass}
+              className="border rounded px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="Batch Name"
               value={batchName}
               onChange={(e) => setBatchName(e.target.value)}
@@ -377,11 +404,11 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setIsApplicationOpen((prev) => !prev)}
                 className={`w-12 h-6 flex items-center rounded-full p-1 transition
-        ${isApplicationOpen ? 'bg-green-500' : 'bg-gray-300'}`}
+            ${isApplicationOpen ? 'bg-green-500' : 'bg-gray-300'}`}
               >
                 <div
                   className={`bg-white w-4 h-4 rounded-full shadow transform transition
-          ${isApplicationOpen ? 'translate-x-6' : 'translate-x-0'}`}
+              ${isApplicationOpen ? 'translate-x-6' : 'translate-x-0'}`}
                 />
               </button>
 
@@ -390,9 +417,6 @@ export default function SettingsPage() {
               </span>
             </div>
           </div>
-
-
-
 
           {/* Courses */}
           <div className="flex flex-col col-span-1 md:col-span-2">
@@ -405,7 +429,7 @@ export default function SettingsPage() {
               <input
                 type="text"
                 placeholder="Enter course name"
-                className={`flex-1 ${inputClass}`}
+                className={`flex-1 border rounded px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none`}
                 value={courseInput}
                 onChange={(e) => setCourseInput(e.target.value)}
               />
@@ -441,8 +465,6 @@ export default function SettingsPage() {
               <p className="text-sm text-gray-500">No courses added yet.</p>
             )}
           </div>
-
-
         </div>
       </div>
 

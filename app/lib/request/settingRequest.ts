@@ -49,6 +49,7 @@ export interface Settings {
   contactEmail?: string;
   contactNumber?: string;
   address?: string;
+  gstPercentage: number 
   createdAt?: string;
   updatedAt?: string;
   applicationFee: number
