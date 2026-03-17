@@ -227,7 +227,7 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
                 </p>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-0.5 rounded-full border ${getRoleBadgeColor()}`}>
-                   {tempAdmin ? "User" : role}
+                    {tempAdmin ? "User" : role}
                   </span>
                 </div>
               </div>
@@ -241,7 +241,7 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
                 {/* User Info Header */}
                 <div className="p-4 border-b border-white/10 bg-white/5">
                   <p className="text-sm font-medium">{userEmail}</p>
-                  <p className="text-xs text-white/50 mt-1 capitalize">{role} Account</p>
+                  <p className="text-xs text-white/50 mt-1 capitalize"> {tempAdmin ? "User" : role} Account</p>
                 </div>
 
                 {/* Menu Items */}
@@ -297,7 +297,7 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
         <h1 className="text-sm font-medium truncate text-white/90">
           {institutionName || "Institution"}
         </h1>
-        <p className="text-xs text-white/60">{role} Portal</p>
+        <p className="text-xs text-white/60">{tempAdmin ? "User" : role}  Portal</p>
       </div>
     </header>
   );

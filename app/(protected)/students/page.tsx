@@ -21,6 +21,7 @@ import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import StudentCleanupForm from "@/components/Forms/Studentdatacleanform";
 import { listStudentsRequest } from "@/app/lib/request/studentRequest";
+import AsyncSelect from "react-select/async";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { deleteStudentRequest, toggleStudentStatusRequest, exportStudentsRequest } from "@/app/lib/request/studentRequest";
 import { motion, AnimatePresence } from "framer-motion";
@@ -232,30 +233,89 @@ export default function StudentsPage() {
     }
   };
 
-  const countryOptions = Country.getAllCountries().map(c => ({
-    value: c.name,
-    label: c.name,
-    isoCode: c.isoCode,
-  }));
-  const selectedCountryObj = countryOptions.find(c => c.value === selectedCountry);
+  // Memoized country options
+  const countryOptions = useMemo(() =>
+    Country.getAllCountries().map(c => ({
+      value: c.name,
+      label: c.name,
+    })),
+    []);
 
-  const stateOptions = selectedCountryObj
-    ? State.getStatesOfCountry(selectedCountryObj.isoCode).map(s => ({
-      value: s.name,
-      label: s.name,
-      isoCode: s.isoCode,
-    }))
-    : [];
+  // Load states based on selected country
+  const loadStates = useCallback(async (inputValue: string) => {
+    if (selectedCountry && selectedCountry !== "all") {
+      const country = Country.getAllCountries().find(
+        c => c.name === selectedCountry
+      );
 
-  const selectedStateObj = stateOptions.find(s => s.value === selectedState);
+      if (country) {
+        const states = State.getStatesOfCountry(country.isoCode);
+        return states
+          .filter((s) =>
+            s.name.toLowerCase().includes(inputValue.toLowerCase())
+          )
+          .slice(0, 200)
+          .map((s) => ({
+            value: s.name,
+            label: s.name,
+          }));
+      }
+    }
 
-  const cityOptions =
-    selectedCountryObj && selectedStateObj
-      ? City.getCitiesOfState(selectedCountryObj.isoCode, selectedStateObj.isoCode).map(c => ({
+    // If no country selected, return all states
+    return State.getAllStates()
+      .filter((s) =>
+        s.name.toLowerCase().includes(inputValue.toLowerCase())
+      )
+      .slice(0, 200)
+      .map((s) => ({
+        value: s.name,
+        label: s.name,
+      }));
+  }, [selectedCountry]);
+
+  // Load cities based on selected country and state
+  const loadCities = useCallback(async (inputValue: string) => {
+    if (selectedState && selectedState !== "all" && selectedCountry && selectedCountry !== "all") {
+      const country = Country.getAllCountries().find(
+        c => c.name === selectedCountry
+      );
+
+      if (country) {
+        const state = State.getStatesOfCountry(country.isoCode).find(
+          s => s.name === selectedState
+        );
+
+        if (state) {
+          const cities = City.getCitiesOfState(
+            country.isoCode,
+            state.isoCode
+          );
+
+          return cities
+            .filter((c) =>
+              c.name.toLowerCase().includes(inputValue.toLowerCase())
+            )
+            .slice(0, 200)
+            .map((c) => ({
+              value: c.name,
+              label: c.name,
+            }));
+        }
+      }
+    }
+
+    // If no state selected or state not found, return all cities
+    return City.getAllCities()
+      .filter((c) =>
+        c.name.toLowerCase().includes(inputValue.toLowerCase())
+      )
+      .slice(0, 200)
+      .map((c) => ({
         value: c.name,
         label: c.name,
-      }))
-      : [];
+      }));
+  }, [selectedCountry, selectedState]);
 
 
   const [columnVisibility, setColumnVisibility] = useState({
@@ -819,44 +879,82 @@ export default function StudentsPage() {
               ))}
             </select>
 
+            {/* Country AsyncSelect */}
+            <div className="w-full">
+              <AsyncSelect
+                key="country-select"
+                placeholder="Search Country..."
+                cacheOptions
+                defaultOptions={countryOptions}
+                loadOptions={(inputValue) => {
+                  return Promise.resolve(
+                    countryOptions.filter(option =>
+                      option.label.toLowerCase().includes(inputValue.toLowerCase())
+                    )
+                  );
+                }}
+                value={countryOptions.find(c => c.value === selectedCountry) || null}
+                onChange={(opt) => {
+                  setSelectedCountry(opt?.value || "all");
+                  setSelectedState("all");
+                  setSelectedCities([]);
+                  setCurrentPage(1);
+                }}
+                isClearable
+                className="w-full text-sm"
+                styles={{
+                  control: (base) => ({ ...base, minHeight: '38px' })
+                }}
+              />
+            </div>
 
-            <Select
-              placeholder="Select Country"
-              options={countryOptions}
-              value={countryOptions.find(c => c.value === selectedCountry) || null}
-              onChange={(opt) => {
-                setSelectedCountry(opt?.value || "");
-                setSelectedState("");
-                setSelectedCities([]);
-                setCurrentPage(1);
-              }}
-              isClearable
-              className="w-full"
-            />
-            <Select
-              placeholder="Select State"
-              options={stateOptions}
-              value={stateOptions.find(s => s.value === selectedState) || null}
-              onChange={(opt) => {
-                setSelectedState(opt?.value || "");
-                setSelectedCities([]);
-                setCurrentPage(1);
-              }}
-              isClearable
-              isDisabled={!selectedCountry}
-              className="w-full"
-            />
-            <Select
-              placeholder="Select City"
-              options={cityOptions}
-              value={cityOptions.filter(c => selectedCities.includes(c.value))}
-              onChange={(opts) => setSelectedCities(opts ? opts.map(o => o.value) : [])}
-              isMulti
-              isClearable
-              isDisabled={!selectedState}
-              className="w-full"
-            />
+            {/* State AsyncSelect */}
+            <div className="w-full">
+              <AsyncSelect
+                key={`state-select-${selectedCountry}`}
+                placeholder="Search State..."
+                cacheOptions
+                defaultOptions
+                loadOptions={loadStates}
+                value={
+                  selectedState && selectedState !== "all"
+                    ? { value: selectedState, label: selectedState }
+                    : null
+                }
+                onChange={(opt) => {
+                  setSelectedState(opt?.value || "all");
+                  setSelectedCities([]);
+                  setCurrentPage(1);
+                }}
+                isClearable
+                className="w-full text-sm"
+                styles={{
+                  control: (base) => ({ ...base, minHeight: '38px' })
+                }}
+              />
+            </div>
 
+            {/* City AsyncSelect (Multi-select) */}
+            <div className="w-full">
+              <AsyncSelect
+                key={`city-select-${selectedCountry}-${selectedState}`}
+                placeholder="Search Cities..."
+                cacheOptions
+                defaultOptions
+                loadOptions={loadCities}
+                isMulti
+                value={selectedCities.map((c) => ({ value: c, label: c }))}
+                onChange={(opts) => {
+                  setSelectedCities(opts ? opts.map((o) => o.value) : []);
+                  setCurrentPage(1);
+                }}
+                isClearable
+                className="w-full text-sm"
+                styles={{
+                  control: (base) => ({ ...base, minHeight: '38px' })
+                }}
+              />
+            </div>
           </div>
 
           {/* Active Filters Summary (optional) */}

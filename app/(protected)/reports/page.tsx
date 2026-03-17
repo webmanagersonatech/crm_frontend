@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { BarChart3, FileText, Users, FileDown, Search, Settings, GraduationCap } from "lucide-react";
 import { DataTable } from "@/components/Tablecomponents";
 import { getApplications, } from "@/app/lib/request/application";
@@ -13,6 +13,7 @@ import ExportModal from "@/components/ExportModal";
 import { Column } from "@/components/Tablecomponents";
 import { Country, State, City } from "country-state-city";
 import { listStudentsRequest } from "@/app/lib/request/studentRequest";
+import AsyncSelect from "react-select/async";
 import Select from "react-select";
 interface Application {
   _id?: string;
@@ -173,30 +174,91 @@ export default function ReportsPage() {
     status: true,
   });
 
-  const countryOptions = Country.getAllCountries().map(c => ({
-    value: c.name,
-    label: c.name,
-    isoCode: c.isoCode,
-  }));
-  const selectedCountryObj = countryOptions.find(c => c.value === selectedCountry);
+  // Memoized country options
+  const countryOptions = useMemo(() =>
+    Country.getAllCountries().map(c => ({
+      value: c.name,
+      label: c.name,
+    })),
+    []);
 
-  const stateOptions = selectedCountryObj
-    ? State.getStatesOfCountry(selectedCountryObj.isoCode).map(s => ({
-      value: s.name,
-      label: s.name,
-      isoCode: s.isoCode,
-    }))
-    : [];
+  // Load states based on selected country
+  const loadStates = useCallback(async (inputValue: string) => {
+    if (selectedCountry) {
+      const country = Country.getAllCountries().find(
+        c => c.name === selectedCountry
+      );
 
-  const selectedStateObj = stateOptions.find(s => s.value === selectedState);
+      if (country) {
+        const states = State.getStatesOfCountry(country.isoCode);
+        return states
+          .filter((s) =>
+            s.name.toLowerCase().includes(inputValue.toLowerCase())
+          )
+          .slice(0, 200)
+          .map((s) => ({
+            value: s.name,
+            label: s.name,
+          }));
+      }
+    }
 
-  const cityOptions =
-    selectedCountryObj && selectedStateObj
-      ? City.getCitiesOfState(selectedCountryObj.isoCode, selectedStateObj.isoCode).map(c => ({
+    // If no country selected, return all states
+    return State.getAllStates()
+      .filter((s) =>
+        s.name.toLowerCase().includes(inputValue.toLowerCase())
+      )
+      .slice(0, 200)
+      .map((s) => ({
+        value: s.name,
+        label: s.name,
+      }));
+  }, [selectedCountry]);
+
+  // Load cities based on selected country and state
+  const loadCities = useCallback(async (inputValue: string) => {
+    if (selectedState && selectedCountry) {
+      const country = Country.getAllCountries().find(
+        c => c.name === selectedCountry
+      );
+
+      if (country) {
+        const state = State.getStatesOfCountry(country.isoCode).find(
+          s => s.name === selectedState
+        );
+
+        if (state) {
+          const cities = City.getCitiesOfState(
+            country.isoCode,
+            state.isoCode
+          );
+
+          return cities
+            .filter((c) =>
+              c.name.toLowerCase().includes(inputValue.toLowerCase())
+            )
+            .slice(0, 200)
+            .map((c) => ({
+              value: c.name,
+              label: c.name,
+            }));
+        }
+      }
+    }
+
+    // If no state selected or state not found, return all cities
+    return City.getAllCities()
+      .filter((c) =>
+        c.name.toLowerCase().includes(inputValue.toLowerCase())
+      )
+      .slice(0, 200)
+      .map((c) => ({
         value: c.name,
         label: c.name,
-      }))
-      : [];
+      }));
+  }, [selectedCountry, selectedState]);
+
+
   useEffect(() => {
     const fetchPermissions = async () => {
       const token = localStorage.getItem("token");
@@ -1203,51 +1265,86 @@ export default function ReportsPage() {
             </div>
           )}
 
-          {/* Country Select */}
+          {/* Country AsyncSelect */}
           <div className="w-full">
-            <Select
-              placeholder="Country"
-              options={countryOptions}
+            <AsyncSelect
+              key="country-select"
+              placeholder="Search Country..."
+              cacheOptions
+              defaultOptions={countryOptions}
+              loadOptions={(inputValue) => {
+                return Promise.resolve(
+                  countryOptions.filter(option =>
+                    option.label.toLowerCase().includes(inputValue.toLowerCase())
+                  )
+                );
+              }}
               value={countryOptions.find(c => c.value === selectedCountry) || null}
               onChange={(opt) => {
                 setSelectedCountry(opt?.value || "");
                 setSelectedState("");
                 setSelectedCities([]);
-                setCurrentPage(1);
+                if (activeTab === "application") setCurrentPage(1);
+                if (activeTab === "lead") setleadCurrentPage(1);
+                if (activeTab === "student") setStudentCurrentPage(1);
               }}
               isClearable
               className="text-sm"
+              styles={{
+                control: (base) => ({ ...base, minHeight: '38px' })
+              }}
             />
           </div>
 
-          {/* State Select */}
+          {/* State AsyncSelect */}
           <div className="w-full">
-            <Select
-              placeholder="State"
-              options={stateOptions}
-              value={stateOptions.find(s => s.value === selectedState) || null}
+            <AsyncSelect
+              key={`state-select-${selectedCountry}`}
+              placeholder="Search State..."
+              cacheOptions
+              defaultOptions
+              loadOptions={loadStates}
+              value={
+                selectedState
+                  ? { value: selectedState, label: selectedState }
+                  : null
+              }
               onChange={(opt) => {
                 setSelectedState(opt?.value || "");
                 setSelectedCities([]);
-                setCurrentPage(1);
+                if (activeTab === "application") setCurrentPage(1);
+                if (activeTab === "lead") setleadCurrentPage(1);
+                if (activeTab === "student") setStudentCurrentPage(1);
               }}
               isClearable
-              isDisabled={!selectedCountry}
               className="text-sm"
+              styles={{
+                control: (base) => ({ ...base, minHeight: '38px' })
+              }}
             />
           </div>
 
-          {/* City Select - Multi */}
+          {/* City AsyncSelect - Multi */}
           <div className="w-full">
-            <Select
-              placeholder="City"
-              options={cityOptions}
-              value={cityOptions.filter(c => selectedCities.includes(c.value))}
-              onChange={(opts) => setSelectedCities(opts ? opts.map(o => o.value) : [])}
+            <AsyncSelect
+              key={`city-select-${selectedCountry}-${selectedState}`}
+              placeholder="Search Cities..."
+              cacheOptions
+              defaultOptions
+              loadOptions={loadCities}
               isMulti
+              value={selectedCities.map((c) => ({ value: c, label: c }))}
+              onChange={(opts) => {
+                setSelectedCities(opts ? opts.map((o) => o.value) : []);
+                if (activeTab === "application") setCurrentPage(1);
+                if (activeTab === "lead") setleadCurrentPage(1);
+                if (activeTab === "student") setStudentCurrentPage(1);
+              }}
               isClearable
-              isDisabled={!selectedState}
               className="text-sm"
+              styles={{
+                control: (base) => ({ ...base, minHeight: '38px' })
+              }}
             />
           </div>
 

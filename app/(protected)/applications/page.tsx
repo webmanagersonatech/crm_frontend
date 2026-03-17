@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { Eye, Plus, Loader2, Pencil, Trash2, FileDown, FileText, Settings, Edit2, PlusCircle, X } from "lucide-react";
 import { DataTable } from "@/components/Tablecomponents";
@@ -19,6 +19,7 @@ import CreateLeadform from "@/components/Forms/CreateLeadForm";
 import Select from "react-select";
 import { Country, State, City } from "country-state-city";
 import BulkUploadForm from "@/components/sheetupload";
+import AsyncSelect from "react-select/async";
 
 interface Application {
   _id?: string;
@@ -139,30 +140,90 @@ export default function ApplicationsPage() {
     { value: "program", label: "Program" },
   ];
 
-  const countryOptions = Country.getAllCountries().map(c => ({
-    value: c.name,
-    label: c.name,
-    isoCode: c.isoCode,
-  }));
-  const selectedCountryObj = countryOptions.find(c => c.value === selectedCountry);
+  // Update these functions to use the current state values properly with useCallback
+  const loadStates = useCallback(async (inputValue: string) => {
+    // Use the current selectedCountry from state
+    if (selectedCountry) {
+      const country = Country.getAllCountries().find(
+        c => c.name === selectedCountry
+      );
 
-  const stateOptions = selectedCountryObj
-    ? State.getStatesOfCountry(selectedCountryObj.isoCode).map(s => ({
-      value: s.name,
-      label: s.name,
-      isoCode: s.isoCode,
-    }))
-    : [];
+      if (country) {
+        const states = State.getStatesOfCountry(country.isoCode);
+        return states
+          .filter((s) =>
+            s.name.toLowerCase().includes(inputValue.toLowerCase())
+          )
+          .slice(0, 200)
+          .map((s) => ({
+            value: s.name,
+            label: s.name,
+          }));
+      }
+    }
 
-  const selectedStateObj = stateOptions.find(s => s.value === selectedState);
+    // If no country selected, return all states
+    return State.getAllStates()
+      .filter((s) =>
+        s.name.toLowerCase().includes(inputValue.toLowerCase())
+      )
+      .slice(0, 200)
+      .map((s) => ({
+        value: s.name,
+        label: s.name,
+      }));
+  }, [selectedCountry]); // Add dependency
 
-  const cityOptions =
-    selectedCountryObj && selectedStateObj
-      ? City.getCitiesOfState(selectedCountryObj.isoCode, selectedStateObj.isoCode).map(c => ({
+  const loadCities = useCallback(async (inputValue: string) => {
+    if (selectedState && selectedCountry) {
+      const country = Country.getAllCountries().find(
+        c => c.name === selectedCountry
+      );
+
+      if (country) {
+        const state = State.getStatesOfCountry(country.isoCode).find(
+          s => s.name === selectedState
+        );
+
+        if (state) {
+          const cities = City.getCitiesOfState(
+            country.isoCode,
+            state.isoCode
+          );
+
+          return cities
+            .filter((c) =>
+              c.name.toLowerCase().includes(inputValue.toLowerCase())
+            )
+            .slice(0, 200)
+            .map((c) => ({
+              value: c.name,
+              label: c.name,
+            }));
+        }
+      }
+    }
+
+    // If no state selected or state not found, return all cities
+    return City.getAllCities()
+      .filter((c) =>
+        c.name.toLowerCase().includes(inputValue.toLowerCase())
+      )
+      .slice(0, 200)
+      .map((c) => ({
         value: c.name,
         label: c.name,
-      }))
-      : [];
+      }));
+  }, [selectedCountry, selectedState]); // Add dependencies
+
+  // Use useMemo for countryOptions
+  const countryOptions = useMemo(() =>
+    Country.getAllCountries().map(c => ({
+      value: c.name,
+      label: c.name,
+    })),
+    []);
+
 
 
   const columnOptions = [
@@ -1015,7 +1076,7 @@ export default function ApplicationsPage() {
                   </option>
                 ))}
               </select>
-               <span className="text-xs text-gray-500">entries</span>
+              <span className="text-xs text-gray-500">entries</span>
             </div>
 
             {/* Action Buttons */}
@@ -1191,24 +1252,34 @@ export default function ApplicationsPage() {
                   )}
 
                   {/* Location Filters Group */}
+                  {/* Location Filters Group */}
                   {(activeFilters.includes("country") || activeFilters.includes("state") || activeFilters.includes("city")) && (
                     <div className="flex flex-wrap items-center gap-2 p-1.5 bg-white rounded-md border border-gray-200 shadow-sm">
                       {activeFilters.includes("country") && (
                         <div className="min-w-[120px]">
-                          <Select
-                            placeholder="Country"
-                            options={countryOptions}
+                          <AsyncSelect
+                            key={`country-select-${selectedCountry}`}
+                            placeholder="Search Country..."
+                            cacheOptions
+                            defaultOptions={countryOptions}
+                            loadOptions={(inputValue) => {
+                              return Promise.resolve(
+                                countryOptions.filter(option =>
+                                  option.label.toLowerCase().includes(inputValue.toLowerCase())
+                                )
+                              );
+                            }}
                             value={countryOptions.find(c => c.value === selectedCountry) || null}
                             onChange={(opt) => {
                               setSelectedCountry(opt?.value || "");
-                              setSelectedState("");
-                              setSelectedCities([]);
+                              setSelectedState("");  // Reset state when country changes
+                              setSelectedCities([]); // Reset cities when country changes
                               setCurrentPage(1);
                             }}
                             isClearable
                             className="text-xs"
                             styles={{
-                              control: (base) => ({ ...base, minHeight: '32px', border: 'none' })
+                              control: (base) => ({ ...base, minHeight: '32px' })
                             }}
                           />
                         </div>
@@ -1216,20 +1287,26 @@ export default function ApplicationsPage() {
 
                       {activeFilters.includes("state") && (
                         <div className="min-w-[120px]">
-                          <Select
-                            placeholder="State"
-                            options={stateOptions}
-                            value={stateOptions.find(s => s.value === selectedState) || null}
+                          <AsyncSelect
+                            key={`state-select-${selectedCountry}`}
+                            placeholder="Search State..."
+                            cacheOptions
+                            defaultOptions
+                            loadOptions={loadStates}
+                            value={
+                              selectedState
+                                ? { value: selectedState, label: selectedState }
+                                : null
+                            }
                             onChange={(opt) => {
                               setSelectedState(opt?.value || "");
-                              setSelectedCities([]);
+                              setSelectedCities([]); // Reset cities when state changes
                               setCurrentPage(1);
                             }}
                             isClearable
-                            isDisabled={!selectedCountry}
                             className="text-xs"
                             styles={{
-                              control: (base) => ({ ...base, minHeight: '32px', border: 'none' })
+                              control: (base) => ({ ...base, minHeight: '32px' })
                             }}
                           />
                         </div>
@@ -1237,17 +1314,21 @@ export default function ApplicationsPage() {
 
                       {activeFilters.includes("city") && (
                         <div className="min-w-[140px]">
-                          <Select
-                            placeholder="City"
-                            options={cityOptions}
-                            value={cityOptions.filter(c => selectedCities.includes(c.value))}
-                            onChange={(opts) => setSelectedCities(opts ? opts.map(o => o.value) : [])}
+                          <AsyncSelect
+                            key={`city-select-${selectedCountry}-${selectedState}`}
+                            placeholder="Search Cities..."
+                            cacheOptions
+                            defaultOptions
+                            loadOptions={loadCities}
                             isMulti
-                            isClearable
-                            isDisabled={!selectedState}
+                            value={selectedCities.map((c) => ({ value: c, label: c }))}
+                            onChange={(opts) => {
+                              setSelectedCities(opts ? opts.map((o) => o.value) : []);
+                              setCurrentPage(1);
+                            }}
                             className="text-xs"
                             styles={{
-                              control: (base) => ({ ...base, minHeight: '32px', border: 'none' })
+                              control: (base) => ({ ...base, minHeight: '32px' })
                             }}
                           />
                         </div>
