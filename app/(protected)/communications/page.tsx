@@ -523,27 +523,24 @@ export default function CommunicationsPage() {
           {/* Top row - Entries selector and Actions */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             {/* Left side - Entries selector */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Show</span>
-              <div className="flex rounded-md border border-gray-200 dark:border-gray-700 divide-x divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                {[10, 50, 100, 250, 500].map((value) => (
-                  <button
-                    key={value}
-                    onClick={() => {
-                      setLimit(value);
-                      setCurrentPage(1);
-                    }}
-                    className={`px-2 sm:px-3 py-1.5 text-xs font-medium transition-all first:rounded-l-md last:rounded-r-md ${limit === value
-                      ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                      }`}
-                  >
-                    {value}
-                  </button>
-                ))}
-              </div>
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">entries</span>
-            </div>
+       <div className="flex items-center gap-2 w-full sm:w-auto">
+  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">Show</span>
+  <select
+    value={limit}
+    onChange={(e) => {
+      setLimit(Number(e.target.value));
+      setCurrentPage(1);
+    }}
+    className="px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1e2a5a] dark:focus:ring-[#3d4f91] cursor-pointer"
+  >
+    {[10, 50, 100, 250, 500].map((value) => (
+      <option key={value} value={value} className="text-xs">
+        {value}
+      </option>
+    ))}
+  </select>
+  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">entries</span>
+</div>
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">

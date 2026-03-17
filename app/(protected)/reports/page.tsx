@@ -1109,76 +1109,88 @@ export default function ReportsPage() {
       </div>
 
       {/* Filters + Export */}
+      {/* Filters + Export */}
       <div className="mt-4 bg-white dark:bg-gray-900 shadow-sm rounded-lg p-4">
-        {/* Flex wrap — automatically moves filters to next line */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-
-          {/* Left side — All filters */}
-          <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+        {/* Export button - Top right on mobile, inline on desktop */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <button
+            onClick={() => setCustomizeOpen(true)}
+            className="flex items-center justify-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md hover:opacity-90 transition"
+          >
+            <Settings className="w-4 h-4" /> Customize Columns
+          </button>
+          {(userpermission === "superadmin" || userpermission?.download) && (
             <button
-              onClick={() => setCustomizeOpen(true)}
-              className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
+              onClick={() => setOpen(true)}
+              className="flex items-center justify-center gap-1 bg-green-700 hover:bg-green-800 text-white px-4 py-2 text-sm rounded-md transition w-full sm:w-auto"
             >
-              <Settings className="w-4 h-4" /> Customize Columns
+              <FileDown className="w-4 h-4" /> Export
             </button>
+          )}
+        </div>
 
-            {userpermission === "superadmin" && (
+        {/* Main Filters Grid - 5 columns on large screens */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+
+          {/* Customize Columns Button */}
+
+
+          {/* Institution Filter - Superadmin only */}
+          {userpermission === "superadmin" && (
+            <select
+              value={selectedInstitution}
+              onChange={(e) => {
+                setSelectedInstitution(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-full"
+            >
+              <option value="all">All Institutions</option>
+              {institutions.map((inst) => (
+                <option key={inst.value} value={inst.value}>
+                  {inst.label}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* 🎓 Academic Year */}
+          {activeTab !== "lead" && (
+            <div className="flex items-center gap-2 border rounded-md p-[3px] w-full">
+              <label className="text-sm font-semibold text-gray-700 whitespace-nowrap ml-1">
+                Acad Year:
+              </label>
               <select
-                value={selectedInstitution}
+                value={selectedYear}
                 onChange={(e) => {
-                  setSelectedInstitution(e.target.value);
+                  setSelectedYear(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-[160px] sm:w-[160px] md:w-[160px] lg:w-[160px]"
+                className="border-0 text-sm rounded-md py-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
               >
-                <option value="all">All Institutions</option>
-                {institutions.map((inst) => (
-                  <option key={inst.value} value={inst.value}>
-                    {inst.label}
+                <option value="all">All</option>
+                {academicYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
                   </option>
                 ))}
               </select>
-            )}
+            </div>
+          )}
 
-            {/* 🎓 Academic Year */}
-            {activeTab !== "lead" && (
-              <div className="rounded-md w-fit border p-[3px] flex items-center gap-3">
-                <label className="text-sm font-semibold text-gray-700">
-                  Academic Year:
-                </label>
-
-                <select
-                  value={selectedYear}
-                  onChange={(e) => {
-                    setSelectedYear(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="border text-sm rounded-md py-2 px-3 w-40 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                >
-                  <option value="all">All</option>
-
-                  {academicYears.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* 📅 Date Range */}
-
-            {activeTab !== "student" && (<div className="flex flex-wrap items-center gap-2">
+          {/* 📅 Date Range - Takes 2 columns on large screens */}
+          {activeTab !== "student" && (
+            <div className="flex items-center gap-1 col-span-1 lg:col-span-2 xl:col-span-1">
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-full"
               />
-              <span className="flex items-center justify-center text-gray-500">
+              <span className="text-gray-500 shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none"
                   viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
-                  className="w-5 h-5">
+                  className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </span>
@@ -1186,88 +1198,92 @@ export default function ReportsPage() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-full"
               />
-            </div>)}
-
-
-            {/* Country → State → City */}
-
-
-            <div className="flex gap-2">
-              <Select
-                placeholder="Select Country"
-                options={countryOptions}
-                value={countryOptions.find(c => c.value === selectedCountry) || null}
-                onChange={(opt) => {
-                  setSelectedCountry(opt?.value || "");
-                  setSelectedState("");
-                  setSelectedCities([]);
-                  setCurrentPage(1);
-                }}
-                isClearable
-              />
-              <Select
-                placeholder="Select State"
-                options={stateOptions}
-                value={stateOptions.find(s => s.value === selectedState) || null}
-                onChange={(opt) => {
-                  setSelectedState(opt?.value || "");
-                  setSelectedCities([]);
-                  setCurrentPage(1);
-                }}
-                isClearable
-                isDisabled={!selectedCountry}
-              />
-              <Select
-                placeholder="Select City"
-                options={cityOptions}
-                value={cityOptions.filter(c =>
-                  selectedCities.includes(c.value)
-                )}
-                onChange={(opts) =>
-                  setSelectedCities(opts ? opts.map(o => o.value) : [])
-                }
-                isMulti
-                isClearable
-                isDisabled={!selectedState}
-              />
-
-
             </div>
-            {/* 💳 Payment Filter */}
-            {activeTab !== "lead" && activeTab !== "student" && (
-              <>
-                <select
-                  value={selectedPayment}
-                  onChange={(e) => {
-                    setSelectedPayment(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                >
-                  <option value="all">All Payments</option>
-                  <option value="Paid">Paid</option>
-                  <option value="Unpaid">Unpaid</option>
-                </select>
-                <select
-                  value={selectedFormStatus}
-                  onChange={(e) => {
-                    setSelectedFormStatus(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                >
-                  <option value="all">All Form Status</option>
-                  <option value="Complete">Complete</option>
-                  <option value="Incomplete">Incomplete</option>
-                </select>
+          )}
 
+          {/* Country Select */}
+          <div className="w-full">
+            <Select
+              placeholder="Country"
+              options={countryOptions}
+              value={countryOptions.find(c => c.value === selectedCountry) || null}
+              onChange={(opt) => {
+                setSelectedCountry(opt?.value || "");
+                setSelectedState("");
+                setSelectedCities([]);
+                setCurrentPage(1);
+              }}
+              isClearable
+              className="text-sm"
+            />
+          </div>
 
+          {/* State Select */}
+          <div className="w-full">
+            <Select
+              placeholder="State"
+              options={stateOptions}
+              value={stateOptions.find(s => s.value === selectedState) || null}
+              onChange={(opt) => {
+                setSelectedState(opt?.value || "");
+                setSelectedCities([]);
+                setCurrentPage(1);
+              }}
+              isClearable
+              isDisabled={!selectedCountry}
+              className="text-sm"
+            />
+          </div>
 
-                {/* Application Source Filter */}
+          {/* City Select - Multi */}
+          <div className="w-full">
+            <Select
+              placeholder="City"
+              options={cityOptions}
+              value={cityOptions.filter(c => selectedCities.includes(c.value))}
+              onChange={(opts) => setSelectedCities(opts ? opts.map(o => o.value) : [])}
+              isMulti
+              isClearable
+              isDisabled={!selectedState}
+              className="text-sm"
+            />
+          </div>
+
+          {/* Payment Filter */}
+          {activeTab !== "lead" && activeTab !== "student" && (
+            <>
+              <select
+                value={selectedPayment}
+                onChange={(e) => {
+                  setSelectedPayment(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-full"
+              >
+                <option value="all">All Payments</option>
+                <option value="Paid">Paid</option>
+                <option value="Unpaid">Unpaid</option>
+              </select>
+
+              <select
+                value={selectedFormStatus}
+                onChange={(e) => {
+                  setSelectedFormStatus(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+              >
+                <option value="all">All Form Status</option>
+                <option value="Complete">Complete</option>
+                <option value="Incomplete">Incomplete</option>
+              </select>
+
+              {/* Application Source */}
+              <div className="w-full">
                 <Select
-                  placeholder="Select Application Source"
+                  placeholder="Application Source"
                   options={[
                     { value: "online", label: "Online" },
                     { value: "offline", label: "Offline" },
@@ -1279,11 +1295,14 @@ export default function ReportsPage() {
                     setCurrentPage(1);
                   }}
                   isClearable
+                  className="text-sm"
                 />
+              </div>
 
-                {/* Applicant Interaction Filter */}
+              {/* Interaction */}
+              <div className="w-full">
                 <Select
-                  placeholder="Select Interaction"
+                  placeholder="Interaction"
                   options={[
                     { value: "New", label: "New" },
                     { value: "Followup", label: "Followup" },
@@ -1303,311 +1322,279 @@ export default function ReportsPage() {
                     setCurrentPage(1);
                   }}
                   isClearable
+                  className="text-sm"
                 />
-              </>
+              </div>
 
+              {/* Application ID Search */}
+              <input
+                type="text"
+                placeholder="Application ID"
+                value={searchApplicationId}
+                onChange={(e) => {
+                  setSearchApplicationId(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-full"
+              />
 
-            )}
-            {/* 🔢 Application ID */}
-            {activeTab !== "lead" && activeTab !== "student" && (
-              <>
-                <input
-                  type="text"
-                  placeholder="Search by Application ID"
-                  value={searchApplicationId}
-                  onChange={(e) => {
-                    setSearchApplicationId(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                />
-                <input
-                  type="text"
-                  placeholder="Search by Program"
-                  value={searchProgram}
-                  onChange={(e) => {
-                    setSearchProgram(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                />
-              </>
-            )}
+              {/* Program Search */}
+              <input
+                type="text"
+                placeholder="Program"
+                value={searchProgram}
+                onChange={(e) => {
+                  setSearchProgram(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+              />
+            </>
+          )}
 
+          {/* Lead Filters */}
+          {activeTab === "lead" && (
+            <>
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-full"
+              >
+                <option value="all">All Status</option>
+                {statusOptions.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
 
+              <select
+                value={selectedCommunication}
+                onChange={(e) => setSelectedCommunication(e.target.value)}
+                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-full"
+              >
+                <option value="all">All Communication</option>
+                {communicationOptions.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
 
+              <select
+                value={selectedLeadSource}
+                onChange={(e) => setSelectedLeadSource(e.target.value)}
+                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-full"
+              >
+                <option value="all">All Lead Sources</option>
+                <option value="offline">Offline</option>
+                <option value="online">Online</option>
+                <option value="application">Application</option>
+              </select>
 
-
-            {/* 📈 Lead Filters */}
-            {activeTab === "lead" && (
-              <>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                >
-                  <option value="all">All Status</option>
-                  {statusOptions.map((s) => (
-                    <option key={s.value} value={s.value}>
-                      {s.label}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedCommunication}
-                  onChange={(e) => setSelectedCommunication(e.target.value)}
-                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                >
-                  <option value="all">All Communication</option>
-                  {communicationOptions.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={selectedLeadSource}
-                  onChange={(e) => setSelectedLeadSource(e.target.value)}
-                  className="w-full sm:w-auto border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                >
-                  <option value="all">All Lead Sources</option>
-                  <option value="offline">Offline</option>
-                  <option value="online">Online</option>
-                  <option value="application">Application</option>
-                </select>
-              </>
-            )}
-
-            {/* 🧍 Applicant / Lead Name */}
-            {activeTab === "lead" && (
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              {/* Name Search */}
+              <div className="relative w-full">
+                <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search by name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                  className="w-full pl-8 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
                 />
               </div>
-            )}
 
-            {activeTab === "application" && (
-              <input
-                type="text"
-                placeholder="Search by Applicant"
-                value={searchApplicantName}
+              {/* Phone Search */}
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Search by phone..."
+                  value={phoneSearch}
+                  onChange={(e) => setPhoneSearch(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                />
+              </div>
+
+              {/* Lead ID Search */}
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  placeholder="Search by Lead ID..."
+                  value={leadIdSearch}
+                  onChange={(e) => setLeadIdSearch(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Application Tab - Applicant Name Search */}
+          {activeTab === "application" && (
+            <input
+              type="text"
+              placeholder="Search by Applicant"
+              value={searchApplicantName}
+              onChange={(e) => {
+                setSearchApplicantName(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-full"
+            />
+          )}
+
+          {/* Student Filters */}
+          {activeTab === "student" && (
+            <>
+              <select
+                value={statusFilter}
                 onChange={(e) => {
-                  setSearchApplicantName(e.target.value);
+                  setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-              />
-            )}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
 
+              <select
+                value={bloodGroupFilter}
+                onChange={(e) => { setBloodGroupFilter(e.target.value); setCurrentPage(1); }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+              >
+                <option value="all">All Blood Groups</option>
+                {bloodOptions.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
 
-            {/* 🔹 Phone Number Search */}
-            {activeTab === "lead" && (
-              <>
-                <div className="relative w-full sm:w-48 md:w-60">
-                  <input
-                    type="text"
-                    placeholder="Search by phone..."
-                    value={phoneSearch}
-                    onChange={(e) => setPhoneSearch(e.target.value)}
-                    className="w-full pl-3 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                  />
-                </div>
+              <select
+                value={bloodDonateFilter}
+                onChange={(e) => { setBloodDonateFilter(e.target.value); setCurrentPage(1); }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+              >
+                <option value="all">Blood Donate: All</option>
+                <option value="true">Yes</option>
+                <option value="false">No</option>
+              </select>
 
+              <select
+                value={hostelWillingFilter}
+                onChange={(e) => { setHostelWillingFilter(e.target.value); setCurrentPage(1); }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+              >
+                <option value="all">Hostel: All</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
 
-                <div className="relative w-full sm:w-48 md:w-60">
-                  <input
-                    type="text"
-                    placeholder="Search by Lead ID..."
-                    value={leadIdSearch}
-                    onChange={(e) => setLeadIdSearch(e.target.value)}
-                    className="w-full pl-3 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
-                  />
-                </div>
-              </>)}
+              <select
+                value={quotaFilter}
+                onChange={(e) => {
+                  setQuotaFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+              >
+                <option value="all">Quota: All</option>
+                {quotaOptions.map((q) => (
+                  <option key={q.value} value={q.value}>{q.label}</option>
+                ))}
+              </select>
 
+              <select
+                value={feedbackFilter}
+                onChange={(e) => { setFeedbackFilter(e.target.value); setCurrentPage(1); }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+              >
+                <option value="all">All Feedback</option>
+                {feedbackOptions.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+              </select>
 
+              <select
+                value={familyOccupationFilter}
+                onChange={(e) => { setFamilyOccupationFilter(e.target.value); setCurrentPage(1); }}
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
+              >
+                <option value="all">All Occupations</option>
+                {occupationOptions.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
 
-            {activeTab === "student" && (
-
-
-              <>
-
-
-
-
-
-                {/* Status Filter */}
-                <select
-                  value={statusFilter}
+              {/* Student Search */}
+              <div className="relative w-full lg:col-span-2 xl:col-span-1">
+                <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="name, email, std ID, univ NO"
+                  value={searchTerm}
                   onChange={(e) => {
-                    setStatusFilter(e.target.value);
+                    setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-
-                <select
-                  value={bloodGroupFilter}
-                  onChange={(e) => { setBloodGroupFilter(e.target.value); setCurrentPage(1); }}
-                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                >
-                  <option value="all">All Blood Groups</option>
-                  {bloodOptions.map((b) => (
-                    <option key={b} value={b}>{b}</option>
-                  ))}
-                </select>
-
-                {/* Blood Donate */}
-                <select
-                  value={bloodDonateFilter}
-                  onChange={(e) => { setBloodDonateFilter(e.target.value); setCurrentPage(1); }}
-                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                >
-                  <option value="all">Blood Donate: All</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
-
-                {/* Hostel Willing */}
-                <select
-                  value={hostelWillingFilter}
-                  onChange={(e) => { setHostelWillingFilter(e.target.value); setCurrentPage(1); }}
-                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                >
-                  <option value="all">Hostel: All</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-
-                {/* Quota */}
-                <select
-                  value={quotaFilter}
-                  onChange={(e) => {
-                    setQuotaFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                >
-                  <option value="all">Quota: All</option>
-                  {quotaOptions.map((q) => (
-                    <option key={q.value} value={q.value}>{q.label}</option>
-                  ))}
-                </select>
-
-                <select
-                  value={feedbackFilter}
-                  onChange={(e) => { setFeedbackFilter(e.target.value); setCurrentPage(1); }}
-                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                >
-                  <option value="all">All Feedback</option>
-                  {feedbackOptions.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-                </select>
-
-                <select
-                  value={familyOccupationFilter}
-                  onChange={(e) => { setFamilyOccupationFilter(e.target.value); setCurrentPage(1); }}
-                  className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                >
-                  <option value="all">All Occupations</option>
-                  {occupationOptions.map(o => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-                {/* Search */}
-                <div className="relative w-full sm:w-auto">
-                  <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="name, email, std ID,univ NO"
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full sm:w-56 pl-8 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-                  />
-                </div>
-
-              </>)}
-
-          </div>
-
-          {/* 📤 Export Button */}
-          {(userpermission === "superadmin" || userpermission?.download) && (
-            <button
-              onClick={() => setOpen(true)}
-              className="flex items-center justify-center gap-1 bg-green-700 hover:bg-green-800 text-white px-4 py-2 text-sm rounded-md transition"
-            >
-              <FileDown className="w-4 h-4" /> Export
-            </button>
+                  className="w-full pl-8 pr-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                />
+              </div>
+            </>
           )}
         </div>
 
-        <ExportModal
-          open={open}
-          title={
-            activeTab === "application"
-              ? "APPLICATION REPORT"
-              : activeTab === "student"
-                ? "STUDENT REPORT"
-                : "LEAD REPORT"
-          }
-          onClose={() => setOpen(false)}
-          data={
-            activeTab === "application"
-              ? filteredApplications
-              : activeTab === "student"
-                ? filteredStudents
-                : filteredLeads
-          }
-        />
-
-        <ColumnCustomizeDialog
-          open={customizeOpen}
-          title={`Customize ${activeTab} Report Columns`}
-          columns={
-            activeTab === "application"
-              ? columnOptions
-              : activeTab === "student"
-                ? columnOptionsstudent
-                : columnOptionsreport
-          }
-          selected={
-            activeTab === "application"
-              ? columnVisibility
-              : activeTab === "student"
-                ? columnVisibilitystudent
-                : columnVisibilityreport
-          }
-          onChange={(updated) => {
-            if (activeTab === "application") {
-              setColumnVisibility(prev => ({ ...prev, ...updated }));
-            } else if (activeTab === "student") {
-              setColumnVisibilitystudent(prev => ({ ...prev, ...updated }));
-            } else {
-              setColumnVisibilityreport(prev => ({ ...prev, ...updated }));
-            }
-          }}
-          onClose={() => setCustomizeOpen(false)}
-        />
-
-
-
+        {/* Active Filters Summary - Optional */}
+        <div className="mt-3 flex flex-wrap gap-2 text-xs text-gray-600">
+          {/* You can add active filter chips here if needed */}
+        </div>
       </div>
 
 
+      <ExportModal
+        open={open}
+        title={
+          activeTab === "application"
+            ? "APPLICATION REPORT"
+            : activeTab === "student"
+              ? "STUDENT REPORT"
+              : "LEAD REPORT"
+        }
+        onClose={() => setOpen(false)}
+        data={
+          activeTab === "application"
+            ? filteredApplications
+            : activeTab === "student"
+              ? filteredStudents
+              : filteredLeads
+        }
+      />
+
+      <ColumnCustomizeDialog
+        open={customizeOpen}
+        title={`Customize ${activeTab} Report Columns`}
+        columns={
+          activeTab === "application"
+            ? columnOptions
+            : activeTab === "student"
+              ? columnOptionsstudent
+              : columnOptionsreport
+        }
+        selected={
+          activeTab === "application"
+            ? columnVisibility
+            : activeTab === "student"
+              ? columnVisibilitystudent
+              : columnVisibilityreport
+        }
+        onChange={(updated) => {
+          if (activeTab === "application") {
+            setColumnVisibility(prev => ({ ...prev, ...updated }));
+          } else if (activeTab === "student") {
+            setColumnVisibilitystudent(prev => ({ ...prev, ...updated }));
+          } else {
+            setColumnVisibilityreport(prev => ({ ...prev, ...updated }));
+          }
+        }}
+        onClose={() => setCustomizeOpen(false)}
+      />
       <div className="bg-white shadow rounded-lg p-4">
         {activeTab === "application" && (
           <DataTable

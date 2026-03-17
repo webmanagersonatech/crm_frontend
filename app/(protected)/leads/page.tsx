@@ -868,27 +868,24 @@ export default function LeadsPage() {
         <div className="flex flex-wrap items-center gap-4 p-4 bg-white dark:bg-gray-900 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
 
           {/* Left side - Entries selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Show</span>
-            <div className="flex rounded-md border border-gray-200 dark:border-gray-700 divide-x divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-              {[10, 50, 100, 250, 500].map((value) => (
-                <button
-                  key={value}
-                  onClick={() => {
-                    setLimit(value);
-                    setCurrentPage(1);
-                  }}
-                  className={`px-3 py-1.5 text-xs font-medium transition-all ${limit === value
-                    ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                    }`}
-                >
-                  {value}
-                </button>
-              ))}
-            </div>
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">entries</span>
-          </div>
+       <div className="flex items-center gap-2">
+  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Show</span>
+  <select
+    value={limit}
+    onChange={(e) => {
+      setLimit(Number(e.target.value));
+      setCurrentPage(1);
+    }}
+    className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#1e2a5a] dark:focus:ring-[#3d4f91] cursor-pointer"
+  >
+    {[10, 50, 100, 250, 500].map((value) => (
+      <option key={value} value={value} className="text-xs">
+        {value}
+      </option>
+    ))}
+  </select>
+  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">entries</span>
+</div>
 
           {/* Right side - All filters and actions */}
           <div className="flex-1 flex flex-wrap items-center gap-3 justify-end">

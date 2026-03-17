@@ -641,29 +641,35 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                             >
                                 <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
                                 <span >Customize Columns</span>
-                             
+
                             </button>
 
                             {/* Show entries selector - Right side of customize button */}
                             <div className="flex items-center gap-1 sm:gap-2 ml-1 sm:ml-2">
                                 <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap hidden sm:inline">Show:</span>
-                                <div className="flex rounded-md border border-gray-200 divide-x divide-gray-200 bg-white">
-                                    {[10, 50, 100, 250, 500].map((value) => (
-                                        <button
-                                            key={value}
-                                            onClick={() => {
-                                                setLimit(value);
-                                                setCurrentPage(1);
-                                            }}
-                                            className={`px-1.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium transition-all ${limit === value
-                                                    ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
-                                                    : 'text-gray-600 hover:bg-gray-50'
-                                                }`}
-                                            title={value === 500 ? "Show 500 entries" : `Show ${value} entries`}
-                                        >
-                                            {value}
-                                        </button>
-                                    ))}
+                                <div className="relative">
+                                    <select
+                                        value={limit}
+                                        onChange={(e) => {
+                                            setLimit(Number(e.target.value));
+                                            setCurrentPage(1);
+                                        }}
+                                        className="px-1.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium rounded-md border border-gray-200 bg-white text-gray-600 pr-6 sm:pr-8 focus:outline-none focus:ring-2 focus:ring-[#1e2a5a] cursor-pointer appearance-none"
+                                    >
+                                        {[10, 50, 100, 250, 500].map((value) => (
+                                            <option key={value} value={value}>
+                                                {value}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <svg
+                                        className="absolute right-1.5 sm:right-2 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-gray-500 pointer-events-none"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
                                 </div>
                             </div>
                         </div>

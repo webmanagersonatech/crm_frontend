@@ -595,22 +595,29 @@ export default function StudentsPage() {
             <div className="flex items-center gap-2 order-2 ml-auto">
               <div className="hidden sm:flex items-center gap-2">
                 <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">Show</span>
-                <div className="flex rounded-md border border-gray-200 divide-x divide-gray-200 bg-white">
-                  {[10, 25, 50, 100, 250, 500].map((value) => (
-                    <button
-                      key={value}
-                      onClick={() => {
-                        setLimit(value);
-                        setCurrentPage(1);
-                      }}
-                      className={`px-2 py-1.5 text-xs font-medium transition-all ${limit === value
-                        ? 'bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white shadow-inner'
-                        : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                    >
-                      {value}
-                    </button>
-                  ))}
+                <div className="relative">
+                  <select
+                    value={limit}
+                    onChange={(e) => {
+                      setLimit(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="px-3 py-1.5 text-xs font-medium rounded-md border border-gray-200 bg-white text-gray-600 pr-8 focus:outline-none focus:ring-2 focus:ring-[#1e2a5a] cursor-pointer appearance-none"
+                  >
+                    {[10, 25, 50, 100, 250, 500].map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </div>
                 <span className="text-xs font-medium text-gray-500">entries</span>
               </div>

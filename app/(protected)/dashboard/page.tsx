@@ -85,7 +85,7 @@ export default function DashboardPage() {
   const [userpermission, setUserpermisssion] = useState<any | null>(null);
 
 
-  const COLORS = ["#3b82f6", "#ef4444"];
+  const COLORS = ["#22c55e", "#ef4444", "#3b82f6", "#f59e0b"];
 
   // 🔹 Date Range Options
   const dateOptions = [
@@ -557,6 +557,8 @@ export default function DashboardPage() {
   const pieData = [
     { name: "Paid", value: dashboardData?.paidApplications || 0 },
     { name: "Unpaid", value: dashboardData?.unpaidApplications || 0 },
+    { name: "Complete", value: dashboardData?.completeApplications || 0 },
+    { name: "Incomplete", value: dashboardData?.incompleteApplications || 0 },
   ];
 
   // 📈 Dummy Lead Data
@@ -812,21 +814,28 @@ export default function DashboardPage() {
                   </p>
 
                   {/* Legend */}
-                  <div className="flex justify-center gap-6 mt-2 text-sm text-gray-700 dark:text-gray-300">
+                  <div className="flex flex-wrap justify-center gap-6 mt-2 text-sm text-gray-700 dark:text-gray-300">
+
                     <div className="flex items-center gap-2">
-                      <span
-                        className="inline-block w-3 h-3 rounded-full"
-                        style={{ backgroundColor: COLORS[0] }}
-                      ></span>
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[0] }}></span>
                       <span>Paid</span>
                     </div>
+
                     <div className="flex items-center gap-2">
-                      <span
-                        className="inline-block w-3 h-3 rounded-full"
-                        style={{ backgroundColor: COLORS[1] }}
-                      ></span>
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[1] }}></span>
                       <span>Unpaid</span>
                     </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[2] }}></span>
+                      <span>Complete</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[3] }}></span>
+                      <span>Incomplete</span>
+                    </div>
+
                   </div>
                 </ChartCard>
               </div>
