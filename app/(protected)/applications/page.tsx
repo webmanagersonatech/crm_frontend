@@ -1015,6 +1015,7 @@ export default function ApplicationsPage() {
                   </option>
                 ))}
               </select>
+               <span className="text-xs text-gray-500">entries</span>
             </div>
 
             {/* Action Buttons */}
