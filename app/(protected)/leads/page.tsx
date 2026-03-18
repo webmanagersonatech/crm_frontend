@@ -665,7 +665,7 @@ export default function LeadsPage() {
     },
 
     columnVisibility.communication && {
-      header: "Communication",
+      header: "Comms",
       accessor: "communication",
     },
 
@@ -786,7 +786,7 @@ export default function LeadsPage() {
 
 
     {
-      header: "Duplicate",
+      header: "Dup",
       render: (lead: Lead) => {
         if (!lead.isduplicate) return null;
 
