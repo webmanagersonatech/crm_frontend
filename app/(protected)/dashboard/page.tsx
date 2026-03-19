@@ -694,7 +694,9 @@ export default function DashboardPage() {
                   type="date"
                   value={startDate}
                   onChange={(e) => handleCustomDateChange(setStartDate, e.target.value)}
-                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480]  transition"
+                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                  pattern="\d{4}-\d{2}-\d{2}"
+                  placeholder="YYYY-MM-DD"
                 />
               </div>
 
@@ -706,7 +708,9 @@ export default function DashboardPage() {
                   type="date"
                   value={endDate}
                   onChange={(e) => handleCustomDateChange(setEndDate, e.target.value)}
-                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480]  transition"
+                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                  pattern="\d{4}-\d{2}-\d{2}"
+                  placeholder="YYYY-MM-DD"
                 />
               </div>
             </>
