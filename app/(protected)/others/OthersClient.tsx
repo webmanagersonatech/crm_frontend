@@ -942,7 +942,7 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                 title="Create Lead"
                 message={`Create lead for "${selected?.name}"?`}
                 onConfirm={handleCreateLead}
-                onCancel={() => setConfirmOpen(false)}
+                onCancel={() => setLeadConfirmOpen(false)}
             />
 
 
