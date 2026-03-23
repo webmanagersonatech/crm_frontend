@@ -705,7 +705,7 @@ export default function ReportsPage() {
     if (columnVisibilityreport.createdBy) {
       obj.CreatedBy = lead.creator
         ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`.trim()
-        : "-";
+        : "Website";
     }
 
     if (columnVisibilityreport.status) {
@@ -969,7 +969,7 @@ export default function ReportsPage() {
       render: (lead: any) =>
         lead.creator
           ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
-          : "—",
+          : "Website",
     },
     {
       header: "Duplicate",
