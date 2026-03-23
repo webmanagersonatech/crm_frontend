@@ -1471,7 +1471,8 @@ export default function AddApplicationForm({
                             {section.fields.map((f: any) => (
                                 <div
                                     key={f.fieldName}
-                                    className="flex flex-col relative border rounded p-2"
+                                    className={`flex flex-col relative border rounded p-2 ${f.type === "declaration" ? "col-span-1 sm:col-span-2 lg:col-span-3" : ""
+                                        }`}
                                 >
                                     {/*  REMOVE BUTTON (only for manually added fields) */}
                                     {f.isCustom && (
