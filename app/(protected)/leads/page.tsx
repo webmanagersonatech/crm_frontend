@@ -207,80 +207,62 @@ export default function LeadsPage() {
     })),
     []);
 
-  // Load states based on selected country
   const loadStates = useCallback(async (inputValue: string) => {
-    if (selectedCountry) {
-      const country = Country.getAllCountries().find(
-        c => c.name === selectedCountry
+    let countryName = selectedCountry || "India";
+
+    const country = Country.getAllCountries().find(
+      c => c.name === countryName
+    );
+
+    if (country) {
+      const states = State.getStatesOfCountry(country.isoCode);
+
+      return states
+        .filter((s) =>
+          s.name.toLowerCase().includes(inputValue.toLowerCase())
+        )
+        .slice(0, 200)
+        .map((s) => ({
+          value: s.name,
+          label: s.name,
+        }));
+    }
+
+    return [];
+  }, [selectedCountry]);
+
+  const loadCities = useCallback(async (inputValue: string) => {
+    let countryName = selectedCountry || "India";
+    let stateName = selectedState || "Tamil Nadu";
+
+    const country = Country.getAllCountries().find(
+      c => c.name === countryName
+    );
+
+    if (country) {
+      const state = State.getStatesOfCountry(country.isoCode).find(
+        s => s.name === stateName
       );
 
-      if (country) {
-        const states = State.getStatesOfCountry(country.isoCode);
-        return states
-          .filter((s) =>
-            s.name.toLowerCase().includes(inputValue.toLowerCase())
+      if (state) {
+        const cities = City.getCitiesOfState(
+          country.isoCode,
+          state.isoCode
+        );
+
+        return cities
+          .filter((c) =>
+            c.name.toLowerCase().includes(inputValue.toLowerCase())
           )
           .slice(0, 200)
-          .map((s) => ({
-            value: s.name,
-            label: s.name,
+          .map((c) => ({
+            value: c.name,
+            label: c.name,
           }));
       }
     }
 
-    // If no country selected, return all states
-    return State.getAllStates()
-      .filter((s) =>
-        s.name.toLowerCase().includes(inputValue.toLowerCase())
-      )
-      .slice(0, 200)
-      .map((s) => ({
-        value: s.name,
-        label: s.name,
-      }));
-  }, [selectedCountry]);
-
-  // Load cities based on selected country and state
-  const loadCities = useCallback(async (inputValue: string) => {
-    if (selectedState && selectedCountry) {
-      const country = Country.getAllCountries().find(
-        c => c.name === selectedCountry
-      );
-
-      if (country) {
-        const state = State.getStatesOfCountry(country.isoCode).find(
-          s => s.name === selectedState
-        );
-
-        if (state) {
-          const cities = City.getCitiesOfState(
-            country.isoCode,
-            state.isoCode
-          );
-
-          return cities
-            .filter((c) =>
-              c.name.toLowerCase().includes(inputValue.toLowerCase())
-            )
-            .slice(0, 200)
-            .map((c) => ({
-              value: c.name,
-              label: c.name,
-            }));
-        }
-      }
-    }
-
-    // If no state selected or state not found, return all cities
-    return City.getAllCities()
-      .filter((c) =>
-        c.name.toLowerCase().includes(inputValue.toLowerCase())
-      )
-      .slice(0, 200)
-      .map((c) => ({
-        value: c.name,
-        label: c.name,
-      }));
+    return [];
   }, [selectedCountry, selectedState]);
 
   const [statusUpdateData, setStatusUpdateData] = useState<{

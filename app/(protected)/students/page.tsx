@@ -243,78 +243,72 @@ export default function StudentsPage() {
 
   // Load states based on selected country
   const loadStates = useCallback(async (inputValue: string) => {
-    if (selectedCountry && selectedCountry !== "all") {
-      const country = Country.getAllCountries().find(
-        c => c.name === selectedCountry
-      );
+    const countryName =
+      selectedCountry && selectedCountry !== "all"
+        ? selectedCountry
+        : "India";
 
-      if (country) {
-        const states = State.getStatesOfCountry(country.isoCode);
-        return states
-          .filter((s) =>
-            s.name.toLowerCase().includes(inputValue.toLowerCase())
-          )
-          .slice(0, 200)
-          .map((s) => ({
-            value: s.name,
-            label: s.name,
-          }));
-      }
+    const country = Country.getAllCountries().find(
+      c => c.name === countryName
+    );
+
+    if (country) {
+      const states = State.getStatesOfCountry(country.isoCode);
+
+      return states
+        .filter((s) =>
+          s.name.toLowerCase().includes(inputValue.toLowerCase())
+        )
+        .slice(0, 200)
+        .map((s) => ({
+          value: s.name,
+          label: s.name,
+        }));
     }
 
-    // If no country selected, return all states
-    return State.getAllStates()
-      .filter((s) =>
-        s.name.toLowerCase().includes(inputValue.toLowerCase())
-      )
-      .slice(0, 200)
-      .map((s) => ({
-        value: s.name,
-        label: s.name,
-      }));
+    return [];
   }, [selectedCountry]);
 
   // Load cities based on selected country and state
   const loadCities = useCallback(async (inputValue: string) => {
-    if (selectedState && selectedState !== "all" && selectedCountry && selectedCountry !== "all") {
-      const country = Country.getAllCountries().find(
-        c => c.name === selectedCountry
+    const countryName =
+      selectedCountry && selectedCountry !== "all"
+        ? selectedCountry
+        : "India";
+
+    const stateName =
+      selectedState && selectedState !== "all"
+        ? selectedState
+        : "Tamil Nadu";
+
+    const country = Country.getAllCountries().find(
+      c => c.name === countryName
+    );
+
+    if (country) {
+      const state = State.getStatesOfCountry(country.isoCode).find(
+        s => s.name === stateName
       );
 
-      if (country) {
-        const state = State.getStatesOfCountry(country.isoCode).find(
-          s => s.name === selectedState
+      if (state) {
+        const cities = City.getCitiesOfState(
+          country.isoCode,
+          state.isoCode
         );
 
-        if (state) {
-          const cities = City.getCitiesOfState(
-            country.isoCode,
-            state.isoCode
-          );
-
-          return cities
-            .filter((c) =>
-              c.name.toLowerCase().includes(inputValue.toLowerCase())
-            )
-            .slice(0, 200)
-            .map((c) => ({
-              value: c.name,
-              label: c.name,
-            }));
-        }
+        return cities
+          .filter((c) =>
+            c.name.toLowerCase().includes(inputValue.toLowerCase())
+          )
+          .slice(0, 200)
+          .map((c) => ({
+            value: c.name,
+            label: c.name,
+          }));
       }
     }
 
-    // If no state selected or state not found, return all cities
-    return City.getAllCities()
-      .filter((c) =>
-        c.name.toLowerCase().includes(inputValue.toLowerCase())
-      )
-      .slice(0, 200)
-      .map((c) => ({
-        value: c.name,
-        label: c.name,
-      }));
+    return [];
   }, [selectedCountry, selectedState]);
 
 
