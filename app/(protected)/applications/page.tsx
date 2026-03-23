@@ -140,81 +140,63 @@ export default function ApplicationsPage() {
     { value: "program", label: "Program" },
   ];
 
-  // Update these functions to use the current state values properly with useCallback
   const loadStates = useCallback(async (inputValue: string) => {
-    // Use the current selectedCountry from state
-    if (selectedCountry) {
-      const country = Country.getAllCountries().find(
-        c => c.name === selectedCountry
+    let countryName = selectedCountry || "India";
+
+    const country = Country.getAllCountries().find(
+      c => c.name === countryName
+    );
+
+    if (country) {
+      const states = State.getStatesOfCountry(country.isoCode);
+
+      return states
+        .filter((s) =>
+          s.name.toLowerCase().includes(inputValue.toLowerCase())
+        )
+        .slice(0, 200)
+        .map((s) => ({
+          value: s.name,
+          label: s.name,
+        }));
+    }
+
+    return [];
+  }, [selectedCountry]);
+
+  const loadCities = useCallback(async (inputValue: string) => {
+    let countryName = selectedCountry || "India";
+    let stateName = selectedState || "Tamil Nadu";
+
+    const country = Country.getAllCountries().find(
+      c => c.name === countryName
+    );
+
+    if (country) {
+      const state = State.getStatesOfCountry(country.isoCode).find(
+        s => s.name === stateName
       );
 
-      if (country) {
-        const states = State.getStatesOfCountry(country.isoCode);
-        return states
-          .filter((s) =>
-            s.name.toLowerCase().includes(inputValue.toLowerCase())
+      if (state) {
+        const cities = City.getCitiesOfState(
+          country.isoCode,
+          state.isoCode
+        );
+
+        return cities
+          .filter((c) =>
+            c.name.toLowerCase().includes(inputValue.toLowerCase())
           )
           .slice(0, 200)
-          .map((s) => ({
-            value: s.name,
-            label: s.name,
+          .map((c) => ({
+            value: c.name,
+            label: c.name,
           }));
       }
     }
 
-    // If no country selected, return all states
-    return State.getAllStates()
-      .filter((s) =>
-        s.name.toLowerCase().includes(inputValue.toLowerCase())
-      )
-      .slice(0, 200)
-      .map((s) => ({
-        value: s.name,
-        label: s.name,
-      }));
-  }, [selectedCountry]); // Add dependency
-
-  const loadCities = useCallback(async (inputValue: string) => {
-    if (selectedState && selectedCountry) {
-      const country = Country.getAllCountries().find(
-        c => c.name === selectedCountry
-      );
-
-      if (country) {
-        const state = State.getStatesOfCountry(country.isoCode).find(
-          s => s.name === selectedState
-        );
-
-        if (state) {
-          const cities = City.getCitiesOfState(
-            country.isoCode,
-            state.isoCode
-          );
-
-          return cities
-            .filter((c) =>
-              c.name.toLowerCase().includes(inputValue.toLowerCase())
-            )
-            .slice(0, 200)
-            .map((c) => ({
-              value: c.name,
-              label: c.name,
-            }));
-        }
-      }
-    }
-
-    // If no state selected or state not found, return all cities
-    return City.getAllCities()
-      .filter((c) =>
-        c.name.toLowerCase().includes(inputValue.toLowerCase())
-      )
-      .slice(0, 200)
-      .map((c) => ({
-        value: c.name,
-        label: c.name,
-      }));
-  }, [selectedCountry, selectedState]); // Add dependencies
+    return [];
+  }, [selectedCountry, selectedState]);
 
   // Use useMemo for countryOptions
   const countryOptions = useMemo(() =>
@@ -1318,17 +1300,13 @@ export default function ApplicationsPage() {
                             key={`city-select-${selectedCountry}-${selectedState}`}
                             placeholder="Search Cities..."
                             cacheOptions
-                            defaultOptions
+                            defaultOptions   // ✅ this is important
                             loadOptions={loadCities}
                             isMulti
                             value={selectedCities.map((c) => ({ value: c, label: c }))}
                             onChange={(opts) => {
                               setSelectedCities(opts ? opts.map((o) => o.value) : []);
                               setCurrentPage(1);
-                            }}
-                            className="text-xs"
-                            styles={{
-                              control: (base) => ({ ...base, minHeight: '32px' })
                             }}
                           />
                         </div>

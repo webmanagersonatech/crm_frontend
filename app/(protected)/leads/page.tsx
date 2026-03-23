@@ -564,7 +564,7 @@ export default function LeadsPage() {
         if (columnVisibility.createdBy) {
           obj.CreatedBy = lead.creator
             ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`.trim()
-            : "-";
+            : "Website";
         }
 
         if (columnVisibility.status) {
@@ -687,7 +687,7 @@ export default function LeadsPage() {
       render: (lead: any) =>
         lead.creator
           ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
-          : "—",
+          : "Website",
     },
 
     columnVisibility.status && {
