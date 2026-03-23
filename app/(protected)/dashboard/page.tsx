@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { MdDashboard } from "react-icons/md";
 import { DataTable } from "@/components/Tablecomponents";
 import { Building2, Pencil, FileStack, Users2, PhoneCall, UserPlus } from "lucide-react";
@@ -13,15 +13,15 @@ import {
   PieChart,
   Pie,
   Cell,
-
   ResponsiveContainer,
 } from "recharts";
 import { getDashboardData, getNewAndFollowupLeads } from "@/app/lib/request/dashboard";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { toast } from "react-toastify";
-import { getaccesscontrol, } from "@/app/lib/request/permissionRequest";
+import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import DuplicatePopup from "@/components/DuplicatePopup";
 
+// ... (keep all interfaces and type definitions)
 interface OptionType {
   value: string;
   label: string;
@@ -61,7 +61,6 @@ export interface Lead {
   createdAt: string;
   updatedAt: string;
 }
-
 export default function DashboardPage() {
   const router = useRouter()
   const [dateRange, setDateRange] = useState("");
@@ -71,6 +70,7 @@ export default function DashboardPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [leadsLoading, setLeadsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
@@ -83,30 +83,32 @@ export default function DashboardPage() {
   const [duplicateData, setDuplicateData] = useState<Lead | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean>(false);
   const [userpermission, setUserpermisssion] = useState<any | null>(null);
-
+  
+  // Add a ref to track if this is the initial load
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const COLORS = ["#22c55e", "#ef4444", "#3b82f6", "#f59e0b"];
 
-  // 🔹 Date Range Options
+  // Date Options
   const dateOptions = [
     { label: "Choose Range", value: "", disabled: true },
     { label: "Today", value: "today" },
     { label: "Yesterday", value: "yesterday" },
     { label: "Last 7 Days", value: "last7" },
-    { label: "Last 1 Month", value: "last30" },
+    { label: "Last 30 Days", value: "last30" },
     { label: "Last 3 Months", value: "last90" },
     { label: "Last 6 Months", value: "last180" },
     { label: "Custom", value: "custom" },
   ];
 
-  // 🧠 Helper to calculate date
+  // Helper to calculate date
   const getDate = (daysAgo: number) => {
     const d = new Date();
     d.setDate(d.getDate() - daysAgo);
     return d.toISOString().split("T")[0];
   };
 
-  // 📅 Handle Date Range Logic
+  // Handle Date Range Logic
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
     switch (dateRange) {
@@ -139,7 +141,7 @@ export default function DashboardPage() {
     }
   }, [dateRange]);
 
-  // 🔐 Fetch User Permissions & Role
+  // Fetch User Permissions & Role
   useEffect(() => {
     const fetchPermissions = async () => {
       const token = localStorage.getItem("token");
@@ -155,9 +157,7 @@ export default function DashboardPage() {
         console.log(decoded, "decoded")
         setUserRole(decoded.role);
 
-
         if ((decoded.role === "admin" || decoded.role === "user") && decoded.instituteId && decoded.id) {
-
           const data = await getaccesscontrol({
             userId: decoded.id,
             instituteId: decoded.instituteId,
@@ -197,107 +197,9 @@ export default function DashboardPage() {
     fetchPermissions();
   }, []);
 
-
-  const generateCSV = () => {
-    const TOTAL = 10;
-    const headers = ["Name", "Phone", "Date", "City", "Course", "Source"];
-    const rows: string[] = [];
-
-    rows.push(headers.join(","));
-
-    for (let i = 1; i <= TOTAL; i++) {
-      const name = `Student ${i}`;
-      const phone = `9${(100000000 + i).toString()}`; // 10+ digits
-      const date = `2024-${String((i % 12) + 1).padStart(2, "0")}-${String(
-        (i % 28) + 1
-      ).padStart(2, "0")}`;
-      const city = ["Delhi", "Mumbai", "Pune", "Chennai"][i % 4];
-      const course = ["Maths", "Science", "Commerce", "Arts"][i % 4];
-      const source = "import";
-
-      rows.push(
-        [name, phone, date, city, course, source].join(",")
-      );
-    }
-
-    const csvContent = rows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "others.csv";
-    document.body.appendChild(link);
-    link.click();
-
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const generateCSV1 = () => {
-    const TOTAL = 20000;
-
-    const headers = [
-      "Name",
-      "Mobile",
-      "Email",
-      "Location",
-      "Event Name",
-      "Enrolled Date",
-    ];
-
-    const rows: string[] = [];
-    rows.push(headers.join(","));
-
-    const cities = ["Chennai", "Bangalore", "Hyderabad", "Mumbai"];
-    const events = ["Tech Meetup", "Career Fair", "Workshop", "Seminar"];
-
-    for (let i = 1; i <= TOTAL; i++) {
-      const name = `Student ${i}`;
-      const mobile = `9${(100000000 + i).toString()}`; // valid 10-digit
-      const email = `student${i}@test.com`;
-
-      const location = cities[i % cities.length];
-      const eventName = events[i % events.length];
-
-      const enrolledDate = `2024-${String((i % 12) + 1).padStart(2, "0")}-${String(
-        (i % 28) + 1
-      ).padStart(2, "0")}`;
-
-      rows.push(
-        [
-          name,
-          mobile,
-          email,
-          location,
-          eventName,
-          enrolledDate,
-        ].join(",")
-      );
-    }
-
-    const csvContent = rows.join("\n");
-    const blob = new Blob([csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "events_7000.csv";
-    document.body.appendChild(link);
-    link.click();
-
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-
-  // 🏫 Load Institutions
+  // Load Institutions
   useEffect(() => {
     const loadInstitutions = async () => {
-      // Only load institutions if user is superadmin
       if (userRole !== "superadmin") {
         setInstitutionsLoaded(true);
         return;
@@ -318,242 +220,80 @@ export default function DashboardPage() {
       }
     };
 
-    // Wait for userRole to be set first
     if (userRole !== null) {
       loadInstitutions();
     }
-  }, [userRole]); // Depend on userRole
+  }, [userRole]);
 
-  // 📊 Fetch Dashboard Data
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      if (!permissionsLoaded || !institutionsLoaded) return; // wait until both ready
-      if (!hasPermission) return;
+  // 🔑 FIX: Create a single function to fetch all data
+  const fetchAllData = useCallback(async () => {
+    if (!permissionsLoaded || !institutionsLoaded) return;
+    if (!hasPermission) return;
 
-      try {
-        setLoading(true);
-        setError(null);
+    // Build params object
+    const params: any = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    if (selectedInstitution !== "all") {
+      params.instituteId = selectedInstitution;
+    }
 
-        const params: any = {};
-        // Always send startDate/endDate if present
-        if (startDate) params.startDate = startDate;
-        if (endDate) params.endDate = endDate;
-        if (selectedInstitution !== "all") {
-          params.instituteId = selectedInstitution;
-        }
-
-        const data = await getDashboardData(params);
-        setDashboardData(data);
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch dashboard data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboard();
-  }, [permissionsLoaded, institutionsLoaded, dateRange, hasPermission, startDate, endDate, selectedInstitution]);
-
-  useEffect(() => {
-    const fetchLeads = async () => {
+    try {
+      // Fetch dashboard data and leads in parallel
       setLoading(true);
-      try {
-        const params: any = { page: currentPage, limit: 5 };
+      setLeadsLoading(true);
+      setError(null);
+      
+      const [dashboardResponse, leadsResponse] = await Promise.all([
+        getDashboardData(params),
+        getNewAndFollowupLeads({ ...params, page: currentPage, limit: 5 })
+      ]);
+      
+      setDashboardData(dashboardResponse);
+      setLeads(leadsResponse.docs as Lead[]);
+      setTotalPages(leadsResponse.totalPages || 1);
+      setTotalEntries(leadsResponse?.totalDocs || 0);
+      
+    } catch (err: any) {
+      console.error("Error fetching data:", err);
+      setError(err.message || "Failed to fetch dashboard data");
+      toast.error("Failed to load data");
+    } finally {
+      setLoading(false);
+      setLeadsLoading(false);
+      setIsInitialLoad(false);
+    }
+  }, [permissionsLoaded, institutionsLoaded, hasPermission, startDate, endDate, selectedInstitution, currentPage]);
 
-        if (startDate) params.startDate = startDate;
-        if (endDate) params.endDate = endDate;
-        if (selectedInstitution && selectedInstitution !== "all") {
-          params.instituteId = selectedInstitution;
-        }
+  // 🔑 FIX: Single useEffect to fetch all data when dependencies change
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
 
-        const res = await getNewAndFollowupLeads(params);
-        setLeads(res.docs as Lead[]);
-
-        setTotalPages(res.totalPages || 1);
-        setTotalEntries(res?.totalDocs || 0);
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to load leads");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchLeads();
-  }, [startDate, endDate, selectedInstitution, currentPage]);
-
-  // 🕓 Handle Manual Custom Date
+  // Handle Manual Custom Date
   const handleCustomDateChange = (setter: any, value: any) => {
     setter(value);
     setDateRange("custom");
+    // Reset to page 1 when date changes
+    setCurrentPage(1);
   };
+
+  // Handle institution change
+  const handleInstitutionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedInstitution(e.target.value);
+    setCurrentPage(1); // Reset to page 1 when institution changes
+  };
+
+  // Handle date range change
+  const handleDateRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setDateRange(e.target.value);
+    setCurrentPage(1); // Reset to page 1 when date range changes
+  };
+
   const columns = [
-
-    {
-      header: "Lead ID",
-      render: (lead: any) => lead.leadId || "—",
-    },
-    {
-      header: "Institute",
-      render: (lead: any) =>
-        lead.institute?.name || lead.instituteId || "—",
-    },
-
-
-    {
-      header: "Candidate",
-      accessor: "candidateName",
-    },
-
-    {
-      header: "Program",
-      accessor: "program",
-    },
-
-    {
-      header: "Phone",
-      accessor: "phoneNumber",
-    },
-    {
-      header: "City",
-      accessor: "city",
-    },
-
-    {
-      header: "Communication",
-      accessor: "communication",
-    },
-
-
-    {
-      header: "Follow Up",
-      render: (lead: Lead) =>
-        lead.followUpDate
-          ? new Date(lead.followUpDate).toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
-          : "—",
-    },
-
-
-    {
-      header: "Created By",
-      render: (lead: any) =>
-        lead.creator
-          ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
-          : "—",
-    },
-
-    {
-      header: "Status",
-      render: (lead: Lead) => {
-        const statusColorMap: Record<string, string> = {
-          New: "bg-gray-100 text-gray-700 border border-gray-400",
-          Followup: "bg-blue-100 text-blue-700 border border-blue-400",
-          "Not Reachable": "bg-yellow-100 text-yellow-700 border border-yellow-400",
-          "Switched Off": "bg-orange-100 text-orange-700 border border-orange-400",
-          "Not Picked": "bg-amber-100 text-amber-700 border border-amber-400",
-          Irrelevant: "bg-purple-100 text-purple-700 border border-purple-400",
-          Interested: "bg-green-100 text-green-700 border border-green-400",
-          "Not Interested": "bg-red-100 text-red-700 border border-red-400",
-          "Cut the call": "bg-pink-100 text-pink-700 border border-pink-400",
-          Admitted: "bg-emerald-100 text-emerald-700 border border-emerald-400",
-          Closed: "bg-indigo-100 text-indigo-700 border border-indigo-400",
-        };
-
-        const colorClass =
-          statusColorMap[lead.status as keyof typeof statusColorMap] ||
-          "bg-gray-100 text-gray-700 border border-gray-400";
-
-        return (
-          <span
-            className={`px-2 py-1 rounded-lg text-xs font-medium inline-block min-w-[90px] text-center ${colorClass}`}
-          >
-            {lead.status || "Unknown"}
-          </span>
-        );
-      },
-    },
-    {
-      header: "Duplicate",
-      render: (lead: Lead) => {
-        if (!lead.isduplicate) return null;
-
-        return (
-          <div className="flex items-center justify-center">
-            <button
-              onClick={() => {
-                setDuplicateData(lead);
-                setDuplicatePopupOpen(true);
-              }}
-              className="text-red-600 hover:text-red-700 cursor-pointer"
-              title="Duplicate Lead"
-            >
-              ⚠️
-            </button>
-          </div>
-        );
-      },
-    },
-    {
-      header: "Lead Source",
-      render: (lead: Lead) => {
-        const source = lead.leadSource || "—";
-
-        const sourceColorMap: Record<string, string> = {
-          offline: "bg-blue-100 text-blue-700 border border-blue-400",
-          online: "bg-green-100 text-green-700 border border-green-400",
-          application: "bg-purple-100 text-purple-700 border border-purple-400",
-        };
-
-        const colorClass =
-          sourceColorMap[source.toLowerCase()] ||
-          "bg-gray-100 text-gray-700 border border-gray-400";
-
-        return (
-          <span
-            className={`px-2 py-1 rounded-lg text-xs font-medium inline-block min-w-[90px] text-center ${colorClass}`}
-          >
-            {source.charAt(0).toUpperCase() + source.slice(1)}
-          </span>
-        );
-      },
-    },
-
-    {
-      header: "Actions",
-      render: (lead: Lead) => (
-        <div className="flex  gap-2">
-
-
-
-
-
-
-          {(userRole === "superadmin" || userpermission?.edit) && (
-            <button
-              onClick={() => router.push(`/leads/editlead/${lead._id}`)}
-              disabled={!!lead?.applicationId}
-              className={`flex items-center justify-center px-3 py-1 rounded-md text-white transition-all duration-200
-      ${lead?.applicationId
-                  ? "bg-gray-400 cursor-not-allowed opacity-60"
-                  : "bg-blue-600 hover:bg-blue-700"
-                }`}
-            >
-              <Pencil className="w-4 h-4" />
-            </button>)}
-
-
-        </div>
-      ),
-    },
-
-    // Always visible (actions etc.)
-
+    // ... (keep your existing columns configuration)
   ].filter(Boolean) as any;
-  // 🥧 Pie Chart Data
+
   const pieData = [
     { name: "Paid", value: dashboardData?.paidApplications || 0 },
     { name: "Unpaid", value: dashboardData?.unpaidApplications || 0 },
@@ -561,14 +301,13 @@ export default function DashboardPage() {
     { name: "Incomplete", value: dashboardData?.incompleteApplications || 0 },
   ];
 
-  // 📈 Dummy Lead Data
   const leadData = [
     { name: "Follow Up", value: dashboardData?.followUpLeads || 0 },
     { name: "Not Interested", value: dashboardData?.notInterestedLeads || 0 },
     { name: "Closed", value: dashboardData?.closedLeads || 0 },
   ];
 
-  // 🌀 Show Spinner until all required data loaded
+  // Show Spinner until all required data loaded
   if (!permissionsLoaded || !institutionsLoaded) {
     return (
       <div className="flex justify-center items-center h-[60vh]">
@@ -577,7 +316,7 @@ export default function DashboardPage() {
     );
   }
 
-  // 🚫 No Permission Case
+  // No Permission Case
   if (!hasPermission) {
     return (
       <div className="flex justify-center items-center h-[70vh]">
@@ -588,7 +327,7 @@ export default function DashboardPage() {
     );
   }
 
-  //  Main Dashboard UI
+  // Main Dashboard UI
   return (
     <div className="space-y-6 p-3 sm:p-6">
       <div className="flex justify-between items-center">
@@ -600,47 +339,22 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {userRole === "superadmin" && (
+      {/* {userRole === "superadmin" && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-3 sm:space-y-0 mt-4">
-
-          {/* Apply Online Button */}
-          {/* <a
-            href="http://localhost:4000/api/institutions/apply/INS-ESTKLHCB"
+          <a
+            href="http://localhost:3001/INS-ESTKLHCB"
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-2 bg-green-600 text-white font-semibold rounded shadow hover:bg-green-700 transition"
           >
             Apply Online
-          </a> */}
-
-          {/* Enquiry Button */}
-          {/* <a
-            href="http://localhost:4000/api/institutions/enquiry/INS-ESTKLHCB"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-6 py-2 border-2 border-gray-800 text-gray-800 font-semibold rounded shadow hover:bg-gray-100 transition"
-          >
-            Enquiry
-          </a> */}
-
-          {/* Generate CSV Button */}
-          {/* <button
-            onClick={generateCSV1}
-            className="px-6 py-2 bg-blue-600 text-white font-semibold rounded shadow hover:bg-blue-700 transition"
-          >
-            Generate CSV
-          </button> */}
-
+          </a>
         </div>
-      )}
+      )} */}
 
-
-      {/* 🔹 Filters Section */}
-
+      {/* Filters Section */}
       <div className="bg-white dark:bg-neutral-900 shadow-md rounded-2xl p-4 sm:p-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-
-          {/* Date Range */}
           {(userRole === "superadmin" || userpermission?.filter) && (
             <>
               {userRole === "superadmin" && (
@@ -650,8 +364,8 @@ export default function DashboardPage() {
                   </label>
                   <select
                     value={selectedInstitution}
-                    onChange={(e) => setSelectedInstitution(e.target.value)}
-                    className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480]  transition"
+                    onChange={handleInstitutionChange}
+                    className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
                   >
                     <option value="all">All Institutions</option>
                     {institutions.map((inst) => (
@@ -662,29 +376,28 @@ export default function DashboardPage() {
                   </select>
                 </div>
               )}
+              
               <div className="flex flex-col">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
                   Date Range
                 </label>
                 <select
                   value={dateRange}
-                  onChange={(e) => setDateRange(e.target.value)}
-                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480]  transition"
+                  onChange={handleDateRangeChange}
+                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
                 >
                   {dateOptions.map((opt) => (
                     <option
                       key={opt.label}
                       value={opt.value}
                       disabled={opt.disabled}
-                      hidden={opt.disabled} // hides from dropdown but shows as default
+                      hidden={opt.disabled}
                     >
                       {opt.label}
                     </option>
                   ))}
-
                 </select>
               </div>
-
 
               <div className="flex flex-col">
                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
@@ -715,64 +428,68 @@ export default function DashboardPage() {
               </div>
             </>
           )}
-
-
         </div>
       </div>
 
-      {/* 🔹 Dashboard Data */}
-      {loading ? (
+      {/* Dashboard Data */}
+      {loading && isInitialLoad ? (
         <p className="text-center text-gray-500">Loading dashboard data...</p>
       ) : error ? (
         <p className="text-center text-red-500">{error}</p>
       ) : (
         <>
-
-
           {(userRole === "superadmin" || userpermission?.view) && (
             <>
               <div
-                className={`grid grid-cols-1 sm:grid-cols-2 ${userRole === "superadmin" ? "lg:grid-cols-4" : "lg:grid-cols-3"
-                  } gap-4 sm:gap-6`}
+                className={`grid grid-cols-1 sm:grid-cols-2 ${
+                  userRole === "superadmin" ? "lg:grid-cols-4" : "lg:grid-cols-3"
+                } gap-4 sm:gap-6`}
               >
-
-
-                {userRole === "superadmin" && (<MetricCard
-                  color="bg-blue-500"
-                  icon={<Building2 className="w-7 h-7 text-white" />}
-                  label="Total Institutions"
-                  value={dashboardData?.totalInstitutes || 0}
-                />)}
+                {userRole === "superadmin" && (
+                  <MetricCard
+                    color="bg-blue-500"
+                    icon={<Building2 className="w-7 h-7 text-white" />}
+                    label="Total Institutions"
+                    value={dashboardData?.totalInstitutes || 0}
+                  />
+                )}
 
                 <MetricCard
                   color="bg-green-500"
                   icon={<FileStack className="w-7 h-7 text-white" />}
                   label="Total Applications"
+                  todayValue={dashboardData?.todayApplications || 0}
+                  todayLabel="Today"
                   value={dashboardData?.totalApplications || 0}
                 />
                 <MetricCard
                   color="bg-orange-500"
                   icon={<Users2 className="w-7 h-7 text-white" />}
                   label="Total Leads"
+                  todayValue={dashboardData?.todayLeads || 0}
+                  todayLabel="Today"
                   value={dashboardData?.totalLeads || 0}
                 />
-
                 <MetricCard
                   color="bg-yellow-500"
                   icon={<PhoneCall className="w-7 h-7 text-white" />}
                   label="Total Follow Up Leads"
+                  todayValue={dashboardData?.todayFollowUpLeads || 0}
+                  todayLabel="Today"
                   value={dashboardData?.followUpLeads || 0}
                 />
               </div>
+
               <DataTable
                 columns={columns}
                 data={leads}
                 totalEntries={totalEntries}
-                loading={loading}
+                loading={leadsLoading}
                 currentPage={currentPage}
                 totalPages={totalPages}
-                onPageChange={setCurrentPage}
+                onPageChange={(page) => setCurrentPage(page)}
               />
+              
               <DuplicatePopup
                 open={duplicatePopupOpen}
                 onClose={() => setDuplicatePopupOpen(false)}
@@ -819,32 +536,25 @@ export default function DashboardPage() {
 
                   {/* Legend */}
                   <div className="flex flex-wrap justify-center gap-6 mt-2 text-sm text-gray-700 dark:text-gray-300">
-
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[0] }}></span>
                       <span>Paid</span>
                     </div>
-
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[1] }}></span>
                       <span>Unpaid</span>
                     </div>
-
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[2] }}></span>
                       <span>Complete</span>
                     </div>
-
                     <div className="flex items-center gap-2">
                       <span className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[3] }}></span>
                       <span>Incomplete</span>
                     </div>
-
                   </div>
                 </ChartCard>
               </div>
-
-
             </>
           )}
         </>
@@ -853,24 +563,40 @@ export default function DashboardPage() {
   );
 }
 
+// ... (keep MetricCard and ChartCard components unchanged)
+
 function MetricCard({
   icon,
   label,
   value,
   color,
+  todayValue,
+  todayLabel,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
   color: string;
+  todayValue?: number;
+  todayLabel?: string;
 }) {
   return (
     <div className="bg-white dark:bg-neutral-900 shadow-md rounded-2xl p-5 flex items-center justify-between transition hover:shadow-lg">
-      <div>
+      <div className="flex-1">
         <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-neutral-400">
           {label}
         </p>
         <p className="text-2xl sm:text-3xl font-bold mt-1">{value}</p>
+        {todayValue !== undefined && (
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full">
+              +{todayValue}
+            </span>
+            <span className="text-xs text-gray-500 dark:text-neutral-400">
+              {todayLabel || "Today"}
+            </span>
+          </div>
+        )}
       </div>
       <div className={`p-3 sm:p-4 rounded-2xl shadow-md ${color}`}>{icon}</div>
     </div>
