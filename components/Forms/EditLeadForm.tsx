@@ -26,6 +26,7 @@ export default function EditLeadPage() {
   const [stateOptions, setStateOptions] = useState<OptionType[]>([]);
   const [cityOptions, setCityOptions] = useState<OptionType[]>([]);
   const [selectedInstitute, setSelectedInstitute] = useState<string>("");
+  const [applicantAge, setApplicantAge] = useState<number>(18);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState<Partial<Lead>>({
     instituteId: "",
@@ -65,7 +66,7 @@ export default function EditLeadPage() {
     { value: "Phone", label: "Phone" },
     { value: "Social Media", label: "Social Media" },
   ];
-  const isAtLeast18YearsOld = (dob: string) => {
+  const isValidAge = (dob: string, minAge: number) => {
     const birthDate = new Date(dob);
     const today = new Date();
 
@@ -79,7 +80,7 @@ export default function EditLeadPage() {
       age--;
     }
 
-    return age >= 18;
+    return age >= minAge;
   };
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -94,8 +95,18 @@ export default function EditLeadPage() {
     } else if (!/^[0-9]{10}$/.test(form.phoneNumber)) {
       newErrors.phoneNumber = "Enter valid 10 digit phone number";
     }
-    if (!form.dateOfBirth)
+    if (!form.dateOfBirth) {
       newErrors.dateOfBirth = "Date of birth is required";
+    } else {
+      const today = new Date();
+      const dobDate = new Date(form.dateOfBirth);
+
+      if (dobDate > today) {
+        newErrors.dateOfBirth = "Future date is not allowed";
+      } else if (!isValidAge(form.dateOfBirth, applicantAge)) {
+        newErrors.dateOfBirth = `Must be at least ${applicantAge} years old`;
+      }
+    }
     if (!form.country)
       newErrors.country = "Country is required";
     if (!form.state)
@@ -110,8 +121,8 @@ export default function EditLeadPage() {
       newErrors.followUpDate = "Follow up date is required";
     }
 
-    if (form.dateOfBirth && !isAtLeast18YearsOld(form.dateOfBirth)) {
-      newErrors.dateOfBirth = "Must be 18+ years old";
+    if (form.dateOfBirth && !isValidAge(form.dateOfBirth, applicantAge)) {
+      newErrors.dateOfBirth = `Must be at least ${applicantAge} years old`;
     }
 
     setErrors(newErrors);
@@ -195,6 +206,10 @@ export default function EditLeadPage() {
     const loadPrograms = async () => {
       try {
         const settings = await getSettingsByInstitute(selectedInstitute);
+        if (settings.applicantAge) {
+          setApplicantAge(settings.applicantAge);
+        }
+
         if (settings.courses?.length) {
           setProgramOptions(settings.courses.map((c: string) => ({ value: c, label: c })));
         } else {
@@ -401,8 +416,14 @@ export default function EditLeadPage() {
             name="dateOfBirth"
             value={form.dateOfBirth || ""}
             onChange={handleChange}
-            className={inputClass}
+            className={`${inputClass} ${errors.dateOfBirth ? "border-red-500 focus:ring-red-500" : ""}`}
           />
+
+          {errors.dateOfBirth && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.dateOfBirth}
+            </span>
+          )}
         </div>
 
         {/* Country */}

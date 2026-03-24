@@ -41,7 +41,7 @@ export default function CreateLeadForm({
     const [showInstituteDropdown, setShowInstituteDropdown] = useState(false);
     const [selectedInstitute, setSelectedInstitute] = useState<string>("");
     const [errors, setErrors] = useState<Record<string, string>>({});
-
+    const [applicantAge, setApplicantAge] = useState<number>(18);
 
 
     const validateForm = () => {
@@ -60,8 +60,8 @@ export default function CreateLeadForm({
 
         if (!form.dateOfBirth) {
             newErrors.dateOfBirth = "Date of birth is required";
-        } else if (!isAtLeast18YearsOld(form.dateOfBirth)) {
-            newErrors.dateOfBirth = "Must be 18+ years old";
+        } else if (!isValidAge(form.dateOfBirth, applicantAge)) {
+            newErrors.dateOfBirth = `Must be at least ${applicantAge} years old`;
         }
 
         if (!form.country) newErrors.country = "Country is required";
@@ -236,7 +236,7 @@ export default function CreateLeadForm({
 
 
 
-    const isAtLeast18YearsOld = (dob: string) => {
+    const isValidAge = (dob: string, minAge: number) => {
         const birthDate = new Date(dob);
         const today = new Date();
 
@@ -250,7 +250,7 @@ export default function CreateLeadForm({
             age--;
         }
 
-        return age >= 18;
+        return age >= minAge;
     };
 
 
@@ -294,6 +294,10 @@ export default function CreateLeadForm({
         const loadPrograms = async () => {
             try {
                 const settings = await getSettingsByInstitute(selectedInstitute);
+
+                if (settings.applicantAge) {
+                    setApplicantAge(settings.applicantAge);
+                }
 
                 if (settings.courses && settings.courses.length) {
                     setProgramOptions(

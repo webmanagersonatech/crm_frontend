@@ -44,78 +44,128 @@ export default function ApplicationDetailsPage() {
     // const BASE_URL = "http://localhost:4000/uploads/";
     const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
 
+    // Sections that should use full width layout
+    const fullWidthSections = ["Declaration", "Enclosures"];
+
     const renderSubSections = (sections: any[]) =>
-        sections.map((section: any) => (
-            <div key={section.sectionName} className="mb-6 border rounded-md overflow-hidden">
-                {/* BLUE HEADER */}
-                <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
-                    {section.sectionName}
-                </div>
+        sections.map((section: any) => {
+            const isFullWidthSection = fullWidthSections.includes(section.sectionName);
 
-                {/* CONTENT */}
-                <div className="p-3">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm print:grid-cols-3 print:gap-1">
-                        {Object.entries(section.fields as Record<string, any>).map(([key, rawValue]) => {
-                            let value = rawValue;
+            return (
+                <div key={section.sectionName} className="mb-6 border rounded-md overflow-hidden">
+                    {/* BLUE HEADER */}
+                    <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
+                        {section.sectionName}
+                    </div>
 
-                            if (Array.isArray(value)) {
-                                value = value.join(", ");
-                            }
+                    {/* CONTENT */}
+                    <div className="p-3 overflow-x-auto">
+                        {isFullWidthSection ? (
+                            // Full width layout for Declaration and Enclosures
+                            <div className="space-y-2 text-sm">
+                                {Object.entries(section.fields as Record<string, any>).map(([key, rawValue]) => {
+                                    let value = rawValue;
 
-                            const isImage =
-                                typeof value === "string" &&
-                                /\.(png|jpe?g|webp|gif)$/i.test(value);
+                                    if (Array.isArray(value)) {
+                                        value = value.join(", ");
+                                    }
 
-                            const isDocument =
-                                typeof value === "string" &&
-                                /\.(pdf|doc|docx|xls|xlsx)$/i.test(value);
+                                    return (
+                                        <div
+                                            key={key}
+                                            className="border border-gray-300 overflow-hidden"
+                                        >
+                                            {/* KEY */}
+                                            <div className="font-semibold text-gray-800 bg-gray-100 px-3 py-2 border-b border-gray-300">
+                                                {key.replace(/_/g, " ")}
+                                            </div>
 
-                            return (
-                                <div
-                                    key={key}
-                                    className="grid grid-cols-[160px_1fr] border border-gray-300 overflow-hidden break-inside-avoid print:grid-cols-[160px_1fr] print:border print:border-gray-300"
-                                >
-                                    {/* KEY - Fixed width column */}
-                                    <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
-                                        {key.replace(/_/g, " ")}
-                                    </span>
+                                            {/* VALUE */}
+                                            <div className="text-gray-700 px-3 py-2 whitespace-pre-wrap break-words">
+                                                {value !== undefined && value !== null && value !== "" ? (
+                                                    typeof value === "string" ? (
+                                                        <div className="whitespace-pre-wrap">
+                                                            {value.split('\n').map((line, i) => (
+                                                                <div key={i}>{line || <br />}</div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        String(value)
+                                                    )
+                                                ) : (
+                                                    ""
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            // Original grid layout for other sections
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm print:grid-cols-3 print:gap-1 min-w-[300px] md:min-w-0">
+                                {Object.entries(section.fields as Record<string, any>).map(([key, rawValue]) => {
+                                    let value = rawValue;
 
-                                    {/* VALUE - Flexible column */}
-                                    <span className="text-gray-700 px-2 py-1 whitespace-pre-wrap break-words">
-                                        {isImage ? (
-                                            <a
-                                                href={`${BASE_URL}${value}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                <img
-                                                    src={`${BASE_URL}${value}`}
-                                                    alt={key}
-                                                    className="max-h-[60px] max-w-[60px] object-contain cursor-pointer hover:opacity-80 transition"
-                                                />
-                                            </a>
-                                        ) : isDocument ? (
-                                            <a
-                                                href={`${BASE_URL}${value}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-blue-600 underline break-all"
-                                            >
-                                                {value}
-                                            </a>
-                                        ) : value !== undefined && value !== null && value !== "" ? (
-                                            String(value)
-                                        ) : (
-                                            ""
-                                        )}
-                                    </span>
-                                </div>
-                            );
-                        })}
+                                    if (Array.isArray(value)) {
+                                        value = value.join(", ");
+                                    }
+
+                                    const isImage =
+                                        typeof value === "string" &&
+                                        /\.(png|jpe?g|webp|gif)$/i.test(value);
+
+                                    const isDocument =
+                                        typeof value === "string" &&
+                                        /\.(pdf|doc|docx|xls|xlsx)$/i.test(value);
+
+                                    return (
+                                        <div
+                                            key={key}
+                                            className="grid grid-cols-[160px_1fr] border border-gray-300 overflow-hidden break-inside-avoid print:grid-cols-[160px_1fr] print:border print:border-gray-300"
+                                        >
+                                            {/* KEY - Fixed width column */}
+                                            <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
+                                                {key.replace(/_/g, " ")}
+                                            </span>
+
+                                            {/* VALUE - Flexible column */}
+                                            <span className="text-gray-700 px-2 py-1 whitespace-pre-wrap break-words">
+                                                {isImage ? (
+                                                    <a
+                                                        href={`${BASE_URL}${value}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    >
+                                                        <img
+                                                            src={`${BASE_URL}${value}`}
+                                                            alt={key}
+                                                            className="max-h-[60px] max-w-[60px] object-contain cursor-pointer hover:opacity-80 transition"
+                                                        />
+                                                    </a>
+                                                ) : isDocument ? (
+                                                    <a
+                                                        href={`${BASE_URL}${value}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-600 underline break-all"
+                                                    >
+                                                        {value}
+                                                    </a>
+                                                ) : value !== undefined && value !== null && value !== "" ? (
+                                                    String(value)
+                                                ) : (
+                                                    ""
+                                                )}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 </div>
-            </div>
-        ));
+            );
+        });
 
     return (
         <div className="p-6">
@@ -134,10 +184,10 @@ export default function ApplicationDetailsPage() {
             {/* PRINT AREA */}
             <div
                 ref={printRef}
-                className="a4-page bg-white shadow-xl rounded-lg p-10 border border-gray-300"
+                className="a4-page bg-white shadow-xl rounded-lg p-4 md:p-10 border border-gray-300 overflow-x-auto"
             >
                 {/* HEADER */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
                     <img
                         src={data?.instituteLogo || "/logo.png"}
                         alt="Logo"
@@ -145,8 +195,8 @@ export default function ApplicationDetailsPage() {
                     />
 
                     <h1 className="text-xl font-bold text-center flex-1">
-                        APPLICATION FORM <span >| </span>
-                        <span >
+                        APPLICATION FORM <span>| </span>
+                        <span>
                             {data?.academicYear}
                         </span>
                     </h1>
@@ -160,14 +210,22 @@ export default function ApplicationDetailsPage() {
                 {/* PERSONAL DETAILS */}
                 <section className="mb-6">
                     <h2 className="section-title">PERSONAL DETAILS</h2>
-                    {renderSubSections(data?.personalDetails || [])}
+                    {data?.personalDetails && data.personalDetails.length > 0 ? (
+                        renderSubSections(data.personalDetails)
+                    ) : (
+                        <div className="text-center text-gray-500 py-8 border rounded-md">
+                            No personal details available
+                        </div>
+                    )}
                 </section>
 
-                {/* EDUCATION DETAILS */}
-                <section className="mb-6">
-                    <h2 className="section-title">EDUCATION DETAILS</h2>
-                    {renderSubSections(data?.educationDetails || [])}
-                </section>
+                {/* EDUCATION DETAILS - Only show section if there are education details */}
+                {data?.educationDetails && data.educationDetails.length > 0 && (
+                    <section className="mb-6">
+                        <h2 className="section-title">EDUCATION DETAILS</h2>
+                        {renderSubSections(data.educationDetails)}
+                    </section>
+                )}
 
                 {/* PROGRAM DETAILS */}
                 <section className="mb-8 border rounded-md overflow-hidden">
@@ -175,8 +233,8 @@ export default function ApplicationDetailsPage() {
                         Program Details
                     </div>
 
-                    <div className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm print:grid-cols-3 print:gap-1">
+                    <div className="p-4 overflow-x-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm print:grid-cols-3 print:gap-1 min-w-[300px] md:min-w-0">
                             {/* Program */}
                             <div className="grid grid-cols-[160px_1fr] border border-gray-300 overflow-hidden print:grid-cols-[160px_1fr] print:border print:border-gray-300">
                                 <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
@@ -221,12 +279,6 @@ export default function ApplicationDetailsPage() {
                         <p className="text-sm text-gray-700">Admin Verification</p>
                     </div>
                 </div>
-
-
-                {/* FOOTER */}
-                {/* <div className="mt-10 text-center text-xs text-gray-500">
-                    © {new Date().getFullYear()}  Hika — Official Application Form
-                </div> */}
             </div>
 
             {/* PRINT STYLES */}
@@ -255,6 +307,7 @@ export default function ApplicationDetailsPage() {
             box-shadow: none !important;
             padding: 30px !important;
             background: white !important;
+            overflow: visible !important;
         }
         
         /* Use Grid for print */
@@ -297,6 +350,38 @@ export default function ApplicationDetailsPage() {
         /* Ensure text doesn't overflow */
         .break-words {
             word-break: break-word !important;
+        }
+        
+        /* Remove scrollbars in print */
+        .overflow-x-auto {
+            overflow: visible !important;
+        }
+    }
+    
+    /* Mobile styles - enable horizontal scroll */
+    @media (max-width: 768px) {
+        .overflow-x-auto {
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Add subtle scrollbar for better UX */
+        .overflow-x-auto::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
         }
     }
 `}</style>
