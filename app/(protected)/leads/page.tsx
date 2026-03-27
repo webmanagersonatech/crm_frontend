@@ -870,7 +870,7 @@ export default function LeadsPage() {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
           <Users className="w-6 h-6 text-blue-600" />
-          <h1 className="text-2xl font-semibold">Leads</h1>
+          <h1 className="text-2xl font-semibold">Leads Manager</h1>
         </div>
 
         {/* FILTERS */}

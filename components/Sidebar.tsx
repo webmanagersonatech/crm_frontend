@@ -33,8 +33,8 @@ const allItems = [
   { href: "/permissions", label: "Permissions", icon: Key },
 
   { href: "/students", label: "Students", icon: GraduationCap },
-  { href: "/applications", label: "Applications", icon: FileText },
-  { href: "/leads", label: "Leads", icon: UserPlus },
+  { href: "/applications", label: "Applications Manager", icon: FileText },
+  { href: "/leads", label: "Leads Manager", icon: UserPlus },
   { href: "/communications", label: "Communications", icon: MessageCircle },
   { href: "/templates", label: "Email Templates", icon: Mail },
   { href: "/reports", label: "Reports", icon: BarChart3 },
@@ -45,6 +45,7 @@ const allItems = [
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/application-settings", label: "Application Settings", icon: Settings2 },
 ];
+
 const roleMenus = {
   superadmin: allItems,
   admin: allItems.filter(item =>

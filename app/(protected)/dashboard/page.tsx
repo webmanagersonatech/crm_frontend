@@ -3,7 +3,7 @@
 import { useState, useEffect, } from "react";
 import { MdDashboard } from "react-icons/md";
 import { DataTable } from "@/components/Tablecomponents";
-import { Building2, Pencil, FileStack, Users2, PhoneCall, UserPlus } from "lucide-react";
+import { Building2, Pencil, FileStack, Users2, PhoneCall, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   LineChart,
@@ -86,7 +86,9 @@ export default function DashboardPage() {
 
 
   const COLORS = ["#22c55e", "#ef4444", "#3b82f6", "#f59e0b"];
+  const today = new Date();
 
+  const formattedToday = today.toLocaleDateString("en-GB");
   // 🔹 Date Range Options
   const dateOptions = [
     { label: "Choose Range", value: "", disabled: true },
@@ -639,19 +641,19 @@ export default function DashboardPage() {
 
       <div className="bg-white dark:bg-neutral-900 shadow-md rounded-2xl p-4 sm:p-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-
-          {/* Date Range */}
+          {/* Date Range Section */}
           {(userRole === "superadmin" || userpermission?.filter) && (
             <>
+              {/* Institution Filter - Only for Superadmin */}
               {userRole === "superadmin" && (
                 <div className="flex flex-col">
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
                     Institution
                   </label>
                   <select
                     value={selectedInstitution}
                     onChange={(e) => setSelectedInstitution(e.target.value)}
-                    className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480]  transition"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg text-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] focus:border-transparent transition duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   >
                     <option value="all">All Institutions</option>
                     {institutions.map((inst) => (
@@ -662,61 +664,74 @@ export default function DashboardPage() {
                   </select>
                 </div>
               )}
+
+              {/* Date Range Select */}
               <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
                   Date Range
                 </label>
                 <select
                   value={dateRange}
                   onChange={(e) => setDateRange(e.target.value)}
-                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480]  transition"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg text-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] focus:border-transparent transition duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                 >
                   {dateOptions.map((opt) => (
                     <option
                       key={opt.label}
                       value={opt.value}
                       disabled={opt.disabled}
-                      hidden={opt.disabled} // hides from dropdown but shows as default
+                      hidden={opt.disabled}
                     >
                       {opt.label}
                     </option>
                   ))}
-
                 </select>
               </div>
 
-
+              {/* Start Date */}
               <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
                   Start Date
                 </label>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => handleCustomDateChange(setStartDate, e.target.value)}
-                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg text-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] focus:border-transparent transition duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   pattern="\d{4}-\d{2}-\d{2}"
                   placeholder="YYYY-MM-DD"
                 />
               </div>
 
+              {/* End Date */}
               <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide">
                   End Date
                 </label>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => handleCustomDateChange(setEndDate, e.target.value)}
-                  className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-lg text-sm py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] focus:border-transparent transition duration-200 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   pattern="\d{4}-\d{2}-\d{2}"
                   placeholder="YYYY-MM-DD"
                 />
               </div>
+
+              {/* Today's Date Display */}
+              <div className="flex flex-col justify-end">
+                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wide opacity-0">
+                  Today
+                </label>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 border border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {formattedToday}
+                  </span>
+                </div>
+              </div>
             </>
           )}
-
-
         </div>
       </div>
 
