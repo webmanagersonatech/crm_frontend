@@ -1225,14 +1225,16 @@ export default function ReportsPage() {
           )}
 
           {/* 📅 Date Range - Takes 2 columns on large screens */}
+          {/* 📅 Date Range */}
           {activeTab !== "student" && (
-            <div className="flex items-center gap-1 col-span-1 lg:col-span-2 xl:col-span-1">
+            <div className="flex items-center gap-1 w-full lg:col-span-2  ">
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-full"
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
               />
+
               <span className="text-gray-500 shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none"
                   viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
@@ -1240,11 +1242,12 @@ export default function ReportsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
               </span>
+
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-full"
+                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
               />
             </div>
           )}
