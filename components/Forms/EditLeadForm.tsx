@@ -158,8 +158,10 @@ export default function EditLeadPage() {
         const normalizeDate = (date: any) =>
           date ? new Date(date).toISOString().split("T")[0] : "";
 
+        const { counsellorName, ...rest } = data;
+
         setForm({
-          ...data,
+          ...rest,
           dateOfBirth: normalizeDate(data.dateOfBirth),
           followUpDate: normalizeDate(data.followUpDate),
         });
@@ -367,7 +369,7 @@ export default function EditLeadPage() {
             name="counsellorName"
             value={form.counsellorName || ""}
             onChange={handleChange}
-            placeholder="Enter counsellor name (or leave blank to use your name)"
+            placeholder="Enter counsellor name "
             className={`${inputClass} ${errors.counsellorName ? "border-red-500 focus:ring-red-500" : ""}`}
 
           />

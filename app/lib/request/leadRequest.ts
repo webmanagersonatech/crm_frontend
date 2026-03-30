@@ -75,6 +75,36 @@ export interface Lead {
   createdAt?: string;
   updatedAt?: string;
 }
+export interface Followup {
+  _id: string;
+  status: string;
+  communication: string;
+  followUpDate: string;
+  calltaken: string;
+  description: string;
+  createdBy: {
+    $oid: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  leadId: string;
+  candidateName: string;
+  instituteId: string;
+  program: string;
+  phoneNumber: string;
+  counsellorName: string;
+}
+export interface FollowupsResponse {
+  data: Followup[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
 export interface ExportResponse<T> {
   success: boolean;
   message?: string;
@@ -121,7 +151,54 @@ export async function bulkUploadLeads(file: File) {
     );
   }
 }
+export async function exportFollowups({
+  startDate,
+  endDate,
+  instituteId,
+  status,
+  candidateName,
+  phoneNumber,
+  calltaken,
+  userId,
+  leadId,
+  communication,
+}: {
+  startDate?: string;
+  endDate?: string;
+  instituteId?: string;
+  status?: string;
+  candidateName?: string;
+  phoneNumber?: string;
+  calltaken?: string;
+  userId?: string;
+  leadId?: string;
+  communication?: string;
+}) {
+  try {
+    const params = new URLSearchParams();
 
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+    if (instituteId) params.append("instituteId", instituteId);
+    if (status) params.append("status", status);
+    if (candidateName) params.append("candidateName", candidateName);
+    if (phoneNumber) params.append("phoneNumber", phoneNumber);
+    if (calltaken) params.append("calltaken", calltaken);
+    if (userId) params.append("userId", userId);
+    if (leadId) params.append("leadId", leadId);
+    if (communication) params.append("communication", communication);
+
+    const response = await api.get(
+      `/leads/export-followups?${params.toString()}`
+    );
+
+    return response.data; // 🔥 JSON response
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to export followups."
+    );
+  }
+}
 // Get paginated leads with filters
 export async function getLeads({
   page = 1,
@@ -193,7 +270,56 @@ export async function getLeads({
     throw new Error(error.response?.data?.message || "Failed to fetch leads.");
   }
 }
+export async function getFollowups({
+  page = 1,
+  limit = 20,
+  startDate,
+  endDate,
+  instituteId,
+  status,
+  candidateName,
+  phoneNumber,
+  calltaken,
+  userId,
+  leadId,
+  communication,
+}: {
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+  instituteId?: string;
+  status?: string;
+  candidateName?: string;
+  phoneNumber?: string;
+  calltaken?: string;
+  userId?: string;
+  leadId?: string;
+  communication?: string;
+}): Promise<FollowupsResponse> {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
 
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+    if (instituteId) params.append("instituteId", instituteId);
+    if (status) params.append("status", status);
+    if (candidateName) params.append("candidateName", candidateName);
+    if (phoneNumber) params.append("phoneNumber", phoneNumber);
+    if (calltaken) params.append("calltaken", calltaken);
+    if (userId) params.append("userId", userId);
+    if (leadId) params.append("leadId", leadId);
+    if (communication) params.append("communication", communication);
+
+    const response = await api.get(`/leads/followupsreport?${params.toString()}`);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || "Failed to fetch followups.");
+  }
+}
 export async function getDuplicateLeads(
   phoneNumber: string,
   instituteId?: string

@@ -1221,6 +1221,17 @@ export default function LeadsPage() {
                 </button>
               )}
 
+
+              {(userpermission === "superadmin" || userpermission?.view) && (
+                <Link
+                  href="/leads/followupsreport"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-gradient-to-b from-[#059669] to-[#047857] hover:from-[#047857] hover:to-[#065f46] text-white rounded-md transition-all shadow-sm"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Lead Followups Report</span>
+                </Link>
+              )}
+
               {/* Add Lead Button */}
               {(userpermission === "superadmin" || userpermission?.create) && (
                 <Link
@@ -1231,6 +1242,9 @@ export default function LeadsPage() {
                   <span>Add Lead</span>
                 </Link>
               )}
+
+
+
             </div>
           </div>
         </div>
