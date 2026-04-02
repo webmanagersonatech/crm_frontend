@@ -3,16 +3,16 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { BarChart3, FileText, Users, FileDown, Search, Settings, GraduationCap } from "lucide-react";
 import { DataTable } from "@/components/Tablecomponents";
-import { getApplications, } from "@/app/lib/request/application";
+import { getApplications, exportApplications } from "@/app/lib/request/application";
 import { toast } from "react-toastify";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
-import { getLeads, } from "@/app/lib/request/leadRequest";
-import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
+import { getLeads, exportLeads } from "@/app/lib/request/leadRequest";
+import { getActivedata } from "@/app/lib/request/institutionRequest";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import ExportModal from "@/components/ExportModal";
 import { Column } from "@/components/Tablecomponents";
 import { Country, State, City } from "country-state-city";
-import { listStudentsRequest } from "@/app/lib/request/studentRequest";
+import { listStudentsRequest, exportStudentsRequest } from "@/app/lib/request/studentRequest";
 import AsyncSelect from "react-select/async";
 import Select from "react-select";
 interface Application {
@@ -118,8 +118,12 @@ export default function ReportsPage() {
   const [selectedInteraction, setSelectedInteraction] = useState("");
   const [endYear, setEndYear] = useState<string>("")
   const [selectedLeadSource, setSelectedLeadSource] = useState("all");
+  const [selectedDuplicate, setSelectedDuplicate] = useState("all");
+  const [userList, setUserList] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
-
+  const [exportData, setExportData] = useState<any[]>([]);
+  const [exportLoading, setExportLoading] = useState(false);
   // student 
 
   const [studentLoading, setStudentLoading] = useState(true);
@@ -323,22 +327,31 @@ export default function ReportsPage() {
       return;
     }
 
-    const loadInstitutions = async () => {
+
+
+
+  }, []);
+
+  useEffect(() => {
+    const fetchActiveData = async () => {
       try {
-        const activeInstitutions = await getActiveInstitutions();
-        const options = activeInstitutions.map((inst: any) => ({
-          value: inst.instituteId,
-          label: inst.name,
-        }));
-        setInstitutions(options);
-      } catch (err) {
-        console.error(err);
-        toast.error("Failed to load institutions");
+        const data = await getActivedata(
+          selectedInstitution !== "all" ? selectedInstitution : undefined
+        );
+        setUserList(data.users || []);
+        setInstitutions(
+          (data.institutions || []).map((inst: any) => ({
+            value: inst.instituteId,
+            label: inst.name,
+          }))
+        );
+      } catch (error: any) {
+        console.error("Failed to fetch active data:", error.message);
       }
     };
 
-    loadInstitutions();
-  }, []);
+    fetchActiveData();
+  }, [selectedInstitution]);
 
   const columnOptions = [
 
@@ -347,9 +360,9 @@ export default function ReportsPage() {
       ? [{ key: "institute", label: "Institute" }]
       : []),
     { key: "applicantName", label: "Applicant Name" },
-    // { key: "program", label: "Program" },
+    { key: "program", label: "Program" },
 
-    { key: "academicYear", label: "Academic Year" },
+    // { key: "academicYear", label: "Academic Year" },
     { key: "city", label: "City" },
     { key: "formStatus", label: "Form Status" },
     { key: "paymentStatus", label: "Payment Status" },
@@ -501,6 +514,13 @@ export default function ReportsPage() {
   }, [startYear, endYear])
 
 
+  useEffect(() => {
+    setExportData([]);
+    setOpen(false);
+    setExportLoading(false);
+  }, [activeTab]);
+
+
 
   const fetchLeads = useCallback(async () => {
     setleadLoading(true);
@@ -520,6 +540,8 @@ export default function ReportsPage() {
         country: selectedCountry || undefined,   // 
         state: selectedState || undefined,       // 
         city: selectedCities.length ? selectedCities : undefined,
+        isduplicate: selectedDuplicate !== "all" ? selectedDuplicate : undefined,
+        userId: selectedUserId || undefined,
       });
       setLeads(res.docs || []);
       setleadTotalPages(res.totalPages || 1);
@@ -529,7 +551,7 @@ export default function ReportsPage() {
     } finally {
       setleadLoading(false);
     }
-  }, [leadcurrentPage, selectedInstitution, selectedStatus, selectedCommunication, selectedLeadSource, selectedCountry, selectedState, selectedCities, searchTerm, startDate, endDate, phoneSearch, leadIdSearch]);
+  }, [leadcurrentPage, selectedInstitution, selectedDuplicate, selectedUserId, selectedStatus, selectedCommunication, selectedLeadSource, selectedCountry, selectedState, selectedCities, searchTerm, startDate, endDate, phoneSearch, leadIdSearch]);
 
   useEffect(() => {
     if (activeTab === "lead") {
@@ -594,55 +616,282 @@ export default function ReportsPage() {
     }
   }, [activeTab, fetchStudents]);
 
+
+
+  const handleExportapplications = async () => {
+    try {
+      setExportLoading(true); // You'll need to add this state
+
+      // Call the export API with the same filters (without pagination)
+      const exportResult = await exportApplications({
+        academicYear: selectedYear !== "all" ? selectedYear : undefined,
+        instituteId: selectedInstitution !== "all" ? selectedInstitution : undefined,
+        paymentStatus: selectedPayment !== "all" ? selectedPayment : undefined,
+        formStatus: selectedFormStatus !== "all" ? selectedFormStatus : undefined,
+        applicationId: searchApplicationId.trim() || undefined,
+        applicantName: searchApplicantName.trim() || undefined,
+        program: searchProgram.trim() || undefined,
+        country: selectedCountry || undefined,
+        state: selectedState || undefined,
+        city: selectedCities.length ? selectedCities : undefined,
+        applicationSource: selectedApplicationSource || undefined,
+        interactions: selectedInteraction || undefined,
+      });
+
+      // Transform the exported data for display in modal
+      const exportedData = (exportResult.data || []).map((app: any) => {
+        const obj: any = {};
+
+        if (columnVisibility.applicationId) {
+          obj.ApplicationId = app.applicationId || "-";
+        }
+
+        if (
+          userpermission === "superadmin" &&
+          columnVisibility.institute
+        ) {
+          obj.Institute = app.institute?.name || app.instituteId || "-";
+        }
+
+        if (columnVisibility.applicantName) {
+          obj.ApplicantName =
+            app.applicantName ||
+            app.personalData?.["Full Name"] ||
+            "-";
+        }
+
+
+        if (columnVisibility.program) {
+          obj.Program = app.program ||
+            "-";
+        }
+
+        {
+
+          if (columnVisibility.city) {
+            obj.City =
+              app.city ||
+              app.personalData?.City ||
+              "-";
+          }
+        }
+
+        if (columnVisibility.paymentStatus) {
+          obj.PaymentStatus = app.paymentStatus || "-";
+        }
+        if (columnVisibility.formStatus) {
+          obj.FormStatus = app.formStatus || "-";
+        }
+
+        if (columnVisibility.createdAt) {
+          obj.CreatedAt = app.createdAt
+            ? new Date(app.createdAt).toLocaleDateString()
+            : "-";
+        }
+
+        return obj;
+      });
+
+
+      setExportData(exportedData);
+      setOpen(true);
+
+    } catch (error: any) {
+      toast.error("Failed to export applications");
+      console.error("Error exporting applications:", error);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const handleExportleads = async () => {
+    try {
+      setExportLoading(true);
+
+      // Call the export API with the same filters (without pagination)
+      const exportResult = await exportLeads({
+        instituteId: selectedInstitution !== "all" ? selectedInstitution : undefined,
+        status: selectedStatus !== "all" ? selectedStatus : undefined,
+        communication: selectedCommunication !== "all" ? selectedCommunication : undefined,
+        candidateName: searchTerm || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        userId: selectedUserId || undefined,
+        phoneNumber: phoneSearch || undefined,
+        leadSource: selectedLeadSource !== "all" ? selectedLeadSource : undefined,
+        leadId: leadIdSearch || undefined,
+        country: selectedCountry || undefined,
+        state: selectedState || undefined,
+        city: selectedCities.length ? selectedCities : undefined,
+        isduplicate: selectedDuplicate !== "all" ? selectedDuplicate : undefined,
+      });
+
+      // Check if we have data
+      if (!exportResult.data || exportResult.data.length === 0) {
+        toast.info("No data to export");
+        setExportLoading(false);
+        return;
+      }
+
+      // Transform the data using the SAME logic as filteredLeads
+      const transformedData = exportResult.data.map((lead: any) => {
+        const obj: any = {};
+
+
+        if (columnVisibilityreport.leadId) {
+          obj.LeadID = lead.leadId || "-"; // assuming _id is your lead ID
+        }
+
+        if (
+          userpermission === "superadmin" &&
+          columnVisibilityreport.instituteId
+        ) {
+          obj.Institute = lead.institute?.name || lead.instituteId || "-";
+        }
+
+        if (columnVisibilityreport.candidateName) {
+          obj.Candidate = lead.candidateName || "-";
+        }
+
+        if (columnVisibilityreport.program) {
+          obj.Program = lead.program || "-";
+        }
+
+        if (columnVisibilityreport.phoneNumber) {
+          obj.Phone = lead.phoneNumber || "-";
+        }
+        if (columnVisibilityreport.city) {
+          obj.city = lead.city || "-";
+        }
+
+        if (columnVisibilityreport.communication) {
+          obj.Communication = lead.communication || "-";
+        }
+
+        if (columnVisibilityreport.followUp) {
+          obj.FollowUpDate = lead.followUpDate
+            ? new Date(lead.followUpDate).toLocaleString()
+            : "-";
+        }
+
+        if (columnVisibilityreport.createdBy) {
+          obj.CreatedBy = lead.creator
+            ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`.trim()
+            : "Website";
+        }
+
+        if (columnVisibilityreport.status) {
+          obj.Status = lead.status || "-";
+        }
+
+        return obj;
+      });
+
+      // Set the data and open modal
+      setExportData(transformedData);
+      setOpen(true);
+
+    } catch (error: any) {
+      toast.error("Failed to export leads: " + (error.message || "Unknown error"));
+      console.error("Error exporting leads:", error);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+
+  const handleExportstudents = async () => {
+    try {
+      setExportLoading(true);
+
+      // Call the export API with the same filters (without pagination)
+      const result = await exportStudentsRequest({
+        search: searchTerm,
+        status: statusFilter,
+        academicYear: selectedYear !== "all" ? selectedYear : undefined,
+        instituteId: selectedInstitution,
+        bloodGroup: bloodGroupFilter,
+        bloodDonate: bloodDonateFilter,
+        hostelWilling: hostelWillingFilter,
+        quota: quotaFilter,
+        country: selectedCountry,
+        state: selectedState,
+        city: selectedCities.length ? selectedCities : undefined,
+        feedbackRating: feedbackFilter,
+        familyOccupation: familyOccupationFilter,
+      });
+
+      // Check if we have data
+      if (!result.data || result.data.length === 0) {
+        toast.info("No data to export");
+        setExportLoading(false);
+        return;
+      }
+
+      // Transform the data using the SAME logic as filteredStudents
+      const transformedData = result.data.map((student: any) => {
+        const obj: any = {};
+
+        if (columnVisibilitystudent.name) {
+          obj.Name = `${student.firstname || ""} ${student.lastname || ""}`.trim() || "-";
+        }
+
+        if (columnVisibilitystudent.studentId) {
+          obj.StudentID = student.studentId || "-";
+        }
+        if (columnVisibilitystudent.UniversityRegNo) {
+          obj.UniversityRegNo = student.admissionUniversityRegNo || "-";
+        }
+        if (columnVisibilitystudent.academicYear) {
+          obj.AcademicYear = student.academicYear || "-";
+        }
+        if (columnVisibilitystudent.bloodGroup) {
+          obj.BloodGroup = student.bloodGroup || "-";
+        }
+
+
+        if (columnVisibilitystudent.email) {
+          obj.Email = student.email || "-";
+        }
+
+        if (columnVisibilitystudent.mobile) {
+          obj.Mobile = student.mobileNo || "-";
+        }
+
+        if (
+          userpermission === "superadmin" &&
+          columnVisibilitystudent.instituteName
+        ) {
+          obj.Institute =
+            student.institute?.name ||
+            student.instituteId ||
+            "-";
+        }
+
+        if (columnVisibilitystudent.status) {
+          obj.Status = student.status || "-";
+        }
+
+
+        return obj;
+      });
+
+      // Set the data and open modal
+      setExportData(transformedData);
+      setOpen(true);
+
+    } catch (error: any) {
+      toast.error("Failed to export students: " + (error.message || "Unknown error"));
+      console.error("Error exporting students:", error);
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   const filteredApplications = (applications || []).map((app: any) => {
     const obj: any = {};
 
-    if (columnVisibility.applicationId) {
-      obj.ApplicationId = app.applicationId || "-";
-    }
 
-    if (
-      userpermission === "superadmin" &&
-      columnVisibility.institute
-    ) {
-      obj.Institute = app.institute?.name || app.instituteId || "-";
-    }
-
-    if (columnVisibility.applicantName) {
-      obj.ApplicantName =
-        app.applicantName ||
-        app.personalData?.["Full Name"] ||
-        "-";
-    }
-
-
-    if (columnVisibility.program) {
-      obj.Program = app.program ||
-        "-";
-    }
-
-    {
-
-      if (columnVisibility.city) {
-        obj.City =
-          app.city ||
-          app.personalData?.City ||
-          "-";
-      }
-    }
-
-    if (columnVisibility.paymentStatus) {
-      obj.PaymentStatus = app.paymentStatus || "-";
-    }
-    if (columnVisibility.formStatus) {
-      obj.FormStatus = app.formStatus || "-";
-    }
-
-    if (columnVisibility.createdAt) {
-      obj.CreatedAt = app.createdAt
-        ? new Date(app.createdAt).toLocaleDateString()
-        : "-";
-    }
 
     return obj;
   });
@@ -703,45 +952,6 @@ export default function ReportsPage() {
   const filteredStudents = (students || []).map((student: any) => {
     const obj: any = {};
 
-    if (columnVisibilitystudent.name) {
-      obj.Name = `${student.firstname || ""} ${student.lastname || ""}`.trim() || "-";
-    }
-
-    if (columnVisibilitystudent.studentId) {
-      obj.StudentID = student.studentId || "-";
-    }
-    if (columnVisibilitystudent.UniversityRegNo) {
-      obj.UniversityRegNo = student.admissionUniversityRegNo || "-";
-    }
-    if (columnVisibilitystudent.academicYear) {
-      obj.AcademicYear = student.academicYear || "-";
-    }
-    if (columnVisibilitystudent.bloodGroup) {
-      obj.BloodGroup = student.bloodGroup || "-";
-    }
-
-
-    if (columnVisibilitystudent.email) {
-      obj.Email = student.email || "-";
-    }
-
-    if (columnVisibilitystudent.mobile) {
-      obj.Mobile = student.mobileNo || "-";
-    }
-
-    if (
-      userpermission === "superadmin" &&
-      columnVisibilitystudent.instituteName
-    ) {
-      obj.Institute =
-        student.institute?.name ||
-        student.instituteId ||
-        "-";
-    }
-
-    if (columnVisibilitystudent.status) {
-      obj.Status = student.status || "-";
-    }
 
     return obj;
   });
@@ -1167,10 +1377,27 @@ export default function ReportsPage() {
           </button>
           {(userpermission === "superadmin" || userpermission?.download) && (
             <button
-              onClick={() => setOpen(true)}
-              className="flex items-center justify-center gap-1 bg-green-700 hover:bg-green-800 text-white px-4 py-2 text-sm rounded-md transition w-full sm:w-auto"
+              onClick={() => {
+                if (activeTab === "application") {
+                  handleExportapplications();
+                } else if (activeTab === "lead") {
+                  handleExportleads();
+                } else if (activeTab === "student") {
+                  handleExportstudents();
+                }
+              }}
+              disabled={exportLoading}
+              className={`flex items-center justify-center gap-1 px-4 py-2 text-sm rounded-md transition w-full sm:w-auto
+    ${exportLoading
+                  ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                  : "bg-green-700 hover:bg-green-800 text-white"
+                }`}
             >
-              <FileDown className="w-4 h-4" /> Export
+              {exportLoading ? "Exporting..." : (
+                <>
+                  <FileDown className="w-4 h-4" /> Export
+                </>
+              )}
             </button>
           )}
         </div>
@@ -1475,6 +1702,27 @@ export default function ReportsPage() {
                 <option value="online">Online</option>
                 <option value="application">Application</option>
               </select>
+              <select
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 min-w-[140px]"
+              >
+                <option value="">Select User</option>
+                {userList.map((user) => (
+                  <option key={user._id} value={user._id}>
+                    {user.firstname} {user.lastname}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={selectedDuplicate}
+                onChange={(e) => setSelectedDuplicate(e.target.value)}
+                className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md"
+              >
+                <option value="all">All Leads</option>
+                <option value="true">Duplicate Only</option>
+                <option value="false">Non-Duplicate</option>
+              </select>
 
               {/* Name Search */}
               <div className="relative w-full">
@@ -1642,13 +1890,7 @@ export default function ReportsPage() {
               : "LEAD REPORT"
         }
         onClose={() => setOpen(false)}
-        data={
-          activeTab === "application"
-            ? filteredApplications
-            : activeTab === "student"
-              ? filteredStudents
-              : filteredLeads
-        }
+        data={exportData}
       />
 
       <ColumnCustomizeDialog

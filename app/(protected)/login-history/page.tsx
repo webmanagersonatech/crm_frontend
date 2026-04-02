@@ -123,10 +123,10 @@ export default function LoginHistoryPage() {
       header: "Email",
       render: (h: LoginHistory) => h.user?.email || "-",
     },
-    {
-      header: "Role",
-      accessor: "role",
-    },
+    // {
+    //   header: "Role",
+    //   accessor: "role",
+    // },
     {
       header: "Last Login",
       render: (h: LoginHistory) =>
@@ -203,18 +203,7 @@ export default function LoginHistoryPage() {
               </select>
 
 
-              <select
-                value={selectedRole}
-                onChange={(e) => {
-                  setSelectedRole(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
-              >
-                <option value="all">All Roles</option>
-                <option value="admin">Admin</option>
-                <option value="user">User</option>
-              </select>
+           
             </>)}
 
           {/* Export */}

@@ -395,11 +395,15 @@ export default function DashboardPage() {
       header: "Lead ID",
       render: (lead: any) => lead.leadId || "—",
     },
-    {
-      header: "Institute",
-      render: (lead: any) =>
-        lead.institute?.name || lead.instituteId || "—",
-    },
+    ...(userRole === "superadmin"
+      ? [
+        {
+          header: "Institute",
+          render: (lead: any) =>
+            lead.institute?.name || lead.instituteId || "—",
+        },
+      ]
+      : []),
 
 
     {
