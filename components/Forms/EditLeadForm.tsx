@@ -30,7 +30,7 @@ export default function EditLeadPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState<Partial<Lead>>({
     instituteId: "",
-    program: "",
+    programId: "",
     candidateName: "",
     ugDegree: "",
     phoneNumber: "",
@@ -85,7 +85,7 @@ export default function EditLeadPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!form.program) newErrors.program = "Program is required";
+    if (!form.programId) newErrors.program = "Program is required";
     if (!form.candidateName?.trim())
       newErrors.candidateName = "Candidate name is required";
     if (!form.counsellorName?.trim())
@@ -213,7 +213,12 @@ export default function EditLeadPage() {
         }
 
         if (settings.courses?.length) {
-          setProgramOptions(settings.courses.map((c: string) => ({ value: c, label: c })));
+          setProgramOptions(
+            settings.courses.map((course: any) => ({
+              value: course.courseId,
+              label: course.name,
+            }))
+          );
         } else {
           setProgramOptions([]);
         }
@@ -331,8 +336,8 @@ export default function EditLeadPage() {
           <label className="text-sm font-semibold mb-1">Program <span className="text-red-500">* </span></label>
           <Select
             options={programOptions}
-            value={programOptions.find(opt => opt.value === form.program) || null}
-            onChange={selected => handleSelectChange("program", selected)}
+            value={programOptions.find(opt => opt.value === form.programId) || null}
+            onChange={selected => handleSelectChange("programId", selected)}
             styles={customSelectStyles("program")}
             isClearable
             placeholder="Select Program"

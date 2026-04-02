@@ -97,10 +97,7 @@ export default function UsersPage() {
       obj.FullName = `${user.firstname || ""} ${user.lastname || ""}`.trim() || "-";
     }
 
-    if (columnVisibility.username) {
-      obj.Username = user.username || "-";
-    }
-
+  
     if (columnVisibility.email) {
       obj.Email = user.email || "-";
     }
@@ -264,14 +261,16 @@ export default function UsersPage() {
 
   /** 🔹 Table Columns */
   const columns = [
+
+    {
+      header: "Institute",
+      render: (u: any) =>
+        u.institute?.name || u.instituteId || "—",
+    },
+
     columnVisibility.name && {
       header: "Name",
       render: (u: User) => `${u.firstname} ${u.lastname}`,
-    },
-
-    columnVisibility.username && {
-      header: "Username",
-      accessor: "username",
     },
 
     columnVisibility.email && {
@@ -306,7 +305,7 @@ export default function UsersPage() {
       header: "Act as Admin",
       accessor: "tempAdminAccess",
       render: (user: User) =>
-        user.role === "user" && user.userType === "our_user" || user.tempAdminAccess === true ? (
+        user.role === "user" && user.userType === "our_user" || user.userType === "department_user" || user.tempAdminAccess === true ? (
           <div className="flex items-center gap-2">
 
             {/* Toggle */}

@@ -53,7 +53,7 @@ export interface Lead {
   instituteId: string;
   applicationId: string;
   leadSource: string;
-  program: string;
+  programId: string;
   counsellorName: string;
   candidateName: string;
   ugDegree?: string;

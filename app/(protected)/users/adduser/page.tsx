@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Select, { SingleValue } from "react-select";
+
+import Select, { SingleValue, MultiValue } from "react-select";
 import { toast } from "react-toastify";;
 import { UserPlus2, Eye, EyeOff } from "lucide-react";
-
+import { getSettingsByInstitute } from "@/app/lib/request/settingRequest";
 import {
   createUserRequest,
   CreateUserData,
@@ -31,8 +32,10 @@ export default function AddUserPage() {
   const [loading, setLoading] = useState(false);
   const [institutions, setInstitutions] = useState<OptionType[]>([]); // 🔹 for dropdown
   const [showPassword, setShowPassword] = useState(false);
+  const [departments, setDepartments] = useState<{ label: string; value: string }[]>([]);
+  const [selectedDepartments, setSelectedDepartments] = useState<OptionType[]>([]);
   const [enablePermissions, setEnablePermissions] = useState(false);
-
+  const [deptLoading, setDeptLoading] = useState(false);
 
   const [form, setForm] = useState<CreateUserData>({
     firstname: "",
@@ -110,6 +113,7 @@ export default function AddUserPage() {
 
     loadInstitutions();
   }, []);
+
   const hasAnyPermissionSelected = () => {
     return permissions.some((perm) =>
       perm.view ||
@@ -151,6 +155,15 @@ export default function AddUserPage() {
         return;
       }
 
+      if (
+        form.role === "user" &&
+        form.userType === "department_user" &&
+        selectedDepartments.length === 0
+      ) {
+        toast.error("Please select at least one department.");
+        return;
+      }
+
       /* -------------------- EMAIL VALIDATION -------------------- */
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(form.email)) {
@@ -182,6 +195,10 @@ export default function AddUserPage() {
         payload.permissions = permissions.map(({ id, ...rest }) => rest);
       }
 
+      if (form.role === "user" && form.userType === "department_user") {
+        payload.departments = selectedDepartments.map((d) => d.value);
+      }
+
       /* -------------------- API CALL -------------------- */
       await createUserRequest(payload);
 
@@ -194,8 +211,30 @@ export default function AddUserPage() {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        if (!form.instituteId) return;
 
+        setDeptLoading(true);
 
+        const res = await getSettingsByInstitute(form.instituteId);
+
+        const deptOptions = (res?.courses || []).map((c: any) => ({
+          label: c.name,
+          value: c.courseId,
+        }));
+
+        setDepartments(deptOptions);
+      } catch (err) {
+        toast.error("Failed to load departments");
+      } finally {
+        setDeptLoading(false);
+      }
+    };
+
+    loadDepartments();
+  }, [form.instituteId]);
 
   /** --- Dropdown Options --- */
   const roleOptions = [
@@ -211,7 +250,8 @@ export default function AddUserPage() {
 
   const userTypeOptions = [
     { value: "our_user", label: "Our User" },
-    { value: "third_party", label: "Third Party User" }
+    { value: "third_party", label: "Third Party User" },
+    { value: "department_user", label: "Department User" },
   ];
 
 
@@ -234,7 +274,7 @@ export default function AddUserPage() {
   /** --- JSX --- */
   return (
     <div className="p-6">
-      
+
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <UserPlus2 className="w-6 h-6 text-blue-600" />
@@ -323,6 +363,25 @@ export default function AddUserPage() {
               placeholder="Select User Type"
               isClearable={false}
             // 👈 required only when role = user
+            />
+          </div>
+        )}
+
+        {form.role === "user" && form.userType === "department_user" && (
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-1">
+              Departments <span className="text-red-500">*</span>
+            </label>
+            <Select
+              isMulti
+              options={departments}
+              value={selectedDepartments}
+              isLoading={deptLoading}
+              onChange={(selected: MultiValue<OptionType>) =>
+                setSelectedDepartments([...selected])
+              }
+              styles={customSelectStyles}
+              placeholder="Select Departments"
             />
           </div>
         )}

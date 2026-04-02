@@ -42,13 +42,13 @@ export default function CreateLeadForm({
     const [selectedInstitute, setSelectedInstitute] = useState<string>("");
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [applicantAge, setApplicantAge] = useState<number>(18);
-
+    const [userDepartments, setUserDepartments] = useState<string[]>([]);
 
     const validateForm = () => {
         const newErrors: Record<string, string> = {};
 
         if (!form.instituteId) newErrors.instituteId = "Institute is required";
-        if (!form.program) newErrors.program = "Program is required";
+        if (!form.programId) newErrors.program = "Program is required";
         if (!form.candidateName?.trim()) newErrors.candidateName = "Candidate name is required";
         if (!form.counsellorName?.trim()) newErrors.counsellorName = "Counsellor name is required";
 
@@ -78,7 +78,7 @@ export default function CreateLeadForm({
     };
     const [form, setForm] = useState<Partial<Lead>>({
         instituteId: "",
-        program: "",
+        programId: "",
         counsellorName: "",
         candidateName: "",
         ugDegree: "",
@@ -141,9 +141,8 @@ export default function CreateLeadForm({
             setForm((prev) => ({
                 ...prev,
                 instituteId: selectedApplication.instituteId || prev.instituteId,
-                program: selectedApplication.program || "",
+                programId: selectedApplication.programId || "",
                 candidateName,
-
                 ugDegree: "", // optional
                 phoneNumber: personal["Contact Number"] || "",
                 dateOfBirth: personal["Date of Birth"] || "",
@@ -182,11 +181,13 @@ export default function CreateLeadForm({
 
 
     useEffect(() => {
-        if (selectedApplication?.program && programOptions.length) {
-            setForm((prev) => ({ ...prev, program: selectedApplication.program }));
+        if (selectedApplication?.programId && programOptions.length) {
+            setForm((prev) => ({
+                ...prev,
+                programId: selectedApplication.programId, // ✅ correct
+            }));
         }
     }, [programOptions, selectedApplication]);
-
 
     useEffect(() => {
         if (instituteId) {
@@ -211,6 +212,7 @@ export default function CreateLeadForm({
             const effectiveInstituteId = decoded.instituteId;
             const role = decoded.role;
 
+            setUserDepartments(decoded.departments || []);
 
             if (role === "superadmin") {
 
@@ -287,7 +289,7 @@ export default function CreateLeadForm({
     useEffect(() => {
         if (!selectedInstitute) {
             setProgramOptions([]);
-            setForm((prev) => ({ ...prev, program: "" }));
+            setForm((prev) => ({ ...prev, programId: "" }));
             return;
         }
 
@@ -300,21 +302,49 @@ export default function CreateLeadForm({
                 }
 
                 if (settings.courses && settings.courses.length) {
+
+                    let filteredCourses = settings.courses;
+
+                    // ✅ Apply department filter ONLY if departments exist
+                    if (userDepartments && userDepartments.length > 0) {
+                        filteredCourses = settings.courses.filter((course: any) =>
+                            userDepartments.includes(course.courseId)
+                        );
+                    }
+
                     setProgramOptions(
-                        settings.courses.map((course: string) => ({
-                            value: course,
-                            label: course,
+                        filteredCourses.map((course: any) => ({
+                            value: course.courseId,
+                            label: course.name,
                         }))
                     );
+
+                    // ✅ Reset program if it's not in allowed list
+                    setForm((prev) => {
+                        const isValid = filteredCourses.some(
+                            (c: any) => c.courseId === prev.programId
+                        );
+
+                        return {
+                            ...prev,
+                            programId: isValid ? prev.programId : "",
+                        };
+                    });
+
+                    // ⚠️ Optional: Show message if nothing allowed
+                    if (userDepartments.length > 0 && filteredCourses.length === 0) {
+                        toast.error("No programs assigned to your department");
+                    }
+
                 } else {
                     setProgramOptions([]);
-                    setForm((prev) => ({ ...prev, program: "" }));
+                    setForm((prev) => ({ ...prev, programId: "" }));
                     toast.error("No courses found in institute settings.");
                 }
             } catch (error: any) {
                 console.error(error);
                 setProgramOptions([]);
-                setForm((prev) => ({ ...prev, program: "" }));
+                setForm((prev) => ({ ...prev, programId: "" }));
                 toast.error("No courses found in institute settings.");
             }
         };
@@ -488,8 +518,8 @@ export default function CreateLeadForm({
                     <label className="text-sm font-semibold mb-1">Program <span className="text-red-500">* </span></label>
                     <Select
                         options={programOptions}
-                        value={programOptions.find((opt) => opt.value === form.program) || null}
-                        onChange={(selected) => handleSelectChange("program", selected)}
+                        value={programOptions.find((opt) => opt.value === form.programId) || null}
+                        onChange={(selected) => handleSelectChange("programId", selected)}
                         styles={customSelectStyles("program")}
                         isClearable
                         placeholder="Select Program"

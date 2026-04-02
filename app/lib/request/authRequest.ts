@@ -11,7 +11,7 @@ export interface CreateUserData {
     password: string;
     mobileNo: string;
     designation: string;
-    role: "superadmin" | "admin" | "user";
+    role: "superadmin" | "admin" | "user" | "department_user";
     instituteId: string;
     status?: "active" | "inactive";
     userType?: string;

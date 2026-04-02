@@ -23,6 +23,7 @@ type SelectedLead = {
     instituteId?: string;
     candidateName?: string;
     program?: string;
+    programId?: string;
     phoneNumber?: string;
     dateOfBirth?: string;
     country?: string;
@@ -59,7 +60,8 @@ export default function AddApplicationForm({
     const [institutions, setInstitutions] = useState<OptionType[]>([])
     const [selectedInstitute, setSelectedInstitute] = useState("")
     const [programOptions, setProgramOptions] = useState<OptionType[]>([])
-    const [program, setProgram] = useState("")
+    const [programId, setProgramId] = useState("")
+    const [userDepartments, setUserDepartments] = useState<string[]>([]);
     const [formConfig, setFormConfig] = useState<any>(null)
     const [minApplicantAge, setMinApplicantAge] = useState<number | null>(null)
     const [formData, setFormData] = useState<Record<string, any>>({})
@@ -202,8 +204,8 @@ export default function AddApplicationForm({
         if (!selectedLead || !formConfig) return;
 
         // 🔹 set program separately
-        if (selectedLead.program) {
-            setProgram(selectedLead.program);
+        if (selectedLead.programId) {
+            setProgramId(selectedLead.programId);
         }
 
         // 🔹 map lead fields
@@ -267,10 +269,17 @@ export default function AddApplicationForm({
         if (!token) return
         try {
             const payload = JSON.parse(atob(token.split(".")[1]))
-            console.log(payload, "payload")
+
+
             if (payload?.instituteId) {
                 setSelectedInstitute(payload.instituteId)
                 setShowInstituteDropdown(false)
+            }
+
+            if (Array.isArray(payload?.departments) && payload.departments.length > 0) {
+                setUserDepartments(payload.departments);
+            } else {
+                setUserDepartments([]);
             }
         } catch {
             setShowInstituteDropdown(true)
@@ -288,7 +297,7 @@ export default function AddApplicationForm({
                 // Set institute and program
                 setSelectedInstitute(app.instituteId);
                 setShowInstituteDropdown(false);
-                setProgram(app.program);
+                setProgramId(app.programId);
 
                 // Flatten application data for formData
                 const flatData: Record<string, any> = {};
@@ -527,15 +536,26 @@ export default function AddApplicationForm({
                     setProgramOptions([])
                     return
                 }
+                let filteredCourses = res.courses;
+                if (userDepartments && userDepartments.length > 0) {
+                    filteredCourses = res.courses.filter((course: any) =>
+                        userDepartments.includes(course.courseId)
+                    );
+                }
+
+
                 setProgramOptions(
-                    res.courses.map((c: string) => ({ value: c, label: c }))
-                )
+                    filteredCourses.map((course: any) => ({
+                        value: course.courseId,
+                        label: course.name,
+                    }))
+                );
             })
             .catch(() => toast.error("Failed to load programs"))
     }, [selectedInstitute])
 
     const validateProgram = () => {
-        if (!program) {
+        if (!programId) {
             toast.error("Please select a program")
             return false
         }
@@ -1212,7 +1232,7 @@ export default function AddApplicationForm({
             const fd = new FormData()
 
             fd.append("instituteId", selectedInstitute)
-            fd.append("program", program)
+            fd.append("programId", programId)
             fd.append("academicYear", academicYear)
 
             if (applicationSource) {
@@ -1271,8 +1291,8 @@ export default function AddApplicationForm({
             {selectedInstitute && (
                 <Select
                     options={programOptions}
-                    value={programOptions.find((p) => p.value === program) || null}
-                    onChange={(o) => setProgram(o?.value || "")}
+                    value={programOptions.find((p) => p.value === programId) || null}
+                    onChange={(o) => setProgramId(o?.value || "")}
                     placeholder="Select Program"
                 />
 

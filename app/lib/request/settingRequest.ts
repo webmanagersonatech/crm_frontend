@@ -41,7 +41,10 @@ export interface Settings {
   _id?: string;
   instituteId: string;
   logo?: string; // Base64 string
-  courses?: string[];
+  courses?: {
+    name: string;
+    courseId: string;
+  }[];
   paymentMethod: PaymentMethod
   paymentCredentials: RazorpayCredentials | InstamojoCredentials
   isApplicationOpen?: boolean;
@@ -49,7 +52,7 @@ export interface Settings {
   contactEmail?: string;
   contactNumber?: string;
   address?: string;
-  gstPercentage: number 
+  gstPercentage: number
   createdAt?: string;
   updatedAt?: string;
   applicationFee: number
