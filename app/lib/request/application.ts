@@ -179,8 +179,7 @@ export async function getApplications(params?: {
   formStatus?: string;
   applicationId?: string;
   applicantName?: string;
-  program?: string;
-
+  program?: string | string[];
   startDate?: string;
   endDate?: string;
   country?: string;
@@ -203,7 +202,13 @@ export async function getApplications(params?: {
 
     if (params?.applicationId) queryParams.append("applicationId", params.applicationId);
     if (params?.applicantName) queryParams.append("applicantName", params.applicantName);
-    if (params?.program) queryParams.append("program", params.program);
+    if (params?.program) {
+      if (Array.isArray(params.program)) {
+        params.program.forEach(p => queryParams.append("program", p));
+      } else {
+        queryParams.append("program", params.program);
+      }
+    }
     if (params?.startDate) queryParams.append("startDate", params.startDate);
     if (params?.endDate) queryParams.append("endDate", params.endDate);
     if (params?.q) queryParams.append("q", params.q);
@@ -221,7 +226,12 @@ export async function getApplications(params?: {
     if (params?.applicationSource) queryParams.append("applicationSource", params.applicationSource);
     if (params?.interactions) queryParams.append("interactions", params.interactions);
 
-    const response = await api.get<PaginatedResponse<Application> & { academicYears: string[] }>(
+    const response = await api.get<PaginatedResponse<Application> & {
+      academicYears: string[]; courses: {
+        name: string;
+        courseId: string;
+      }[];
+    }>(
       `/application?${queryParams.toString()}`
     );
 
@@ -240,7 +250,7 @@ export async function exportApplications(params?: {
   formStatus?: string;
   applicationId?: string;
   applicantName?: string;
-  program?: string;
+  program?: string | string[];
   startDate?: string;
   endDate?: string;
   country?: string;
@@ -260,7 +270,13 @@ export async function exportApplications(params?: {
     if (params?.formStatus) queryParams.append("formStatus", params.formStatus);
     if (params?.applicationId) queryParams.append("applicationId", params.applicationId);
     if (params?.applicantName) queryParams.append("applicantName", params.applicantName);
-    if (params?.program) queryParams.append("program", params.program);
+    if (params?.program) {
+      if (Array.isArray(params.program)) {
+        params.program.forEach(p => queryParams.append("program", p));
+      } else {
+        queryParams.append("program", params.program);
+      }
+    }
     if (params?.startDate) queryParams.append("startDate", params.startDate);
     if (params?.endDate) queryParams.append("endDate", params.endDate);
     if (params?.q) queryParams.append("q", params.q);

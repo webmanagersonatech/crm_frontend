@@ -214,6 +214,7 @@ export async function getLeads({
   leadId,
   leadSource,
   country,
+  program,
   state,
   city,
   isduplicate,
@@ -227,6 +228,7 @@ export async function getLeads({
   startDate?: string;
   endDate?: string;
   userId?: string;
+  program?: string | string[];
   phoneNumber?: string; //  added
   leadId?: string;
   leadSource?: string;
@@ -258,6 +260,13 @@ export async function getLeads({
         city.forEach(c => params.append("city", c));
       } else {
         params.append("city", city);
+      }
+    }
+    if (program) {
+      if (Array.isArray(program)) {
+        program.forEach((p) => params.append("program", p));
+      } else {
+        params.append("program", program);
       }
     }
 
@@ -354,6 +363,7 @@ export async function exportLeads({
   leadId,
   leadSource,
   country,
+  program,
   state,
   city,
   isduplicate,
@@ -367,6 +377,7 @@ export async function exportLeads({
   userId?: string;
   phoneNumber?: string;
   leadId?: string;
+  program?: string | string[];
   leadSource?: string;
   country?: string;
   state?: string;
@@ -393,6 +404,13 @@ export async function exportLeads({
         city.forEach(c => params.append("city", c));
       } else {
         params.append("city", city);
+      }
+    }
+    if (program) {
+      if (Array.isArray(program)) {
+        program.forEach((p) => params.append("program", p));
+      } else {
+        params.append("program", program);
       }
     }
     if (leadSource) params.append("leadSource", leadSource);

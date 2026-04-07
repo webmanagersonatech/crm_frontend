@@ -95,9 +95,9 @@ export default function ApplicationsPage() {
   const [selectedState, setSelectedState] = useState("");
   const [exportData, setExportData] = useState<any[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
-
+  const [programs, setPrograms] = useState<any[]>([]);
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
-
   const [selectedApplicationSource, setSelectedApplicationSource] = useState("");
   const [selectedInteraction, setSelectedInteraction] = useState("");
   const [totalEntries, setTotalEntries] = useState(0);
@@ -122,7 +122,6 @@ export default function ApplicationsPage() {
     formStatus: true,
     createdAt: true,
   });
-
 
 
   const filterOptions = [
@@ -304,8 +303,6 @@ export default function ApplicationsPage() {
   };
 
 
-
-
   const fetchApplications = useCallback(async () => {
     setLoading(true);
     try {
@@ -321,7 +318,7 @@ export default function ApplicationsPage() {
           selectedFormStatus !== "all" ? selectedFormStatus : undefined,
         applicationId: searchApplicationId.trim() || undefined,
         applicantName: searchApplicantName.trim() || undefined,
-        program: searchProgram.trim() || undefined,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
         country: selectedCountry || undefined,
         state: selectedState || undefined,
         city: selectedCities.length ? selectedCities : undefined,
@@ -329,13 +326,20 @@ export default function ApplicationsPage() {
         interactions: selectedInteraction || undefined,
         q: searchAny.trim() || undefined,
       });
-
       setApplications((res.data as Application[]) || []);
       setTotalPages(res.pagination?.totalPages || 1);
       setTotalEntries(res.pagination?.totalDocs || 0);
 
       if (res.academicYears) {
         setAcademicYears(res.academicYears);
+      }
+      if (res.courses) {
+        const formatted = res.courses.map((c: any) => ({
+          value: c.courseId,   // ✅ ID
+          label: c.name        // ✅ Name
+        }));
+
+        setPrograms(formatted);
       }
       const r: any = res;
 
@@ -364,7 +368,7 @@ export default function ApplicationsPage() {
       setLoading(false);
     }
   }, [currentPage, searchAny,
-    selectedYear, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
+    selectedYear, selectedInstitution, selectedPrograms, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
 
   const handleExport = async () => {
     try {
@@ -378,7 +382,7 @@ export default function ApplicationsPage() {
         formStatus: selectedFormStatus !== "all" ? selectedFormStatus : undefined,
         applicationId: searchApplicationId.trim() || undefined,
         applicantName: searchApplicantName.trim() || undefined,
-        program: searchProgram.trim() || undefined,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
         country: selectedCountry || undefined,
         state: selectedState || undefined,
         city: selectedCities.length ? selectedCities : undefined,
@@ -547,9 +551,6 @@ export default function ApplicationsPage() {
       toast.error(err.message || "Failed to delete application");
     }
   };
-
-  /** 🔹 Table Columns */
-
 
   const columns = [
 
@@ -1233,7 +1234,7 @@ export default function ApplicationsPage() {
                     </select>
                   )}
 
-                  {/* Location Filters Group */}
+
                   {/* Location Filters Group */}
                   {(activeFilters.includes("country") || activeFilters.includes("state") || activeFilters.includes("city")) && (
                     <div className="flex flex-wrap items-center gap-2 p-1.5 bg-white rounded-md border border-gray-200 shadow-sm">
@@ -1402,19 +1403,33 @@ export default function ApplicationsPage() {
                   )}
 
                   {activeFilters.includes("program") && (
-                    <div className="min-w-[160px]">
-                      <input
-                        type="text"
-                        placeholder="Search by Program"
-                        value={searchProgram}
-                        onChange={(e) => {
-                          setSearchProgram(e.target.value);
+                    <div className="min-w-[200px]">
+                      <AsyncSelect
+                        placeholder="Select Programs..."
+                        cacheOptions
+                        defaultOptions={programs}
+                        isMulti
+                        loadOptions={(inputValue) => {
+                          return Promise.resolve(
+                            programs.filter((p: any) =>
+                              p.label.toLowerCase().includes(inputValue.toLowerCase())
+                            )
+                          );
+                        }}
+                        value={programs.filter((p: any) =>
+                          selectedPrograms.includes(p.value)
+                        )}
+                        onChange={(opts) => {
+                          setSelectedPrograms(
+                            opts ? opts.map((o: any) => o.value) : []
+                          );
                           setCurrentPage(1);
                         }}
-                        className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white shadow-sm"
                       />
                     </div>
                   )}
+
+                  
                 </div>
               )}
             </div>

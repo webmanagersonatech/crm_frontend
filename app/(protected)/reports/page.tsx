@@ -124,6 +124,8 @@ export default function ReportsPage() {
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [exportData, setExportData] = useState<any[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
+  const [programs, setPrograms] = useState<any[]>([]);
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   // student 
 
   const [studentLoading, setStudentLoading] = useState(true);
@@ -475,11 +477,11 @@ export default function ReportsPage() {
         formStatus:
           selectedFormStatus !== "all" ? selectedFormStatus : undefined,
         applicationId: searchApplicationId.trim() || undefined,
-        program: searchProgram.trim() || undefined,
         applicantName: searchApplicantName.trim() || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         country: selectedCountry || undefined,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
         state: selectedState || undefined,
         city: selectedCities.length ? selectedCities : undefined,
         applicationSource: selectedApplicationSource || undefined,
@@ -492,13 +494,21 @@ export default function ReportsPage() {
       if (res.academicYears) {
         setAcademicYears(res.academicYears);
       }
+      if (res.courses) {
+        const formatted = res.courses.map((c: any) => ({
+          value: c.courseId,   // ✅ ID
+          label: c.name        // ✅ Name
+        }));
+
+        setPrograms(formatted);
+      }
     } catch (err: any) {
       toast.error("Failed to load applications");
       console.error("Error fetching applications:", err);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedYear, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName, searchProgram]);
+  }, [currentPage, selectedYear, selectedPrograms, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName, searchProgram]);
 
   useEffect(() => {
     if (activeTab === "application") {
@@ -515,6 +525,10 @@ export default function ReportsPage() {
 
 
   useEffect(() => {
+    setSelectedPrograms([]);
+    setCurrentPage(1);
+    setleadCurrentPage(1);
+    setStudentCurrentPage(1);
     setExportData([]);
     setOpen(false);
     setExportLoading(false);
@@ -540,18 +554,27 @@ export default function ReportsPage() {
         country: selectedCountry || undefined,   // 
         state: selectedState || undefined,       // 
         city: selectedCities.length ? selectedCities : undefined,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
         isduplicate: selectedDuplicate !== "all" ? selectedDuplicate : undefined,
         userId: selectedUserId || undefined,
       });
       setLeads(res.docs || []);
       setleadTotalPages(res.totalPages || 1);
       setLeadTotalEntries(res.totalDocs || 0);
+      if (res.courses) {
+        const formatted = res.courses.map((c: any) => ({
+          value: c.courseId,   // ✅ ID
+          label: c.name        // ✅ Name
+        }));
+
+        setPrograms(formatted);
+      }
     } catch {
       toast.error("Failed to load leads");
     } finally {
       setleadLoading(false);
     }
-  }, [leadcurrentPage, selectedInstitution, selectedDuplicate, selectedUserId, selectedStatus, selectedCommunication, selectedLeadSource, selectedCountry, selectedState, selectedCities, searchTerm, startDate, endDate, phoneSearch, leadIdSearch]);
+  }, [leadcurrentPage, selectedInstitution, selectedPrograms, selectedDuplicate, selectedUserId, selectedStatus, selectedCommunication, selectedLeadSource, selectedCountry, selectedState, selectedCities, searchTerm, startDate, endDate, phoneSearch, leadIdSearch]);
 
   useEffect(() => {
     if (activeTab === "lead") {
@@ -630,8 +653,8 @@ export default function ReportsPage() {
         formStatus: selectedFormStatus !== "all" ? selectedFormStatus : undefined,
         applicationId: searchApplicationId.trim() || undefined,
         applicantName: searchApplicantName.trim() || undefined,
-        program: searchProgram.trim() || undefined,
         country: selectedCountry || undefined,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
         state: selectedState || undefined,
         city: selectedCities.length ? selectedCities : undefined,
         applicationSource: selectedApplicationSource || undefined,
@@ -718,6 +741,7 @@ export default function ReportsPage() {
         endDate: endDate || undefined,
         userId: selectedUserId || undefined,
         phoneNumber: phoneSearch || undefined,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
         leadSource: selectedLeadSource !== "all" ? selectedLeadSource : undefined,
         leadId: leadIdSearch || undefined,
         country: selectedCountry || undefined,
@@ -887,78 +911,6 @@ export default function ReportsPage() {
       setExportLoading(false);
     }
   };
-
-  const filteredApplications = (applications || []).map((app: any) => {
-    const obj: any = {};
-
-
-
-    return obj;
-  });
-
-  const filteredLeads = (leads || []).map((lead: any) => {
-    const obj: any = {};
-
-    if (columnVisibilityreport.leadId) {
-      obj.LeadID = lead.leadId || "-"; // assuming _id is your lead ID
-    }
-
-    if (
-      userpermission === "superadmin" &&
-      columnVisibilityreport.instituteId
-    ) {
-      obj.Institute = lead.institute?.name || lead.instituteId || "-";
-    }
-
-    if (columnVisibilityreport.candidateName) {
-      obj.Candidate = lead.candidateName || "-";
-    }
-
-    if (columnVisibilityreport.program) {
-      obj.Program = lead.program || "-";
-    }
-
-    if (columnVisibilityreport.phoneNumber) {
-      obj.Phone = lead.phoneNumber || "-";
-    }
-    if (columnVisibilityreport.city) {
-      obj.city = lead.city || "-";
-    }
-
-    if (columnVisibilityreport.communication) {
-      obj.Communication = lead.communication || "-";
-    }
-
-    if (columnVisibilityreport.followUp) {
-      obj.FollowUpDate = lead.followUpDate
-        ? new Date(lead.followUpDate).toLocaleString()
-        : "-";
-    }
-
-    if (columnVisibilityreport.createdBy) {
-      obj.CreatedBy = lead.creator
-        ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`.trim()
-        : "Website";
-    }
-
-    if (columnVisibilityreport.status) {
-      obj.Status = lead.status || "-";
-    }
-
-    return obj;
-  });
-
-
-  const filteredStudents = (students || []).map((student: any) => {
-    const obj: any = {};
-
-
-    return obj;
-  });
-
-
-
-
 
 
   const columns = [
@@ -1649,19 +1601,10 @@ export default function ReportsPage() {
                 className="border text-sm rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-[#3a4480] transition w-full"
               />
 
-              {/* Program Search */}
-              <input
-                type="text"
-                placeholder="Program"
-                value={searchProgram}
-                onChange={(e) => {
-                  setSearchProgram(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480] w-full"
-              />
+
             </>
           )}
+
 
           {/* Lead Filters */}
           {activeTab === "lead" && (
@@ -1759,7 +1702,29 @@ export default function ReportsPage() {
               </div>
             </>
           )}
-
+          {activeTab !== "student" && (
+            <AsyncSelect
+              placeholder="Select Programs..."
+              cacheOptions
+              defaultOptions={programs}
+              isMulti
+              loadOptions={(inputValue) => {
+                return Promise.resolve(
+                  programs.filter((p: any) =>
+                    p.label.toLowerCase().includes(inputValue.toLowerCase())
+                  )
+                );
+              }}
+              value={programs.filter((p: any) =>
+                selectedPrograms.includes(p.value)
+              )}
+              onChange={(opts) => {
+                setSelectedPrograms(
+                  opts ? opts.map((o: any) => o.value) : []
+                );
+                setCurrentPage(1);
+              }}
+            />)}
           {/* Application Tab - Applicant Name Search */}
           {activeTab === "application" && (
             <input
@@ -1871,6 +1836,7 @@ export default function ReportsPage() {
               </div>
             </>
           )}
+
         </div>
 
         {/* Active Filters Summary - Optional */}

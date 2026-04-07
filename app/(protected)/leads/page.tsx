@@ -106,7 +106,12 @@ export default function LeadsPage() {
   const [duplicatePopupOpen, setDuplicatePopupOpen] = useState(false);
   const [duplicateData, setDuplicateData] = useState<Lead | null>(null);
   const [statusCounts, setStatusCounts] = useState<any[]>([]);
-  const [selectedFunnelStatus, setSelectedFunnelStatus] = useState<string | null>(null);
+  const [programs, setPrograms] = useState<any[]>([]);
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
+
+
+
+
   const toggleFilter = (value: string) => {
     if (!value) return;
 
@@ -121,6 +126,7 @@ export default function LeadsPage() {
       setFile(e.target.files[0]);
     }
   };
+
 
   const handleUpload = async () => {
     if (!file) {
@@ -154,6 +160,7 @@ export default function LeadsPage() {
     { value: "leadId", label: "Lead ID" },
     { value: "date", label: "Date Range" },
     { value: "duplicate", label: "Duplicate" },
+    { value: "program", label: "Program" },
   ];
   const resetFilterState = (filter: string) => {
     switch (filter) {
@@ -451,6 +458,7 @@ export default function LeadsPage() {
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         userId: selectedUserId || undefined,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
         phoneNumber: phoneSearch || undefined, //  added
         leadSource: selectedLeadSource !== "all" ? selectedLeadSource : undefined,
         leadId: leadIdSearch || undefined,
@@ -463,12 +471,20 @@ export default function LeadsPage() {
       setTotalPages(res.totalPages || 1);
       setTotalEntries(res?.totalDocs || 0);
       setStatusCounts(res.statusCounts || []);
+      if (res.courses) {
+        const formatted = res.courses.map((c: any) => ({
+          value: c.courseId,   // ✅ ID
+          label: c.name        // ✅ Name
+        }));
+
+        setPrograms(formatted);
+      }
     } catch {
       toast.error("Failed to load leads");
     } finally {
       setLoading(false);
     }
-  }, [currentPage, limit, selectedDuplicate, selectedInstitution, selectedStatus, selectedCommunication, selectedCountry, selectedState, selectedCities, searchTerm, selectedLeadSource, startDate, endDate, selectedUserId, phoneSearch, leadIdSearch]);
+  }, [currentPage, limit, selectedDuplicate, selectedPrograms, selectedInstitution, selectedStatus, selectedCommunication, selectedCountry, selectedState, selectedCities, searchTerm, selectedLeadSource, startDate, endDate, selectedUserId, phoneSearch, leadIdSearch]);
 
 
   useEffect(() => {
@@ -488,6 +504,7 @@ export default function LeadsPage() {
         candidateName: searchTerm || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
         userId: selectedUserId || undefined,
         phoneNumber: phoneSearch || undefined,
         leadSource: selectedLeadSource !== "all" ? selectedLeadSource : undefined,
@@ -1190,6 +1207,33 @@ export default function LeadsPage() {
                       <option value="true">Duplicate Only</option>
                       <option value="false">Non-Duplicate</option>
                     </select>
+                  )}
+
+                  {activeFilter.includes("program") && (
+                    <div className="min-w-[200px]">
+                      <AsyncSelect
+                        placeholder="Select Programs..."
+                        cacheOptions
+                        defaultOptions={programs}
+                        isMulti
+                        loadOptions={(inputValue) => {
+                          return Promise.resolve(
+                            programs.filter((p: any) =>
+                              p.label.toLowerCase().includes(inputValue.toLowerCase())
+                            )
+                          );
+                        }}
+                        value={programs.filter((p: any) =>
+                          selectedPrograms.includes(p.value)
+                        )}
+                        onChange={(opts) => {
+                          setSelectedPrograms(
+                            opts ? opts.map((o: any) => o.value) : []
+                          );
+                          setCurrentPage(1);
+                        }}
+                      />
+                    </div>
                   )}
                 </div>
               </>
