@@ -47,15 +47,39 @@ export default function ApplicationDetailsPage() {
     // Sections that should use full width layout
     const fullWidthSections = ["Declaration", "Enclosures"];
 
-    const renderSubSections = (sections: any[]) =>
-        sections.map((section: any) => {
+    // Category mapping with prefixes
+    const categoryMapping = {
+        "Personal Details": { prefix: "A", name: "PERSONAL DETAILS" },
+        "Education Details": { prefix: "B", name: "EDUCATION DETAILS" },
+        "Program Details": { prefix: "C", name: "PROGRAM DETAILS" }
+    };
+
+    // Function to get category prefix
+    const getCategoryPrefix = (sectionName: string) => {
+        for (const [category, info] of Object.entries(categoryMapping)) {
+            if (sectionName === info.name || sectionName.includes(category)) {
+                return info.prefix;
+            }
+        }
+        return "";
+    };
+
+    // Function to generate sub-section number
+    const getSubSectionNumber = (index: number) => {
+        return index + 1;
+    };
+
+    const renderSubSections = (sections: any[], categoryPrefix: string) =>
+        sections.map((section: any, idx: number) => {
             const isFullWidthSection = fullWidthSections.includes(section.sectionName);
+            const subNumber = getSubSectionNumber(idx);
+            const displayTitle = `${categoryPrefix}${subNumber}. ${section.sectionName}`;
 
             return (
                 <div key={section.sectionName} className="mb-6 border rounded-md overflow-hidden">
                     {/* BLUE HEADER */}
                     <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
-                        {section.sectionName}
+                        {displayTitle}
                     </div>
 
                     {/* CONTENT */}
@@ -207,11 +231,11 @@ export default function ApplicationDetailsPage() {
                     </div>
                 </div>
 
-                {/* PERSONAL DETAILS */}
+                {/* PERSONAL DETAILS - Category A */}
                 <section className="mb-6">
-                    <h2 className="section-title">PERSONAL DETAILS</h2>
+                    <h2 className="section-title">A. PERSONAL DETAILS</h2>
                     {data?.personalDetails && data.personalDetails.length > 0 ? (
-                        renderSubSections(data.personalDetails)
+                        renderSubSections(data.personalDetails, "A")
                     ) : (
                         <div className="text-center text-gray-500 py-8 border rounded-md">
                             No personal details available
@@ -219,18 +243,18 @@ export default function ApplicationDetailsPage() {
                     )}
                 </section>
 
-                {/* EDUCATION DETAILS - Only show section if there are education details */}
+                {/* EDUCATION DETAILS - Category B */}
                 {data?.educationDetails && data.educationDetails.length > 0 && (
                     <section className="mb-6">
-                        <h2 className="section-title">EDUCATION DETAILS</h2>
-                        {renderSubSections(data.educationDetails)}
+                        <h2 className="section-title">B. EDUCATION DETAILS</h2>
+                        {renderSubSections(data.educationDetails, "B")}
                     </section>
                 )}
 
-                {/* PROGRAM DETAILS */}
+                {/* PROGRAM DETAILS - Category C */}
                 <section className="mb-8 border rounded-md overflow-hidden">
                     <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
-                        Program Details
+                        C. PROGRAM DETAILS
                     </div>
 
                     <div className="p-4 overflow-x-auto">
