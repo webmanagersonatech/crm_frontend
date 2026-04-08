@@ -47,33 +47,16 @@ export default function ApplicationDetailsPage() {
     // Sections that should use full width layout
     const fullWidthSections = ["Declaration", "Enclosures"];
 
-    // Category mapping with prefixes
-    const categoryMapping = {
-        "Personal Details": { prefix: "A", name: "PERSONAL DETAILS" },
-        "Education Details": { prefix: "B", name: "EDUCATION DETAILS" },
-        "Program Details": { prefix: "C", name: "PROGRAM DETAILS" }
+    // Function to get sub-section letter (a, b, c, d, ...)
+    const getSubSectionLetter = (index: number) => {
+        return String.fromCharCode(97 + index); // 97 is 'a' in ASCII
     };
-
-    // Function to get category prefix
-    const getCategoryPrefix = (sectionName: string) => {
-        for (const [category, info] of Object.entries(categoryMapping)) {
-            if (sectionName === info.name || sectionName.includes(category)) {
-                return info.prefix;
-            }
-        }
-        return "";
-    };
-
-    // Function to generate sub-section number
-    const getSubSectionNumber = (index: number) => {
-        return index + 1;
-    };
-
-    const renderSubSections = (sections: any[], categoryPrefix: string) =>
+    const hasEducationDetails = data?.educationDetails && data.educationDetails.length > 0;
+    const renderSubSections = (sections: any[], mainNumber: number) =>
         sections.map((section: any, idx: number) => {
             const isFullWidthSection = fullWidthSections.includes(section.sectionName);
-            const subNumber = getSubSectionNumber(idx);
-            const displayTitle = `${categoryPrefix}${subNumber}. ${section.sectionName}`;
+            const subLetter = getSubSectionLetter(idx);
+            const displayTitle = `${mainNumber}${subLetter}. ${section.sectionName}`;
 
             return (
                 <div key={section.sectionName} className="mb-6 border rounded-md overflow-hidden">
@@ -190,7 +173,10 @@ export default function ApplicationDetailsPage() {
                 </div>
             );
         });
-
+    let programNumber = 2; // Default if no education details
+    if (hasEducationDetails) {
+        programNumber = 3; // If education exists, program is 3
+    }
     return (
         <div className="p-6">
             {/* ACTION BAR */}
@@ -231,11 +217,11 @@ export default function ApplicationDetailsPage() {
                     </div>
                 </div>
 
-                {/* PERSONAL DETAILS - Category A */}
+                {/* 1. PERSONAL DETAILS */}
                 <section className="mb-6">
-                    <h2 className="section-title">A. PERSONAL DETAILS</h2>
+                    <h2 className="section-title">1. PERSONAL DETAILS</h2>
                     {data?.personalDetails && data.personalDetails.length > 0 ? (
-                        renderSubSections(data.personalDetails, "A")
+                        renderSubSections(data.personalDetails, 1)
                     ) : (
                         <div className="text-center text-gray-500 py-8 border rounded-md">
                             No personal details available
@@ -243,18 +229,18 @@ export default function ApplicationDetailsPage() {
                     )}
                 </section>
 
-                {/* EDUCATION DETAILS - Category B */}
+                {/* 2. EDUCATION DETAILS */}
                 {data?.educationDetails && data.educationDetails.length > 0 && (
                     <section className="mb-6">
-                        <h2 className="section-title">B. EDUCATION DETAILS</h2>
-                        {renderSubSections(data.educationDetails, "B")}
+                        <h2 className="section-title">2. EDUCATION DETAILS</h2>
+                        {renderSubSections(data.educationDetails, 2)}
                     </section>
                 )}
 
-                {/* PROGRAM DETAILS - Category C */}
+                {/* 3. PROGRAM DETAILS */}
                 <section className="mb-8 border rounded-md overflow-hidden">
                     <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
-                        C. PROGRAM DETAILS
+                        {programNumber}. PROGRAM DETAILS
                     </div>
 
                     <div className="p-4 overflow-x-auto">
