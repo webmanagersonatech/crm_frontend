@@ -803,7 +803,7 @@ export default function ApplicationsPage() {
 
           {/* ✏️ Edit */}
           {(userpermission === "superadmin" || userpermission?.edit) && (
-            userpermission === "superadmin" || a.paymentStatus !== "Paid" ? (
+            userpermission === "superadmin" || a.paymentStatus !== "Paid" ||a.instituteId === "INS-3-ZXYXKM" ? (
               <Link
                 href={`/applications/editapplication/${a._id}`}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center justify-center"
@@ -1429,19 +1429,13 @@ export default function ApplicationsPage() {
                     </div>
                   )}
 
-                  
+
                 </div>
               )}
             </div>
           )}
         </div>
       </div>
-
-
-
-
-
-
 
 
 

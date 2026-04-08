@@ -47,16 +47,19 @@ export default function ApplicationDetailsPage() {
     // Sections that should use full width layout
     const fullWidthSections = ["Declaration", "Enclosures"];
 
+    // Check if education details exist
+    const hasEducationDetails = data?.educationDetails && data.educationDetails.length > 0;
+
     // Function to get sub-section letter (a, b, c, d, ...)
     const getSubSectionLetter = (index: number) => {
         return String.fromCharCode(97 + index); // 97 is 'a' in ASCII
     };
-    const hasEducationDetails = data?.educationDetails && data.educationDetails.length > 0;
+
     const renderSubSections = (sections: any[], mainNumber: number) =>
         sections.map((section: any, idx: number) => {
             const isFullWidthSection = fullWidthSections.includes(section.sectionName);
             const subLetter = getSubSectionLetter(idx);
-            const displayTitle = `${mainNumber}${subLetter}. ${section.sectionName}`;
+            const displayTitle = `${mainNumber}(${subLetter}). ${section.sectionName}`;
 
             return (
                 <div key={section.sectionName} className="mb-6 border rounded-md overflow-hidden">
@@ -173,10 +176,13 @@ export default function ApplicationDetailsPage() {
                 </div>
             );
         });
+
+    // Calculate program details number
     let programNumber = 2; // Default if no education details
     if (hasEducationDetails) {
         programNumber = 3; // If education exists, program is 3
     }
+
     return (
         <div className="p-6">
             {/* ACTION BAR */}
@@ -229,15 +235,15 @@ export default function ApplicationDetailsPage() {
                     )}
                 </section>
 
-                {/* 2. EDUCATION DETAILS */}
-                {data?.educationDetails && data.educationDetails.length > 0 && (
+                {/* 2. EDUCATION DETAILS - Only show if exists */}
+                {hasEducationDetails && (
                     <section className="mb-6">
                         <h2 className="section-title">2. EDUCATION DETAILS</h2>
                         {renderSubSections(data.educationDetails, 2)}
                     </section>
                 )}
 
-                {/* 3. PROGRAM DETAILS */}
+                {/* PROGRAM DETAILS - Dynamic number (2 if no education, 3 if education exists) */}
                 <section className="mb-8 border rounded-md overflow-hidden">
                     <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
                         {programNumber}. PROGRAM DETAILS

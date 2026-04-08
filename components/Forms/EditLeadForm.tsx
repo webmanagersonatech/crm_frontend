@@ -59,6 +59,7 @@ export default function EditLeadPage() {
     { value: "Closed", label: "Closed" },
   ];
 
+
   const communicationOptions: OptionType[] = [
     { value: "WhatsApp", label: "WhatsApp" },
     { value: "Offline", label: "Offline" },
@@ -95,9 +96,8 @@ export default function EditLeadPage() {
     } else if (!/^[0-9]{10}$/.test(form.phoneNumber)) {
       newErrors.phoneNumber = "Enter valid 10 digit phone number";
     }
-    if (!form.dateOfBirth) {
-      newErrors.dateOfBirth = "Date of birth is required";
-    } else {
+
+    if (form.dateOfBirth) {
       const today = new Date();
       const dobDate = new Date(form.dateOfBirth);
 
@@ -387,7 +387,9 @@ export default function EditLeadPage() {
 
 
         {/* UG Degree */}
-        <div className="flex flex-col">
+
+
+        {selectedInstitute !== "INS-3-ZXYXKM" && (<div className="flex flex-col">
           <label className="text-sm font-semibold mb-1">UG Degree</label>
           <input
             type="text"
@@ -396,7 +398,9 @@ export default function EditLeadPage() {
             onChange={handleChange}
             className={inputClass}
           />
-        </div>
+        </div>)}
+
+
 
         {/* Phone */}
         <div className="flex flex-col">
@@ -417,7 +421,7 @@ export default function EditLeadPage() {
 
         {/* DOB */}
         <div className="flex flex-col">
-          <label className="text-sm font-semibold mb-1">Date of Birth <span className="text-red-500">* </span></label>
+          <label className="text-sm font-semibold mb-1">Date of Birth </label>
           <input
             type="date"
             name="dateOfBirth"

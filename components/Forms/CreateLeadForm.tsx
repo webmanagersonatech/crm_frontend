@@ -58,10 +58,10 @@ export default function CreateLeadForm({
             newErrors.phoneNumber = "Enter valid 10 digit phone number";
         }
 
-        if (!form.dateOfBirth) {
-            newErrors.dateOfBirth = "Date of birth is required";
-        } else if (!isValidAge(form.dateOfBirth, applicantAge)) {
-            newErrors.dateOfBirth = `Must be at least ${applicantAge} years old`;
+        if (form.dateOfBirth) {
+            if (!isValidAge(form.dateOfBirth, applicantAge)) {
+                newErrors.dateOfBirth = `Must be at least ${applicantAge} years old`;
+            }
         }
 
         if (!form.country) newErrors.country = "Country is required";
@@ -569,16 +569,20 @@ export default function CreateLeadForm({
 
 
                 {/* UG Degree */}
-                <div className="flex flex-col">
-                    <label className="text-sm font-semibold mb-1">UG Degree</label>
-                    <input
-                        type="text"
-                        name="ugDegree"
-                        value={form.ugDegree}
-                        onChange={handleChange}
-                        className={inputClass}
-                    />
-                </div>
+
+                {form.instituteId !== "INS-3-ZXYXKM" && (
+                    <div className="flex flex-col">
+                        <label className="text-sm font-semibold mb-1">UG Degree</label>
+                        <input
+                            type="text"
+                            name="ugDegree"
+                            value={form.ugDegree}
+                            onChange={handleChange}
+                            className={inputClass}
+                        />
+                    </div>)}
+
+
 
                 {/* Phone Number */}
                 <div className="flex flex-col">
@@ -599,7 +603,7 @@ export default function CreateLeadForm({
 
                 {/* Date of Birth */}
                 <div className="flex flex-col">
-                    <label className="text-sm font-semibold mb-1">Date of Birth <span className="text-red-500">* </span></label>
+                    <label className="text-sm font-semibold mb-1">Date of Birth </label>
                     <input
                         type="date"
                         name="dateOfBirth"
