@@ -44,11 +44,31 @@ export default function ApplicationDetailsPage() {
     // const BASE_URL = "http://localhost:4000/uploads/";
     const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
 
-    // Sections that should use full width layout
-    const fullWidthSections = ["Declaration", "Enclosures"];
-
     // Check if education details exist
     const hasEducationDetails = data?.educationDetails && data.educationDetails.length > 0;
+
+    // Find Declaration and Enclosures sections from educationDetails or personalDetails
+    const declarationSection = data?.educationDetails?.find(
+        (section: any) => section.sectionName === "Declaration"
+    ) || data?.personalDetails?.find(
+        (section: any) => section.sectionName === "Declaration"
+    );
+
+    const enclosuresSection = data?.educationDetails?.find(
+        (section: any) => section.sectionName === "Enclosures"
+    ) || data?.personalDetails?.find(
+        (section: any) => section.sectionName === "Enclosures"
+    );
+
+    // Filter out Declaration and Enclosures from educationDetails for normal rendering
+    const filteredEducationDetails = data?.educationDetails?.filter(
+        (section: any) => !["Declaration", "Enclosures"].includes(section.sectionName)
+    );
+
+    // Filter out Declaration and Enclosures from personalDetails
+    const filteredPersonalDetails = data?.personalDetails?.filter(
+        (section: any) => !["Declaration", "Enclosures"].includes(section.sectionName)
+    );
 
     // Function to get sub-section letter (a, b, c, d, ...)
     const getSubSectionLetter = (index: number) => {
@@ -57,7 +77,6 @@ export default function ApplicationDetailsPage() {
 
     const renderSubSections = (sections: any[], mainNumber: number) =>
         sections.map((section: any, idx: number) => {
-            const isFullWidthSection = fullWidthSections.includes(section.sectionName);
             const subLetter = getSubSectionLetter(idx);
             const displayTitle = `${mainNumber}(${subLetter}). ${section.sectionName}`;
 
@@ -70,118 +89,129 @@ export default function ApplicationDetailsPage() {
 
                     {/* CONTENT */}
                     <div className="p-3 overflow-x-auto">
-                        {isFullWidthSection ? (
-                            // Full width layout for Declaration and Enclosures
-                            <div className="space-y-2 text-sm">
-                                {Object.entries(section.fields as Record<string, any>).map(([key, rawValue]) => {
-                                    let value = rawValue;
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm print:grid-cols-3 print:gap-1 min-w-[300px] md:min-w-0">
+                            {Object.entries(section.fields as Record<string, any>).map(([key, rawValue]) => {
+                                let value = rawValue;
 
-                                    if (Array.isArray(value)) {
-                                        value = value.join(", ");
-                                    }
+                                if (Array.isArray(value)) {
+                                    value = value.join(", ");
+                                }
 
-                                    return (
-                                        <div
-                                            key={key}
-                                            className="border border-gray-300 overflow-hidden"
-                                        >
-                                            {/* KEY */}
-                                            <div className="font-semibold text-gray-800 bg-gray-100 px-3 py-2 border-b border-gray-300">
-                                                {key.replace(/_/g, " ")}
-                                            </div>
+                                const isImage =
+                                    typeof value === "string" &&
+                                    /\.(png|jpe?g|webp|gif)$/i.test(value);
 
-                                            {/* VALUE */}
-                                            <div className="text-gray-700 px-3 py-2 whitespace-pre-wrap break-words">
-                                                {value !== undefined && value !== null && value !== "" ? (
-                                                    typeof value === "string" ? (
-                                                        <div className="whitespace-pre-wrap">
-                                                            {value.split('\n').map((line, i) => (
-                                                                <div key={i}>{line || <br />}</div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        String(value)
-                                                    )
-                                                ) : (
-                                                    ""
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            // Original grid layout for other sections
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm print:grid-cols-3 print:gap-1 min-w-[300px] md:min-w-0">
-                                {Object.entries(section.fields as Record<string, any>).map(([key, rawValue]) => {
-                                    let value = rawValue;
+                                const isDocument =
+                                    typeof value === "string" &&
+                                    /\.(pdf|doc|docx|xls|xlsx)$/i.test(value);
 
-                                    if (Array.isArray(value)) {
-                                        value = value.join(", ");
-                                    }
+                                return (
+                                    <div
+                                        key={key}
+                                        className="grid grid-cols-[160px_1fr] border border-gray-300 overflow-hidden break-inside-avoid print:grid-cols-[160px_1fr] print:border print:border-gray-300"
+                                    >
+                                        {/* KEY - Fixed width column */}
+                                        <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
+                                            {key.replace(/_/g, " ")}
+                                        </span>
 
-                                    const isImage =
-                                        typeof value === "string" &&
-                                        /\.(png|jpe?g|webp|gif)$/i.test(value);
-
-                                    const isDocument =
-                                        typeof value === "string" &&
-                                        /\.(pdf|doc|docx|xls|xlsx)$/i.test(value);
-
-                                    return (
-                                        <div
-                                            key={key}
-                                            className="grid grid-cols-[160px_1fr] border border-gray-300 overflow-hidden break-inside-avoid print:grid-cols-[160px_1fr] print:border print:border-gray-300"
-                                        >
-                                            {/* KEY - Fixed width column */}
-                                            <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
-                                                {key.replace(/_/g, " ")}
-                                            </span>
-
-                                            {/* VALUE - Flexible column */}
-                                            <span className="text-gray-700 px-2 py-1 whitespace-pre-wrap break-words">
-                                                {isImage ? (
-                                                    <a
-                                                        href={`${BASE_URL}${value}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                    >
-                                                        <img
-                                                            src={`${BASE_URL}${value}`}
-                                                            alt={key}
-                                                            className="max-h-[60px] max-w-[60px] object-contain cursor-pointer hover:opacity-80 transition"
-                                                        />
-                                                    </a>
-                                                ) : isDocument ? (
-                                                    <a
-                                                        href={`${BASE_URL}${value}`}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-blue-600 underline break-all"
-                                                    >
-                                                        {value}
-                                                    </a>
-                                                ) : value !== undefined && value !== null && value !== "" ? (
-                                                    String(value)
-                                                ) : (
-                                                    ""
-                                                )}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
+                                        {/* VALUE - Flexible column */}
+                                        <span className="text-gray-700 px-2 py-1 whitespace-pre-wrap break-words">
+                                            {isImage ? (
+                                                <a
+                                                    href={`${BASE_URL}${value}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <img
+                                                        src={`${BASE_URL}${value}`}
+                                                        alt={key}
+                                                        className="max-h-[60px] max-w-[60px] object-contain cursor-pointer hover:opacity-80 transition"
+                                                    />
+                                                </a>
+                                            ) : isDocument ? (
+                                                <a
+                                                    href={`${BASE_URL}${value}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 underline break-all"
+                                                >
+                                                    {value}
+                                                </a>
+                                            ) : value !== undefined && value !== null && value !== "" ? (
+                                                String(value)
+                                            ) : (
+                                                ""
+                                            )}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             );
         });
 
-    // Calculate program details number
-    let programNumber = 2; // Default if no education details
-    if (hasEducationDetails) {
-        programNumber = 3; // If education exists, program is 3
-    }
+    const renderFullWidthSection = (section: any, mainNumber: number) => {
+        return (
+            <div key={section.sectionName} className="mb-6 border rounded-md overflow-hidden">
+                <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
+                    {mainNumber}. {section.sectionName}
+                </div>
+                <div className="p-3 overflow-x-auto">
+                    <div className="space-y-2 text-sm">
+                        {Object.entries(section.fields as Record<string, any>).map(([key, rawValue]) => {
+                            let value = rawValue;
+
+                            if (Array.isArray(value)) {
+                                value = value.join(", ");
+                            }
+
+                            return (
+                                <div
+                                    key={key}
+                                    className="border border-gray-300 overflow-hidden"
+                                >
+                                    {/* KEY */}
+                                    <div className="font-semibold text-gray-800 bg-gray-100 px-3 py-2 border-b border-gray-300">
+                                        {key.replace(/_/g, " ")}
+                                    </div>
+
+                                    {/* VALUE */}
+                                    <div className="text-gray-700 px-3 py-2 whitespace-pre-wrap break-words">
+                                        {value !== undefined && value !== null && value !== "" ? (
+                                            typeof value === "string" ? (
+                                                <div className="whitespace-pre-wrap">
+                                                    {value.split('\n').map((line, i) => (
+                                                        <div key={i}>{line || <br />}</div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                String(value)
+                                            )
+                                        ) : (
+                                            ""
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // Calculate section numbers
+    const personalNumber = 1;
+    const educationNumber = hasEducationDetails ? 2 : null;
+    const programNumber = hasEducationDetails ? 3 : 2;
+    const declarationNumber = hasEducationDetails ? 4 : 3;
+    const enclosuresNumber = hasEducationDetails ? 5 : 4;
+
+    // Check if education section should be rendered
+    const shouldShowEducation = hasEducationDetails && filteredEducationDetails && filteredEducationDetails.length > 0;
 
     return (
         <div className="p-6">
@@ -225,25 +255,25 @@ export default function ApplicationDetailsPage() {
 
                 {/* 1. PERSONAL DETAILS */}
                 <section className="mb-6">
-                    <h2 className="section-title">1. PERSONAL DETAILS</h2>
-                    {data?.personalDetails && data.personalDetails.length > 0 ? (
-                        renderSubSections(data.personalDetails, 1)
+                    <h2 className="section-title">{personalNumber}. STUDENT PERSONAL DETAILS</h2>
+                    {filteredPersonalDetails && filteredPersonalDetails.length > 0 ? (
+                        renderSubSections(filteredPersonalDetails, personalNumber)
                     ) : (
                         <div className="text-center text-gray-500 py-8 border rounded-md">
-                            No personal details available
+                            No Student personal details available
                         </div>
                     )}
                 </section>
 
                 {/* 2. EDUCATION DETAILS - Only show if exists */}
-                {hasEducationDetails && (
+                {shouldShowEducation && (
                     <section className="mb-6">
-                        <h2 className="section-title">2. EDUCATION DETAILS</h2>
-                        {renderSubSections(data.educationDetails, 2)}
+                        <h2 className="section-title">{educationNumber}. EDUCATION DETAILS</h2>
+                        {renderSubSections(filteredEducationDetails, educationNumber as number)}
                     </section>
                 )}
 
-                {/* PROGRAM DETAILS - Dynamic number (2 if no education, 3 if education exists) */}
+                {/* PROGRAM DETAILS */}
                 <section className="mb-8 border rounded-md overflow-hidden">
                     <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
                         {programNumber}. PROGRAM DETAILS
@@ -283,6 +313,16 @@ export default function ApplicationDetailsPage() {
                         </div>
                     </div>
                 </section>
+
+                {/* DECLARATION SECTION */}
+                {declarationSection && (
+                    renderFullWidthSection(declarationSection, declarationNumber)
+                )}
+
+                {/* ENCLOSURES SECTION */}
+                {enclosuresSection && (
+                    renderFullWidthSection(enclosuresSection, enclosuresNumber)
+                )}
 
                 {/* SIGNATURES */}
                 <div className="mt-16 flex justify-between text-center">
