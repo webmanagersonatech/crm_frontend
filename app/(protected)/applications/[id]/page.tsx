@@ -44,29 +44,52 @@ export default function ApplicationDetailsPage() {
     // const BASE_URL = "http://localhost:4000/uploads/";
     const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
 
-    // Check if education details exist
-    const hasEducationDetails = data?.educationDetails && data.educationDetails.length > 0;
+    // Helper function to check if a section has any non-empty values
+    const isSectionEmpty = (section: any) => {
+        if (!section || !section.fields) return true;
+        const values = Object.values(section.fields);
+        // Check if all values are empty strings, null, undefined, or empty arrays
+        return values.every(value => 
+            value === "" || 
+            value === null || 
+            value === undefined || 
+            (Array.isArray(value) && value.length === 0)
+        );
+    };
 
-    // Find Declaration and Enclosures sections from educationDetails or personalDetails
-    const declarationSection = data?.educationDetails?.find(
+    // Helper function to filter out empty sections from an array
+    const filterNonEmptySections = (sections: any[]) => {
+        if (!sections || !Array.isArray(sections)) return [];
+        return sections.filter(section => !isSectionEmpty(section));
+    };
+
+    // Check if education details exist and filter out empty sections
+    const hasEducationDetails = data?.educationDetails && data.educationDetails.length > 0;
+    
+    // Filter out empty sections from personalDetails and educationDetails
+    const filteredPersonalDetailsRaw = data?.personalDetails ? filterNonEmptySections(data.personalDetails) : [];
+    const filteredEducationDetailsRaw = data?.educationDetails ? filterNonEmptySections(data.educationDetails) : [];
+
+    // Find Declaration and Enclosures sections from the filtered arrays
+    const declarationSection = filteredEducationDetailsRaw.find(
         (section: any) => section.sectionName === "Declaration"
-    ) || data?.personalDetails?.find(
+    ) || filteredPersonalDetailsRaw.find(
         (section: any) => section.sectionName === "Declaration"
     );
 
-    const enclosuresSection = data?.educationDetails?.find(
+    const enclosuresSection = filteredEducationDetailsRaw.find(
         (section: any) => section.sectionName === "Enclosures"
-    ) || data?.personalDetails?.find(
+    ) || filteredPersonalDetailsRaw.find(
         (section: any) => section.sectionName === "Enclosures"
     );
 
     // Filter out Declaration and Enclosures from educationDetails for normal rendering
-    const filteredEducationDetails = data?.educationDetails?.filter(
+    const filteredEducationDetails = filteredEducationDetailsRaw.filter(
         (section: any) => !["Declaration", "Enclosures"].includes(section.sectionName)
     );
 
     // Filter out Declaration and Enclosures from personalDetails
-    const filteredPersonalDetails = data?.personalDetails?.filter(
+    const filteredPersonalDetails = filteredPersonalDetailsRaw.filter(
         (section: any) => !["Declaration", "Enclosures"].includes(section.sectionName)
     );
 
@@ -168,6 +191,11 @@ export default function ApplicationDetailsPage() {
                                 value = value.join(", ");
                             }
 
+                            // Skip rendering if value is empty
+                            if (value === undefined || value === null || value === "") {
+                                return null;
+                            }
+
                             return (
                                 <div
                                     key={key}
@@ -180,38 +208,35 @@ export default function ApplicationDetailsPage() {
 
                                     {/* VALUE */}
                                     <div className="text-gray-700 px-3 py-2 whitespace-pre-wrap break-words">
-                                        {value !== undefined && value !== null && value !== "" ? (
-                                            typeof value === "string" ? (
-                                                <div className="whitespace-pre-wrap">
-                                                    {value.split('\n').map((line, i) => (
-                                                        <div key={i}>{line || <br />}</div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                String(value)
-                                            )
+                                        {typeof value === "string" ? (
+                                            <div className="whitespace-pre-wrap">
+                                                {value.split('\n').map((line, i) => (
+                                                    <div key={i}>{line || <br />}</div>
+                                                ))}
+                                            </div>
                                         ) : (
-                                            ""
+                                            String(value)
                                         )}
                                     </div>
                                 </div>
                             );
-                        })}
+                        }).filter(Boolean)} {/* Filter out null values */}
                     </div>
                 </div>
             </div>
         );
     };
 
-    // Calculate section numbers
-    const personalNumber = 1;
-    const educationNumber = hasEducationDetails ? 2 : null;
-    const programNumber = hasEducationDetails ? 3 : 2;
-    const declarationNumber = hasEducationDetails ? 4 : 3;
-    const enclosuresNumber = hasEducationDetails ? 5 : 4;
+    // Calculate section numbers dynamically based on what sections exist
+    let currentNumber = 1;
+    const personalNumber = currentNumber++;
+    const educationNumber = filteredEducationDetails.length > 0 ? currentNumber++ : null;
+    const programNumber = currentNumber++;
+    const declarationNumber = declarationSection ? currentNumber++ : null;
+    const enclosuresNumber = enclosuresSection ? currentNumber++ : null;
 
     // Check if education section should be rendered
-    const shouldShowEducation = hasEducationDetails && filteredEducationDetails && filteredEducationDetails.length > 0;
+    const shouldShowEducation = filteredEducationDetails.length > 0;
 
     return (
         <div className="p-6">
@@ -265,7 +290,7 @@ export default function ApplicationDetailsPage() {
                     )}
                 </section>
 
-                {/* 2. EDUCATION DETAILS - Only show if exists */}
+                {/* 2. EDUCATION DETAILS - Only show if exists and has non-empty sections */}
                 {shouldShowEducation && (
                     <section className="mb-6">
                         <h2 className="section-title">{educationNumber}. EDUCATION DETAILS</h2>
@@ -316,12 +341,12 @@ export default function ApplicationDetailsPage() {
 
                 {/* DECLARATION SECTION */}
                 {declarationSection && (
-                    renderFullWidthSection(declarationSection, declarationNumber)
+                    renderFullWidthSection(declarationSection, declarationNumber as number)
                 )}
 
                 {/* ENCLOSURES SECTION */}
                 {enclosuresSection && (
-                    renderFullWidthSection(enclosuresSection, enclosuresNumber)
+                    renderFullWidthSection(enclosuresSection, enclosuresNumber as number)
                 )}
 
                 {/* SIGNATURES */}
