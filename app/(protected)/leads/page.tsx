@@ -661,6 +661,11 @@ export default function LeadsPage() {
       }]
       : []),
 
+    columnVisibility.candidateName && {
+      header: "Candidate",
+      accessor: "candidateName",
+    },
+
     ...(
       (institute === "INS-ZFBTTF5P" || selectedInstitution === "INS-ZFBTTF5P")
         && columnVisibility.community
