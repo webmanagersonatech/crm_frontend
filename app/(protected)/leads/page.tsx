@@ -108,7 +108,7 @@ export default function LeadsPage() {
   const [statusCounts, setStatusCounts] = useState<any[]>([]);
   const [programs, setPrograms] = useState<any[]>([]);
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
-
+  const [institute, setInstitute] = useState<string>("");
 
 
 
@@ -285,6 +285,7 @@ export default function LeadsPage() {
     leadId: true,
     instituteId: true,
     candidateName: true,
+    community: true,
     program: true,
     phoneNumber: true,
     city: true,
@@ -303,6 +304,11 @@ export default function LeadsPage() {
       ? [{ key: "instituteId", label: "Institute" }]
       : []),
     { key: "candidateName", label: "Candidate" },
+    ...(
+      (institute === "INS-ZFBTTF5P" || selectedInstitution === "INS-ZFBTTF5P")
+        ? [{ key: "community", label: "Community" }]
+        : []
+    ),
     { key: "program", label: "Program" },
     { key: "phoneNumber", label: "Phone" },
     { key: "city", label: "city" },
@@ -359,7 +365,12 @@ export default function LeadsPage() {
     try {
       const payload = token.split(".")[1];
       const decoded: any = JSON.parse(atob(payload));
+
       setRole(decoded.role);
+
+      if (decoded?.instituteId) {
+        setInstitute(decoded.instituteId);
+      }
     } catch {
       console.error("Token decode error");
     }
@@ -537,6 +548,13 @@ export default function LeadsPage() {
         if (columnVisibility.candidateName) {
           obj.Candidate = lead.candidateName || "-";
         }
+        // ✅ COMMUNITY EXPORT CONDITION
+        if (
+          (institute === "INS-ZFBTTF5P" || selectedInstitution === "INS-ZFBTTF5P") &&
+          columnVisibility.community
+        ) {
+          obj.Community = lead.community || "-";
+        }
 
         if (columnVisibility.program) {
           obj.Program = lead.program || "-";
@@ -643,10 +661,15 @@ export default function LeadsPage() {
       }]
       : []),
 
-    columnVisibility.candidateName && {
-      header: "Candidate",
-      accessor: "candidateName",
-    },
+    ...(
+      (institute === "INS-ZFBTTF5P" || selectedInstitution === "INS-ZFBTTF5P")
+        && columnVisibility.community
+        ? [{
+          header: "Community",
+          render: (a: any) => a.community || "—",
+        }]
+        : []
+    ),
 
     columnVisibility.program && {
       header: "Program",

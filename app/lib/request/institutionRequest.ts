@@ -72,7 +72,7 @@ export async function getAllInstitutions({
     const response = await api.get(`/institutions?${params.toString()}`);
     return response.data;
   } catch (error: any) {
-    console.log(error, "error");
+ 
     throw new Error(
       error.response?.data?.message || "Failed to fetch institutions."
     );

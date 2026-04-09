@@ -102,7 +102,7 @@ export default function InstitutionsPage() {
 
       setInstitutions(data?.institutions?.docs || []);
       setTotalEntries(data?.institutions?.totalDocs || []);
-      console.log(data, "ll")
+
 
     } finally {
       setLoading(false);

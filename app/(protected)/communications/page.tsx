@@ -94,7 +94,7 @@ export default function CommunicationsPage() {
       try {
         const payload = token.split(".")[1];
         const decoded: any = JSON.parse(atob(payload));
-        console.log("Decoded Token:", decoded);
+       
 
         if (
           (decoded.role === "admin" || decoded.role === "user") &&

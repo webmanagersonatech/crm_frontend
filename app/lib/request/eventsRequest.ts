@@ -29,7 +29,7 @@ api.interceptors.response.use(
     if (typeof window !== "undefined") {
       if (error.response?.status === 401) {
         const message = error.response?.data?.message;
-        console.log(message, "kkk")
+       
         if (
           message === "Session expired. Please login again." ||
           message === "Token invalid" ||
