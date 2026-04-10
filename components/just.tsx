@@ -211,7 +211,7 @@ export default function AddApplicationForm({
         if (!token) return
         try {
             const payload = JSON.parse(atob(token.split(".")[1]))
-            console.log(payload, "payload")
+     
             if (payload?.instituteId) {
                 setSelectedInstitute(payload.instituteId)
                 setShowInstituteDropdown(false)

@@ -22,6 +22,7 @@ import {
   Layers,
   CalendarDays,
   Grid,
+  TentTree,
   GraduationCap
 } from "lucide-react";
 import clsx from "clsx";
@@ -31,7 +32,6 @@ const allItems = [
   { href: "/institution", label: "Institution", icon: Building },
   { href: "/users", label: "Users", icon: Users },
   { href: "/permissions", label: "Permissions", icon: Key },
-
   { href: "/students", label: "Students", icon: GraduationCap },
   { href: "/applications", label: "Applications Manager", icon: FileText },
   { href: "/leads", label: "Leads Manager", icon: UserPlus },
@@ -39,6 +39,7 @@ const allItems = [
   { href: "/templates", label: "Email Templates", icon: Mail },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/login-history", label: "Login History", icon: History },
+  { href: "/summercamp", label: "Summer Camp", icon: TentTree },
   { href: "/events", label: "Events", icon: CalendarDays },
   { href: "/others", label: "Others", icon: Grid },
   { href: "/dynamic-forms", label: "Dynamic Forms", icon: Layers },
@@ -59,12 +60,13 @@ const roleMenus = {
       "/communications",
       "/templates",
       "/dynamic-forms",
+      "/summercamp",
       "/events",
       "/others"
     ].includes(item.href)
   ),
   user: allItems.filter(item =>
-    ["/dashboard", "/applications", "/leads", "/communications", "/templates", "/dynamic-forms", "/events", "/others"].includes(item.href)
+    ["/dashboard", "/applications", "/leads", "/communications", "/templates", "/summercamp", "/dynamic-forms", "/events", "/others"].includes(item.href)
   ),
 };
 

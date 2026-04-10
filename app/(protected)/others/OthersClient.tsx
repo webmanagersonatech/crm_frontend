@@ -32,7 +32,7 @@ type ImportErrors = {
 export default function Otherspages() {
     /* ---------------- Common ---------------- */
     const [institutions, setInstitutions] = useState<{ value: string; label: string }[]>([]);
-    const [userpermission, setUserpermission] = useState<any | null>(null);
+
     const [viewOpen, setViewOpen] = useState(false);
     const [customizeOpen, setCustomizeOpen] = useState(false);
     /* ---------------- Filters ---------------- */
@@ -62,7 +62,9 @@ export default function Otherspages() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [limit, setLimit] = useState(10);
+    const [hasPermission, setHasPermission] = useState<boolean>(true);
 
+    const [userpermission, setUserpermisssion] = useState<any | null>(null);
 
     const PREVIEW_LIMIT = 3;
 
@@ -262,6 +264,62 @@ export default function Otherspages() {
 
     ].filter(Boolean) as Column<any>[];
 
+    useEffect(() => {
+        const fetchPermissions = async () => {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.log("No token found, skipping API call");
+                setHasPermission(false);
+                return;
+            }
+
+            try {
+                const payload = token.split(".")[1];
+                const decoded: any = JSON.parse(atob(payload));
+
+                if ((decoded.role === "admin" || decoded.role === "user") && decoded.instituteId && decoded.id) {
+
+                    const data = await getaccesscontrol({
+                        userId: decoded.id,
+                        instituteId: decoded.instituteId
+                    });
+                    const permissions = data.permissions?.find(
+                        (p: any) => p.moduleName === "Others"
+                    );
+                    if (
+                        permissions &&
+                        (permissions.view ||
+                            permissions.create ||
+                            permissions.edit ||
+                            permissions.delete ||
+                            permissions.filter ||
+                            permissions.download)
+                    ) {
+
+                        setUserpermisssion(permissions);
+                        setHasPermission(true);
+                    } else {
+
+                        setUserpermisssion(null);
+                        setHasPermission(false);
+                    }
+                } else if (decoded.role === "superadmin") {
+
+                    setUserpermisssion("superadmin");
+                    setHasPermission(true);
+                } else {
+
+                    setHasPermission(false);
+                }
+            } catch (error) {
+                console.error("Failed to decode token or fetch permissions:", error);
+                setHasPermission(false);
+            }
+        };
+
+        fetchPermissions();
+    }, []);
+
 
     const fetchOthers = async () => {
         try {
@@ -324,7 +382,7 @@ export default function Otherspages() {
             const payload: any = JSON.parse(atob(token.split(".")[1]));
 
             if (payload.role === "superadmin") {
-                setUserpermission("superadmin");
+                setUserpermisssion("superadmin");
                 setImportInstitution(payload.instituteId);
             } else {
                 getaccesscontrol({
@@ -342,7 +400,7 @@ export default function Otherspages() {
                             return;
                         }
 
-                        setUserpermission(permission);
+                        setUserpermisssion(permission);
                         setImportInstitution(payload.instituteId);
                     })
                     .catch(() => {
@@ -614,7 +672,13 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
     };
 
 
-
+    if (!hasPermission) {
+        return (
+            <div className="p-6 text-center text-red-600">
+                You do not have permission to access this page. Please contact your superadmin.
+            </div>
+        );
+    }
 
 
 
