@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Eye, Pencil, FileDown, Users, ArrowRight, Plus, Loader2, Settings, Trash2, Search, FileText, X, Clock } from "lucide-react";
+import { Eye, Pencil, FileDown, Users, ArrowRight, Plus, Loader2, Settings, Trash2, Search, FileText, X, AlertTriangle, CheckCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import { DataTable } from "@/components/Tablecomponents";
@@ -8,7 +8,7 @@ import ViewDialog from "@/components/ViewDialog";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { getActivedata } from "@/app/lib/request/institutionRequest";
 import AddapplicationForm from "@/components/Forms/Addapplicationform";
-import { getLeads, deleteLead, updateLead, bulkUploadLeads, exportLeads } from "@/app/lib/request/leadRequest";
+import { getLeads, deleteLead, updateLead, bulkUploadLeads, exportLeads, markAsNonDuplicate } from "@/app/lib/request/leadRequest";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
@@ -109,7 +109,8 @@ export default function LeadsPage() {
   const [programs, setPrograms] = useState<any[]>([]);
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [institute, setInstitute] = useState<string>("");
-
+  const [nonDuplicateConfirmOpen, setNonDuplicateConfirmOpen] = useState(false);
+  const [selectedNonDuplicateLead, setSelectedNonDuplicateLead] = useState<Lead | null>(null);
 
 
   const toggleFilter = (value: string) => {
@@ -635,6 +636,23 @@ export default function LeadsPage() {
   };
 
 
+  const handleNonDuplicateConfirm = async () => {
+    if (!selectedNonDuplicateLead) return;
+
+    try {
+      await markAsNonDuplicate(selectedNonDuplicateLead._id!);
+
+      toast.success("Marked as non-duplicate");
+      fetchLeads();
+    } catch (err: any) {
+      toast.error(err.message || "Failed");
+    } finally {
+      setNonDuplicateConfirmOpen(false);
+      setSelectedNonDuplicateLead(null);
+    }
+  };
+
+
   const handleDelete = (lead: Lead) => {
     setSelectedLead(lead);
     setConfirmType("delete");
@@ -811,28 +829,43 @@ export default function LeadsPage() {
       },
     },
 
-
     {
       header: "Dup",
       render: (lead: Lead) => {
         if (!lead.isduplicate) return null;
 
         return (
-          <div className="flex items-center justify-center">
+          <div className="flex gap-2 items-center justify-center">
+
+            {/* Duplicate Icon */}
             <button
+              title="Duplicate Lead"
               onClick={() => {
                 setDuplicateData(lead);
                 setDuplicatePopupOpen(true);
               }}
               className="text-red-600 hover:text-red-700 cursor-pointer"
-              title="Duplicate Lead"
             >
-              ⚠️
+              <AlertTriangle size={18} />
             </button>
+            {/* Non-Duplicate Icon */}
+            {(institute === "INS-3-ZXYXKM" || selectedInstitution === "INS-3-ZXYXKM") && (
+              <button
+                title="Make as Non-Duplicate"
+                onClick={() => {
+                  setSelectedNonDuplicateLead(lead);
+                  setNonDuplicateConfirmOpen(true);
+                }}
+                className="text-green-600 hover:text-green-700 cursor-pointer"
+              >
+                <CheckCircle size={18} />
+              </button>
+            )}
           </div>
         );
       },
     },
+
 
 
 
@@ -1376,6 +1409,15 @@ export default function LeadsPage() {
         onConfirm={confirmAction}
         onCancel={() => setConfirmOpen(false)}
       />
+
+      <ConfirmDialog
+        open={nonDuplicateConfirmOpen}
+        title="Mark as Non-Duplicate"
+        message={`Are you sure you want to mark "${selectedNonDuplicateLead?.candidateName}" (${selectedNonDuplicateLead?.phoneNumber || "No Phone"}) as non-duplicate?`}
+        onConfirm={handleNonDuplicateConfirm}
+        onCancel={() => setNonDuplicateConfirmOpen(false)}
+      />
+
       <DuplicatePopup
         open={duplicatePopupOpen}
         onClose={() => setDuplicatePopupOpen(false)}

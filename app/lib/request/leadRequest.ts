@@ -28,7 +28,7 @@ api.interceptors.response.use(
     if (typeof window !== "undefined") {
       if (error.response?.status === 401) {
         const message = error.response?.data?.message;
-    
+
         if (
           message === "Session expired. Please login again." ||
           message === "Token invalid" ||
@@ -196,6 +196,17 @@ export async function exportFollowups({
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message || "Failed to export followups."
+    );
+  }
+}
+
+export async function markAsNonDuplicate(id: string) {
+  try {
+    const response = await api.patch(`/leads/${id}/non-duplicate`);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to mark as non-duplicate."
     );
   }
 }
