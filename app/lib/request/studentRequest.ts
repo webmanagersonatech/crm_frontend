@@ -87,6 +87,8 @@ export async function listStudentsRequest({
   city = "all",
   feedbackRating = "all",
   familyOccupation = "all",
+  startCutoff,
+  endCutoff,
 }: {
   page?: number;
   limit?: number;
@@ -103,6 +105,8 @@ export async function listStudentsRequest({
   city?: string | string[];
   feedbackRating?: string;
   familyOccupation?: string;
+  startCutoff?: number;
+  endCutoff?: number;
 }) {
   try {
     const params: any = {
@@ -126,7 +130,14 @@ export async function listStudentsRequest({
     if (city !== "all") {
       params.city = city;
     }
+    // 🔥 Cutoff range
+    if (startCutoff !== undefined) {
+      params.startCutoff = startCutoff;
+    }
 
+    if (endCutoff !== undefined) {
+      params.endCutoff = endCutoff;
+    }
     const response = await api.get("/student", { params });
     return response.data;
   } catch (error: any) {
@@ -151,6 +162,8 @@ export async function exportStudentsRequest({
   city = "all",
   feedbackRating = "all",
   familyOccupation = "all",
+  startCutoff,
+  endCutoff,
 }: {
   search?: string;
   status?: string;
@@ -165,6 +178,8 @@ export async function exportStudentsRequest({
   city?: string | string[];
   feedbackRating?: string;
   familyOccupation?: string;
+  startCutoff?: number;
+  endCutoff?: number;
 }) {
   try {
     const params: any = {
@@ -185,6 +200,15 @@ export async function exportStudentsRequest({
     // Handle multi-city safely
     if (city !== "all") {
       params.city = city;
+    }
+
+    if (startCutoff !== undefined) {
+      params.startCutoff = startCutoff;
+    }
+
+
+    if (endCutoff !== undefined) {
+      params.endCutoff = endCutoff;
     }
 
     const response = await api.get<ExportResponse<Student>>("/student/export", { params });

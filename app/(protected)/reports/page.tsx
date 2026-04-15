@@ -125,6 +125,8 @@ export default function ReportsPage() {
   const [exportData, setExportData] = useState<any[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
   const [programs, setPrograms] = useState<any[]>([]);
+  const [startCutoff, setStartCutoff] = useState<string>("");
+  const [endCutoff, setEndCutoff] = useState<string>("");
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   // student 
 
@@ -486,6 +488,8 @@ export default function ReportsPage() {
         city: selectedCities.length ? selectedCities : undefined,
         applicationSource: selectedApplicationSource || undefined,
         interactions: selectedInteraction || undefined,
+        startCutoff: startCutoff ? Number(startCutoff) : undefined,
+        endCutoff: endCutoff ? Number(endCutoff) : undefined,
       });
 
       setApplications((res.data as Application[]) || []);
@@ -508,7 +512,7 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedYear, selectedPrograms, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName, searchProgram]);
+  }, [currentPage, selectedYear, startCutoff, endCutoff, selectedPrograms, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName, searchProgram]);
 
   useEffect(() => {
     if (activeTab === "application") {
@@ -526,6 +530,8 @@ export default function ReportsPage() {
 
   useEffect(() => {
     setSelectedPrograms([]);
+    setEndCutoff("")
+    setStartCutoff("")
     setCurrentPage(1);
     setleadCurrentPage(1);
     setStudentCurrentPage(1);
@@ -602,6 +608,8 @@ export default function ReportsPage() {
         city: selectedCities.length ? selectedCities : undefined,
         feedbackRating: feedbackFilter,
         familyOccupation: familyOccupationFilter,
+        startCutoff: startCutoff ? Number(startCutoff) : undefined,
+        endCutoff: endCutoff ? Number(endCutoff) : undefined,
       });
 
       setStudents(res.students.docs || []);
@@ -620,6 +628,8 @@ export default function ReportsPage() {
     selectedYear,
     studentCurrentPage,
     searchTerm,
+    startCutoff,
+    endCutoff,
     statusFilter,
     selectedInstitution,
     bloodGroupFilter,
@@ -659,6 +669,8 @@ export default function ReportsPage() {
         city: selectedCities.length ? selectedCities : undefined,
         applicationSource: selectedApplicationSource || undefined,
         interactions: selectedInteraction || undefined,
+        startCutoff: startCutoff ? Number(startCutoff) : undefined,
+        endCutoff: endCutoff ? Number(endCutoff) : undefined,
       });
 
       // Transform the exported data for display in modal
@@ -843,6 +855,8 @@ export default function ReportsPage() {
         city: selectedCities.length ? selectedCities : undefined,
         feedbackRating: feedbackFilter,
         familyOccupation: familyOccupationFilter,
+        startCutoff: startCutoff ? Number(startCutoff) : undefined,
+        endCutoff: endCutoff ? Number(endCutoff) : undefined,
       });
 
       // Check if we have data
@@ -1401,6 +1415,8 @@ export default function ReportsPage() {
                 ))}
               </select>
             </div>
+
+
           )}
 
           {/* 📅 Date Range - Takes 2 columns on large screens */}
@@ -1703,28 +1719,62 @@ export default function ReportsPage() {
             </>
           )}
           {activeTab !== "student" && (
-            <AsyncSelect
-              placeholder="Select Programs..."
-              cacheOptions
-              defaultOptions={programs}
-              isMulti
-              loadOptions={(inputValue) => {
-                return Promise.resolve(
-                  programs.filter((p: any) =>
-                    p.label.toLowerCase().includes(inputValue.toLowerCase())
-                  )
-                );
-              }}
-              value={programs.filter((p: any) =>
-                selectedPrograms.includes(p.value)
-              )}
-              onChange={(opts) => {
-                setSelectedPrograms(
-                  opts ? opts.map((o: any) => o.value) : []
-                );
-                setCurrentPage(1);
-              }}
-            />)}
+            <>
+              <AsyncSelect
+                placeholder="Select Programs..."
+                cacheOptions
+                defaultOptions={programs}
+                isMulti
+                loadOptions={(inputValue) => {
+                  return Promise.resolve(
+                    programs.filter((p: any) =>
+                      p.label.toLowerCase().includes(inputValue.toLowerCase())
+                    )
+                  );
+                }}
+                value={programs.filter((p: any) =>
+                  selectedPrograms.includes(p.value)
+                )}
+                onChange={(opts) => {
+                  setSelectedPrograms(
+                    opts ? opts.map((o: any) => o.value) : []
+                  );
+                  setCurrentPage(1);
+                }}
+              />
+
+
+            </>
+
+          )}
+          {activeTab !== "lead" && (
+            <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-md border border-gray-200 shadow-sm">
+              <span className="text-xs font-medium text-gray-600">Cutoff:</span>
+
+              <input
+                type="number"
+                placeholder="Min"
+                value={startCutoff}
+                onChange={(e) => {
+                  setStartCutoff(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-20 px-2 py-1 text-xs border border-gray-200 rounded-md focus:ring-1 focus:ring-[#3a4480]"
+              />
+
+              <span className="text-xs text-gray-500">to</span>
+
+              <input
+                type="number"
+                placeholder="Max"
+                value={endCutoff}
+                onChange={(e) => {
+                  setEndCutoff(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-20 px-2 py-1 text-xs border border-gray-200 rounded-md focus:ring-1 focus:ring-[#3a4480]"
+              />
+            </div>)}
           {/* Application Tab - Applicant Name Search */}
           {activeTab === "application" && (
             <input

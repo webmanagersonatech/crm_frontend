@@ -904,8 +904,6 @@ export default function AddApplicationForm({
                     );
 
                 /* FILE */
-                /* FILE */
-                /* FILE */
                 case "file":
                     const isImage = (filename: string) => {
                         const ext = filename?.split('.').pop()?.toLowerCase();
@@ -1010,7 +1008,7 @@ export default function AddApplicationForm({
                             <p className="text-xs text-gray-500 mt-1">This is a declaration field and cannot be edited</p>
                         </div>
                     );
-                /* NUMBER */
+
                 /* NUMBER */
                 case "number":
                     return (
@@ -1065,6 +1063,34 @@ export default function AddApplicationForm({
                                     handleBlur(e);
                                 }
                             }}
+                        />
+                    );
+
+
+                case "decimal":
+                    return (
+                        <input
+                            type="text"
+                            name={field.fieldName}
+                            value={value}
+                            className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+                            inputMode="decimal"
+                            onChange={(e) => {
+                                let val = e.target.value;
+
+                                // Allow only numbers + one decimal point
+                                val = val.replace(/[^0-9.]/g, "");
+
+                                // Prevent multiple dots
+                                const parts = val.split(".");
+                                if (parts.length > 2) {
+                                    val = parts[0] + "." + parts[1];
+                                }
+
+                                setFormData(p => ({ ...p, [field.fieldName]: val }));
+                                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+                            }}
+                            onBlur={handleBlur}
                         />
                     );
                 /* TEXT */

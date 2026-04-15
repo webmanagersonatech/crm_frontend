@@ -102,8 +102,9 @@ export default function ApplicationsPage() {
   const [selectedInteraction, setSelectedInteraction] = useState("");
   const [totalEntries, setTotalEntries] = useState(0);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [uiFilters, setUiFilters] = useState<UiFilter[]>([]);
+  const [startCutoff, setStartCutoff] = useState<string>("");
+  const [endCutoff, setEndCutoff] = useState<string>("");
   const [availableFilterFields, setAvailableFilterFields] =
     useState<FilterMeta[]>([]);
   const [searchAny, setSearchAny] = useState("");
@@ -136,6 +137,7 @@ export default function ApplicationsPage() {
     { value: "interactions", label: "Follow-up Interaction" },
     { value: "applicationId", label: "Application ID" },
     { value: "applicantName", label: "Applicant Name" },
+    { value: "cutoff", label: "Cutoff Range" },
     { value: "program", label: "Program" },
   ];
 
@@ -324,6 +326,8 @@ export default function ApplicationsPage() {
         city: selectedCities.length ? selectedCities : undefined,
         applicationSource: selectedApplicationSource || undefined,
         interactions: selectedInteraction || undefined,
+        startCutoff: startCutoff ? Number(startCutoff) : undefined,
+        endCutoff: endCutoff ? Number(endCutoff) : undefined,
         q: searchAny.trim() || undefined,
       });
       setApplications((res.data as Application[]) || []);
@@ -368,7 +372,7 @@ export default function ApplicationsPage() {
       setLoading(false);
     }
   }, [currentPage, searchAny,
-    selectedYear, selectedInstitution, selectedPrograms, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
+    selectedYear, selectedInstitution, startCutoff, endCutoff, selectedPrograms, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
 
   const handleExport = async () => {
     try {
@@ -388,6 +392,8 @@ export default function ApplicationsPage() {
         city: selectedCities.length ? selectedCities : undefined,
         applicationSource: selectedApplicationSource || undefined,
         interactions: selectedInteraction || undefined,
+        startCutoff: startCutoff ? Number(startCutoff) : undefined,
+        endCutoff: endCutoff ? Number(endCutoff) : undefined,
         q: searchAny.trim() || undefined,
       });
 
@@ -1141,6 +1147,10 @@ export default function ApplicationsPage() {
                           case "interactions": setSelectedInteraction(""); break;
                           case "applicationId": setSearchApplicationId(""); break;
                           case "applicantName": setSearchApplicantName(""); break;
+                          case "cutoff":
+                            setStartCutoff("");
+                            setEndCutoff("");
+                            break;
                           case "program": setSearchProgram(""); break;
                         }
                       });
@@ -1428,7 +1438,35 @@ export default function ApplicationsPage() {
                       />
                     </div>
                   )}
+                  {activeFilters.includes("cutoff") && (
+                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-md border border-gray-200 shadow-sm">
+                      <span className="text-xs font-medium text-gray-600">Cutoff:</span>
 
+                      <input
+                        type="number"
+                        placeholder="Min"
+                        value={startCutoff}
+                        onChange={(e) => {
+                          setStartCutoff(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className="w-20 px-2 py-1 text-xs border border-gray-200 rounded-md focus:ring-1 focus:ring-[#3a4480]"
+                      />
+
+                      <span className="text-xs text-gray-500">to</span>
+
+                      <input
+                        type="number"
+                        placeholder="Max"
+                        value={endCutoff}
+                        onChange={(e) => {
+                          setEndCutoff(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className="w-20 px-2 py-1 text-xs border border-gray-200 rounded-md focus:ring-1 focus:ring-[#3a4480]"
+                      />
+                    </div>
+                  )}
 
                 </div>
               )}

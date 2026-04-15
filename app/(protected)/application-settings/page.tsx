@@ -104,7 +104,7 @@ function SortableField({
       </div>
 
       {/* Show validation info for number/text fields */}
-      {(field.fieldType === 'number' || field.fieldType === 'text' || field.fieldType === 'email') &&
+      {(field.fieldType === 'number' || field.fieldType === 'text' || field.fieldType === 'email' || field.fieldType === 'decimal') &&
         (field.minLength !== undefined || field.maxLength !== undefined) && (
           <div className="text-xs text-gray-500 mb-2">
             {field.minLength !== undefined && `Min: ${field.minLength} `}
@@ -348,6 +348,7 @@ export default function SettingsPage() {
     '11th Details',
     '12th Details',
     'Diploma Details',
+    'Cutoff Details',
   ]
 
   /* ===============================
@@ -460,7 +461,11 @@ export default function SettingsPage() {
         { fieldName: "Father Organization", fieldType: "text", required: false, maxLength: 50 },
         { fieldName: "Father Designation", fieldType: "text", required: false, maxLength: 50 },
         { fieldName: "Father Aadhar No", fieldType: "text", required: false, maxLength: 12 },
-        { fieldName: "Father Blood Group", fieldType: "text", required: false, maxLength: 3 },
+        {
+          fieldName: "Father Blood Group", fieldType: 'select',
+          required: true,
+          options: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-']
+        },
 
         { fieldName: "Mother Name", fieldType: "text", required: true, maxLength: 50 },
         { fieldName: "Mother Age", fieldType: "number", required: false },
@@ -469,7 +474,11 @@ export default function SettingsPage() {
         { fieldName: "Mother Organization", fieldType: "text", required: false, maxLength: 50 },
         { fieldName: "Mother Designation", fieldType: "text", required: false, maxLength: 50 },
         { fieldName: "Mother Aadhar No", fieldType: "number", required: false, maxLength: 12, minLength: 12, },
-        { fieldName: "Mother Blood Group", fieldType: "text", required: false, maxLength: 3 },
+        {
+          fieldName: "Mother Blood Group", fieldType: 'select',
+          required: true,
+          options: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-']
+        },
 
         { fieldName: "Annual Income", fieldType: "number", required: false },
       ],
@@ -572,6 +581,12 @@ export default function SettingsPage() {
         { fieldName: 'Diploma Year of Completion', fieldType: 'number', required: false },
         { fieldName: 'Diploma Percentage / CGPA', fieldType: 'number', required: false },
         { fieldName: 'Diploma Certificate', fieldType: 'file', required: false },
+      ],
+      'Cutoff Details': [
+        { fieldName: 'Physics Cutoff', fieldType: 'decimal', required: true },
+        { fieldName: 'Chemistry Cutoff', fieldType: 'decimal', required: true },
+        { fieldName: 'Mathematics Cutoff', fieldType: 'decimal', required: true },
+        { fieldName: 'Overall Cutoff', fieldType: 'decimal', required: true },
       ],
     },
 
@@ -732,10 +747,10 @@ export default function SettingsPage() {
         fieldType,
         required,
         visibility: 'Yes',
-        minLength: ['text', 'number', 'email'].includes(fieldType) && minLength
+        minLength: ['text', 'number', 'email', 'decimal'].includes(fieldType) && minLength
           ? Number(minLength)
           : undefined,
-        maxLength: ['text', 'number', 'email'].includes(fieldType) && maxLength
+        maxLength: ['text', 'number', 'email', 'decimal'].includes(fieldType) && maxLength
           ? Number(maxLength)
           : undefined,
         options:
@@ -963,7 +978,7 @@ text-white px-4 py-2 font-semibold rounded-t">
                     onChange={(e) => setFieldName(e.target.value)}
                   />
 
-                  {['text', 'number', 'email'].includes(fieldType) && (
+                  {['text', 'number', 'email', 'decimal'].includes(fieldType) && (
                     <div className="space-y-2">
                       <input
                         type="number"
@@ -997,6 +1012,7 @@ text-white px-4 py-2 font-semibold rounded-t">
                     <option value="">Select type</option>
                     <option value="text">Text</option>
                     <option value="number">Number</option>
+                    <option value="decimal">Decimal Number</option>
                     <option value="alphanumeric">Text + Number</option>
                     <option value="any">Any (Allow All)</option> {/* NEW */}
                     <option value="email">Email</option>

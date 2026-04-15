@@ -91,6 +91,8 @@ interface Student {
 export default function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startCutoff, setStartCutoff] = useState("");
+  const [endCutoff, setEndCutoff] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -162,6 +164,8 @@ export default function StudentsPage() {
         city: selectedCities.length ? selectedCities : undefined,
         feedbackRating: feedbackFilter,
         familyOccupation: familyOccupationFilter,
+        startCutoff: startCutoff ? Number(startCutoff) : undefined,
+        endCutoff: endCutoff ? Number(endCutoff) : undefined,
       });
 
       // Check if we have data
@@ -404,7 +408,8 @@ export default function StudentsPage() {
         country: selectedCountry,
         state: selectedState,
         city: selectedCities.length ? selectedCities : undefined,
-
+        startCutoff: startCutoff ? Number(startCutoff) : undefined,
+        endCutoff: endCutoff ? Number(endCutoff) : undefined,
         feedbackRating: feedbackFilter,
         familyOccupation: familyOccupationFilter,
       });
@@ -436,7 +441,9 @@ export default function StudentsPage() {
     selectedCities,
     feedbackFilter,
     selectedYear,
-    familyOccupationFilter
+    familyOccupationFilter,
+    startCutoff,
+    endCutoff
   ]);
 
 
@@ -842,7 +849,30 @@ export default function StudentsPage() {
                 <option key={q.value} value={q.value}>{q.label}</option>
               ))}
             </select>
+            {/* Cutoff Range */}
+            <div className="flex items-center gap-2 w-full">
+              <input
+                type="number"
+                placeholder="Cutoff Min"
+                value={startCutoff}
+                onChange={(e) => {
+                  setStartCutoff(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-2 w-full focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+              />
 
+              <input
+                type="number"
+                placeholder="Cutoff Max"
+                value={endCutoff}
+                onChange={(e) => {
+                  setEndCutoff(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="border text-sm rounded-md py-2 px-2 w-full focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+              />
+            </div>
             {/* Feedback */}
             <select
               value={feedbackFilter}

@@ -28,7 +28,7 @@ api.interceptors.response.use(
     if (typeof window !== "undefined") {
       if (error.response?.status === 401) {
         const message = error.response?.data?.message;
-      
+
         if (
           message === "Session expired. Please login again." ||
           message === "Token invalid" ||
@@ -176,6 +176,8 @@ export async function getApplications(params?: {
   academicYear?: string;
   instituteId?: string;
   paymentStatus?: string;
+  startCutoff?: number;   // ✅ NEW
+  endCutoff?: number;
   formStatus?: string;
   applicationId?: string;
   applicantName?: string;
@@ -225,6 +227,13 @@ export async function getApplications(params?: {
 
     if (params?.applicationSource) queryParams.append("applicationSource", params.applicationSource);
     if (params?.interactions) queryParams.append("interactions", params.interactions);
+    if (params?.startCutoff !== undefined) {
+      queryParams.append("startCutoff", String(params.startCutoff));
+    }
+
+    if (params?.endCutoff !== undefined) {
+      queryParams.append("endCutoff", String(params.endCutoff));
+    }
 
     const response = await api.get<PaginatedResponse<Application> & {
       academicYears: string[]; courses: {
@@ -248,6 +257,8 @@ export async function exportApplications(params?: {
   instituteId?: string;
   paymentStatus?: string;
   formStatus?: string;
+  startCutoff?: number;   // ✅ NEW
+  endCutoff?: number;
   applicationId?: string;
   applicantName?: string;
   program?: string | string[];
@@ -290,7 +301,13 @@ export async function exportApplications(params?: {
         queryParams.append("city", params.city);
       }
     }
+    if (params?.startCutoff !== undefined) {
+      queryParams.append("startCutoff", String(params.startCutoff));
+    }
 
+    if (params?.endCutoff !== undefined) {
+      queryParams.append("endCutoff", String(params.endCutoff));
+    }
     if (params?.applicationSource) queryParams.append("applicationSource", params.applicationSource);
     if (params?.interactions) queryParams.append("interactions", params.interactions);
 
@@ -364,6 +381,8 @@ export async function getpendingApplications(params?: {
     );
   }
 }
+
+
 export async function sendMail(data: EmailRequest): Promise<EmailResponse> {
   try {
     const response = await api.post<EmailResponse>("/application/send-mail", data);
