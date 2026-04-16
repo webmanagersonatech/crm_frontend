@@ -639,12 +639,7 @@ export default function AddApplicationForm({
         return true
     }
 
-    const hasPersonalField = (name: string) =>
-        formConfig?.personalDetails?.some((section: any) =>
-            section.fields.some(
-                (f: any) => f.fieldName.toLowerCase() === name.toLowerCase()
-            )
-        )
+   
 
 
 

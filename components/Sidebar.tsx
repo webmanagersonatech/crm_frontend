@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getTempAdminAccessRequest } from "@/app/lib/request/authRequest";
 import { toast } from "react-toastify";
 import {
   X,
@@ -22,12 +21,23 @@ import {
   Layers,
   CalendarDays,
   Grid,
+  FlaskConical,
   TentTree,
-  GraduationCap
+  GraduationCap,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import clsx from "clsx";
 
-const allItems = [
+// Define types for menu items
+type MenuItem = {
+  href?: string;
+  label: string;
+  icon: any;
+  submenu?: MenuItem[];
+};
+
+const allItems: MenuItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/institution", label: "Institution", icon: Building },
   { href: "/users", label: "Users", icon: Users },
@@ -39,7 +49,14 @@ const allItems = [
   { href: "/templates", label: "Email Templates", icon: Mail },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/login-history", label: "Login History", icon: History },
-  { href: "/summercamp", label: "Summer Camp", icon: TentTree },
+  {
+    label: "Registrations",
+    icon: Grid,
+    submenu: [
+      { href: "/ciicp", label: "CIICP", icon: FlaskConical },
+      { href: "/summercamp", label: "Summer Camp", icon: TentTree },
+    ]
+  },
   { href: "/events", label: "Events", icon: CalendarDays },
   { href: "/others", label: "Others", icon: Grid },
   { href: "/dynamic-forms", label: "Dynamic Forms", icon: Layers },
@@ -47,10 +64,11 @@ const allItems = [
   { href: "/application-settings", label: "Application Settings", icon: Settings2 },
 ];
 
+// Flatten menu items for role-based filtering (keeping submenu structure)
 const roleMenus = {
   superadmin: allItems,
-  admin: allItems.filter(item =>
-    [
+  admin: allItems.filter(item => {
+    const allowedPaths = [
       "/dashboard",
       "/students",
       "/applications",
@@ -60,15 +78,134 @@ const roleMenus = {
       "/communications",
       "/templates",
       "/dynamic-forms",
-      "/summercamp",
       "/events",
-      "/others"
-    ].includes(item.href)
-  ),
-  user: allItems.filter(item =>
-    ["/dashboard", "/applications", "/leads", "/communications", "/templates", "/summercamp", "/dynamic-forms", "/events", "/others"].includes(item.href)
-  ),
+      "/others",
+      "/ciicp",
+      "/summercamp"
+    ];
+
+    // Check if the item itself has an href and is allowed
+    if (item.href && allowedPaths.includes(item.href)) return true;
+
+    // Check if item has submenu with any allowed items
+    if (item.submenu) {
+      const hasAllowedSubmenu = item.submenu.some(sub =>
+        sub.href && allowedPaths.includes(sub.href)
+      );
+      if (hasAllowedSubmenu) return true;
+    }
+
+    // Check if it's a parent item without href (like Registrations)
+    if (!item.href && item.submenu) return true;
+
+    return false;
+  }),
+  user: allItems.filter(item => {
+    const allowedPaths = [
+      "/dashboard",
+      "/applications",
+      "/leads",
+      "/communications",
+      "/templates",
+      "/dynamic-forms",
+      "/events",
+      "/others",
+      "/ciicp",
+      "/summercamp"
+    ];
+
+    if (item.href && allowedPaths.includes(item.href)) return true;
+    if (item.submenu) {
+      const hasAllowedSubmenu = item.submenu.some(sub =>
+        sub.href && allowedPaths.includes(sub.href)
+      );
+      if (hasAllowedSubmenu) return true;
+    }
+    if (!item.href && item.submenu) return true;
+    return false;
+  }),
 };
+
+// Recursive component to render menu items with submenus
+function MenuItemComponent({
+  item,
+  pathname,
+  onClose
+}: {
+  item: MenuItem;
+  pathname: string;
+  onClose: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const hasSubmenu = item.submenu && item.submenu.length > 0;
+  const isActive = item.href === pathname;
+
+  // Check if any submenu item is active
+  const isSubmenuActive = hasSubmenu && item.submenu?.some(sub => sub.href === pathname);
+
+  // Auto-expand if submenu item is active
+  useEffect(() => {
+    if (isSubmenuActive) {
+      setIsOpen(true);
+    }
+  }, [isSubmenuActive]);
+
+  if (hasSubmenu) {
+    return (
+      <div>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={clsx(
+            "w-full flex items-center justify-between px-4 py-3 rounded-lg text-base transition-all",
+            isSubmenuActive
+              ? "bg-white/20 text-white font-semibold shadow-sm"
+              : "text-white/80 hover:bg-white/10 hover:text-white"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <item.icon className="w-5 h-5" />
+            <span>{item.label}</span>
+          </div>
+          {isOpen ? (
+            <ChevronDown className="w-4 h-4" />
+          ) : (
+            <ChevronRight className="w-4 h-4" />
+          )}
+        </button>
+
+        {isOpen && (
+          <div className="ml-6 mt-1 space-y-1 border-l border-white/10 pl-3">
+            {item.submenu?.map((subItem) => (
+              <MenuItemComponent
+                key={subItem.href || subItem.label}
+                item={subItem}
+                pathname={pathname}
+                onClose={onClose}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Regular link item
+  return (
+    <Link
+      href={item.href as any}
+      onClick={onClose}
+      className={clsx(
+        "flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-all",
+        isActive
+          ? "bg-white/20 text-white font-semibold shadow-sm"
+          : "text-white/80 hover:bg-white/10 hover:text-white"
+      )}
+    >
+      <item.icon className="w-5 h-5" />
+      {item.label}
+    </Link>
+  );
+}
 
 export default function Sidebar({
   open,
@@ -93,7 +230,6 @@ export default function Sidebar({
     try {
       const payload = token.split(".")[1];
       const decoded: any = JSON.parse(atob(payload));
-
 
       const userRole = decoded?.role?.toLowerCase();
       if (!userRole) {
@@ -146,25 +282,14 @@ export default function Sidebar({
       {/* Navigation */}
       <nav className="p-4 space-y-1 overflow-y-auto h-[calc(100%-70px)]">
         {items.length > 0 ? (
-          items.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href as any}
-                onClick={onClose}
-                className={clsx(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-all",
-                  active
-                    ? "bg-white/20 text-white font-semibold shadow-sm"
-                    : "text-white/80 hover:bg-white/10 hover:text-white"
-                )}
-              >
-                <Icon className="w-5 h-5" />
-                {label}
-              </Link>
-            );
-          })
+          items.map((item) => (
+            <MenuItemComponent
+              key={item.href || item.label}
+              item={item}
+              pathname={pathname}
+              onClose={onClose}
+            />
+          ))
         ) : (
           <p className="text-white/70 px-4 py-3 text-sm">
             No menu available for this role.

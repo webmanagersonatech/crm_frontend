@@ -1,18 +1,20 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Eye,
   FileDown,
   Settings,
   Search,
-  TentTree,
+  GraduationCap,
   X,
-  Users, CheckCircle, XCircle, DollarSign,
+  Users,
   Loader2,
   Trash2,
   Filter,
   Calendar,
+  BookOpen,
+
 } from "lucide-react";
 import { toast } from "react-toastify";
 import Select from "react-select";
@@ -24,27 +26,25 @@ import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 
 import {
-  listSummerCampRequest,
-  deleteSummerCampRequest,
-  updatePaymentStatusRequest,
-  exportSummerCampRequest,
-  SummerCamp,
-} from "@/app/lib/request/summercampRequest";
+  listCIICPRequest,
+  deleteCIICPRequest,
+  exportCIICPRequest,
+  CIICPData,
+  updateCIICPPaymentStatusRequest,
+} from "@/app/lib/request/ciicpRequest";
 
 interface Statistics {
   totalRegistrations: number;
-  totalPaid: number;
-  totalUnpaid: number;
-  totalRevenue: number;
+  totalCourses: number;
+  uniqueStudents: number;
 }
 
-export default function SummerCampPage() {
-  const [camps, setCamps] = useState<SummerCamp[]>([]);
+export default function CIICPPage() {
+  const [registrations, setRegistrations] = useState<CIICPData[]>([]);
   const [statistics, setStatistics] = useState<Statistics>({
     totalRegistrations: 0,
-    totalPaid: 0,
-    totalUnpaid: 0,
-    totalRevenue: 0,
+    totalCourses: 0,
+    uniqueStudents: 0,
   });
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,111 +52,59 @@ export default function SummerCampPage() {
   const [totalEntries, setTotalEntries] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [role, setRole] = useState<string>("");
-  const [registrarFilter, setRegistrarFilter] = useState("all");
-  // Filter states
-  const [selectedSports, setSelectedSports] = useState<string[]>([]);
+  const [batchFilter, setBatchFilter] = useState("all");
+  const [districtFilter, setDistrictFilter] = useState("all");
+  const [courseFilter, setCourseFilter] = useState<string[]>([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [paymentConfirmOpen, setPaymentConfirmOpen] = useState(false);
-  const [selectedPaymentCamp, setSelectedPaymentCamp] = useState<SummerCamp | null>(null);
-  const [selectedCamp, setSelectedCamp] = useState<SummerCamp | null>(null);
+  const [selectedRegistration, setSelectedRegistration] = useState<CIICPData | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [userpermission, setUserpermisssion] = useState<any | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean>(true);
-
   const [confirmType, setConfirmType] = useState<"delete" | null>(null);
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
-
   const [exportData, setExportData] = useState<any[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
   const [limit, setLimit] = useState(10);
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
+  const [genderFilter, setGenderFilter] = useState("all");
 
-  // Get unique sports for filter dropdown - fetch all sports from all camps
-  const [allSportOptions, setAllSportOptions] = useState<{ value: string; label: string }[]>([]);
+  const [districtOptions, setDistrictOptions] = useState<{ value: string; label: string }[]>([]);
+  const [courseOptions, setCourseOptions] = useState<{ value: string; label: string }[]>([]);
+  const [paymentConfirmOpen, setPaymentConfirmOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<CIICPData | null>(null);
 
-  const registrarOptions = [
-    { value: "all", label: "All Registrars" },
-    { value: "Sona Student / Faculty", label: "Sona Student / Faculty" },
-    { value: "Outsider", label: "Outsider" },
+  const batchOptions = [
+    { value: "all", label: "All Batches" },
+    { value: "FN", label: "Forenoon (FN)" },
+    { value: "AN", label: "Afternoon (AN)" },
+    { value: "Full", label: "Full Day" },
   ];
 
-
-  const formattedCamp = {
-    "Registration ID": selectedCamp?.regId || "-",
-    "Name": selectedCamp?.name || "-",
-    "Mobile Number": selectedCamp?.mobile_no || "-",
-    "Email": selectedCamp?.email_id || "-",
-    "Gender": selectedCamp?.gender || "-",
-
-    "Date of Birth": selectedCamp?.dob
-      ? new Date(selectedCamp.dob).toLocaleDateString()
-      : "-",
-
-    "Age": selectedCamp?.age ?? "-",
-    "Payment Status": selectedCamp?.paymentStatus || "-",
-
-    "Address": [
-      selectedCamp?.street_address,
-      selectedCamp?.city,
-      selectedCamp?.state_province,
-      selectedCamp?.zip_postal,
-    ]
-      .filter(Boolean)
-      .join(", ") || "-",
-
-    "Allergies": selectedCamp?.allergies || "No",
-    "Allergy Details": selectedCamp?.allergyDetails || "-",
-
-    "Medical Conditions": selectedCamp?.medicalConditions || "No",
-    "Medical Details": selectedCamp?.medicalConditionsDetails || "-",
-
-    "Currently Taking Medicine":
-      selectedCamp?.medicalsCurrentlyTaking || "No",
-
-    "Sports Selected": selectedCamp?.sports || "-",
-
-    // 🔥 THIS IS WHAT YOU WANT
-    "Sports Details": selectedCamp?.sportsData?.length
-      ? selectedCamp.sportsData
-        .map(
-          (sport: any, i: number) =>
-            `${i + 1}. ${sport.sport_name} (${sport.skill_level}) - ${sport.duration}, ${sport.timing}, ₹${sport.price}`
-        )
-        .join("\n")
-      : "-",
-
-    "Total Amount":
-      selectedCamp?.totalAmt !== undefined
-        ? `₹${selectedCamp.totalAmt}`
-        : "-",
-
-    "Registrar": selectedCamp?.registrar || "-",
-
-    "Created Date": selectedCamp?.createdAt
-      ? new Date(selectedCamp.createdAt).toLocaleString()
-      : "-",
-  };
-
   useEffect(() => {
-    const fetchAllSports = async () => {
+    const fetchFilterOptions = async () => {
       try {
-        const res = await listSummerCampRequest({ limit: 1000, page: 1 });
-        const sportsSet = new Set<string>();
-        res.docs?.forEach((camp: SummerCamp) => {
-          camp.sportsData?.forEach((sport) => {
-            sportsSet.add(sport.sport_name);
+        const res = await listCIICPRequest({ limit: 1000, page: 1 });
+        const districtsSet = new Set<string>();
+        const coursesSet = new Set<string>();
+
+        res.docs?.forEach((reg: CIICPData) => {
+          if (reg.district) districtsSet.add(reg.district);
+          reg.courses?.forEach((course) => {
+            coursesSet.add(course);
           });
         });
-        setAllSportOptions(Array.from(sportsSet).map(sport => ({ value: sport, label: sport })));
+
+        setDistrictOptions(Array.from(districtsSet).map(district => ({ value: district, label: district })));
+        setCourseOptions(Array.from(coursesSet).map(course => ({ value: course, label: course })));
       } catch (error) {
-        console.error("Failed to fetch sports options", error);
+        console.error("Failed to fetch filter options", error);
       }
     };
-    fetchAllSports();
+    fetchFilterOptions();
   }, []);
 
   useEffect(() => {
@@ -177,50 +125,64 @@ export default function SummerCampPage() {
     try {
       setExportLoading(true);
 
-      const res = await exportSummerCampRequest({
+      const res = await exportCIICPRequest({
         search: searchTerm,
-        sport: selectedSports.join(","),
+        batch: batchFilter,
+        district: districtFilter,
         startDate: startDate,
         endDate: endDate,
+        course: courseFilter.join(','),
         paymentStatus: paymentStatusFilter,
-        registrar: registrarFilter,
+        gender: genderFilter,
       });
 
-      const exportData = res.data || []; // 👈 முக்கியம்
+      const exportData = res.data || [];
 
-      const transformedData = exportData.map((camp: SummerCamp) => {
+      const transformedData = exportData.map((reg: CIICPData) => {
         const obj: any = {};
 
-        if (columnVisibility.regId) {
-          obj["Registration ID"] = camp.regId || "-";
-        }
-        if (columnVisibility.regno) {
-          obj["Reg No"] = camp.regno || "-";
+        if (columnVisibility.registrationId) {
+          obj["Registration ID"] = reg.registrationId || "-";
         }
         if (columnVisibility.name) {
-          obj["Name"] = camp.name || "-";
+          obj["Name"] = reg.name || "-";
         }
-        if (columnVisibility.mobile) {
-          obj["Mobile"] = camp.mobile_no || "-";
+        if (columnVisibility.fatherName) {
+          obj["Father Name"] = reg.fatherName || "-";
         }
-        if (columnVisibility.email) {
-          obj["Email"] = camp.email_id || "-";
+        if (columnVisibility.gender) {
+          obj["Gender"] = reg.gender || "-";
         }
-        if (columnVisibility.sports) {
-          obj["Sports"] = camp.sports || "-";
+        if (columnVisibility.dob) {
+          obj["Date of Birth"] = reg.dob ? new Date(reg.dob).toLocaleDateString() : "-";
         }
-        if (columnVisibility.totalAmount) {
-          obj["Total Amount"] = camp.totalAmt || "-";
+        if (columnVisibility.phone) {
+          obj["Phone"] = reg.phone || "-";
+        }
+        if (columnVisibility.aadhaar) {
+          obj["Aadhaar"] = reg.aadhaar || "-";
+        }
+        if (columnVisibility.address) {
+          obj["Address"] = reg.address || "-";
+        }
+        if (columnVisibility.district) {
+          obj["District"] = reg.district || "-";
+        }
+        if (columnVisibility.qualification) {
+          obj["Qualification"] = reg.qualification || "-";
+        }
+        if (columnVisibility.courses) {
+          obj["Courses"] = reg.courses?.join(", ") || "-";
+        }
+        if (columnVisibility.batch) {
+          obj["Batch"] = reg.batch || "-";
         }
         if (columnVisibility.paymentStatus) {
-          obj["Payment Status"] = camp.paymentStatus || "-";
-        }
-        if (columnVisibility.registrar) {
-          obj["Registrar"] = camp.registrar || "-";
+          obj["Payment Status"] = reg.paymentStatus === "paid" ? "Paid" : "Unpaid";
         }
         if (columnVisibility.createdAt) {
-          obj["Registered On"] = camp.createdAt
-            ? new Date(camp.createdAt).toLocaleDateString()
+          obj["Registered On"] = reg.createdAt
+            ? new Date(reg.createdAt).toLocaleDateString()
             : "-";
         }
 
@@ -231,36 +193,44 @@ export default function SummerCampPage() {
       setExportOpen(true);
 
     } catch (error: any) {
-      toast.error("Failed to export camps: " + (error.message || "Unknown error"));
-      console.error("Error exporting camps:", error);
+      toast.error("Failed to export registrations: " + (error.message || "Unknown error"));
+      console.error("Error exporting registrations:", error);
     } finally {
       setExportLoading(false);
     }
   };
 
-  const fetchCamps = useCallback(async () => {
+  const fetchRegistrations = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await listSummerCampRequest({
+      const res = await listCIICPRequest({
         limit: limit,
         page: currentPage,
         search: searchTerm,
-        sport: selectedSports.join(','),
+        batch: batchFilter,
+        district: districtFilter,
         startDate: startDate,
         endDate: endDate,
+        course: courseFilter.join(','),
         paymentStatus: paymentStatusFilter,
-        registrar: registrarFilter,
+        gender: genderFilter,
       });
 
-      setCamps(res.docs || []);
+      setRegistrations(res.docs || []);
       setTotalPages(res.totalPages || 1);
       setTotalEntries(res.totalDocs || 0);
 
-      if (res.statistics) {
-        setStatistics(res.statistics);
-      }
+      // Calculate statistics
+      const totalRegistrations = res.totalDocs || 0;
+      const totalCourses = res.courses?.reduce((sum, c) => sum + c.count, 0) || 0;
+      const uniqueStudents = res.totalDocs || 0;
+
+      setStatistics({
+        totalRegistrations,
+        totalCourses,
+        uniqueStudents,
+      });
     } catch (err: any) {
-      // Access the backend error message directly
       const errorMessage = err.response?.data?.message || "Something went wrong";
 
       if (err.response?.status === 403) {
@@ -269,33 +239,47 @@ export default function SummerCampPage() {
         toast.error(errorMessage);
       }
 
-      console.error("Failed to fetch camps:", errorMessage);
+      console.error("Failed to fetch registrations:", errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, limit, registrarFilter, selectedSports, startDate, endDate, paymentStatusFilter]);
+  }, [currentPage, searchTerm, limit, batchFilter, districtFilter, courseFilter, startDate, endDate, paymentStatusFilter, genderFilter]);
+
   useEffect(() => {
-    fetchCamps();
-  }, [fetchCamps]);
+    fetchRegistrations();
+  }, [fetchRegistrations]);
 
   const confirmAction = async () => {
-    if (!selectedCamp || !confirmType) return;
+    if (!selectedRegistration || !confirmType) return;
 
     try {
       if (confirmType === "delete") {
-        await deleteSummerCampRequest(selectedCamp._id);
-        toast.success("Summer camp registration deleted successfully!");
+        await deleteCIICPRequest(selectedRegistration._id);
+        toast.success("CIICP registration deleted successfully!");
       }
 
-      await fetchCamps();
+      await fetchRegistrations();
     } catch (err: any) {
       toast.error(err?.message || "Action failed");
     } finally {
       setConfirmOpen(false);
-      setSelectedCamp(null);
+      setSelectedRegistration(null);
       setConfirmType(null);
     }
   };
+
+  const paymentStatusOptions = [
+    { value: "all", label: "All Payments" },
+    { value: "paid", label: "Paid" },
+    { value: "unpaid", label: "Unpaid" },
+  ];
+
+  const genderOptions = [
+    { value: "all", label: "All Genders" },
+    { value: "Male", label: "Male" },
+    { value: "Female", label: "Female" },
+    { value: "Other", label: "Other" },
+  ];
 
   useEffect(() => {
     const fetchPermissions = async () => {
@@ -317,7 +301,7 @@ export default function SummerCampPage() {
             instituteId: decoded.instituteId
           });
           const permissions = data.permissions?.find(
-            (p: any) => p.moduleName === "Summer Camp"
+            (p: any) => p.moduleName === "CIICP"
           );
           if (
             permissions &&
@@ -353,127 +337,167 @@ export default function SummerCampPage() {
     fetchPermissions();
   }, []);
 
+  const [columnVisibility, setColumnVisibility] = useState({
+    registrationId: true,
+    name: true,
+    fatherName: true,
+    gender: true,
+    dob: true,
+    phone: true,
+    aadhaar: true,
+    address: true,
+    district: true,
+    qualification: true,
+    courses: true,
+    batch: true,
+    createdAt: true,
+    paymentStatus: true,
+  });
+
+  const columnOptions = [
+    { key: "registrationId", label: "Registration ID" },
+    { key: "name", label: "Name" },
+    { key: "fatherName", label: "Father Name" },
+    { key: "gender", label: "Gender" },
+    { key: "dob", label: "Date of Birth" },
+    { key: "phone", label: "Phone" },
+    { key: "aadhaar", label: "Aadhaar" },
+    { key: "address", label: "Address" },
+    { key: "district", label: "District" },
+    { key: "qualification", label: "Qualification" },
+    { key: "courses", label: "Courses" },
+    { key: "batch", label: "Batch" },
+    { key: "createdAt", label: "Registered On" },
+    { key: "paymentStatus", label: "paymentStatus" },
+  ];
+
   const handlePaymentConfirm = async () => {
-    if (!selectedPaymentCamp) return;
+    if (!selectedPayment) return;
     try {
-      await updatePaymentStatusRequest(
-        selectedPaymentCamp._id,
+      await updateCIICPPaymentStatusRequest(
+        selectedPayment._id,
         "paid"
       );
 
       toast.success("Payment marked as PAID");
-      fetchCamps();
+      fetchRegistrations();
     } catch (err: any) {
       toast.error("Failed to update payment");
     } finally {
       setPaymentConfirmOpen(false);
-      setSelectedPaymentCamp(null);
+      setSelectedPayment(null);
     }
   };
 
-  const [columnVisibility, setColumnVisibility] = useState({
-    regId: true,
-    regno: true,
-    name: true,
-    mobile: true,
-    email: true,
-    sports: true,
-    totalAmount: true,
-    paymentStatus: true,
-    registrar: true,
-    createdAt: true,
-  });
-
-  const columnOptions = [
-    { key: "regId", label: "Registration ID" },
-    { key: "regno", label: "Reg No" },
-    { key: "name", label: "Name" },
-    { key: "mobile", label: "Mobile" },
-    { key: "email", label: "Email" },
-    { key: "sports", label: "Sports" },
-    { key: "totalAmount", label: "Total Amount" },
-    { key: "paymentStatus", label: "Payment Status" },
-    { key: "registrar", label: "Registrar" },
-    { key: "createdAt", label: "Registered On" },
-  ];
-
-  const columns: Column<SummerCamp>[] = [
-    columnVisibility.regId && {
+  const columns: Column<CIICPData>[] = [
+    columnVisibility.registrationId && {
       header: "Reg ID",
-      render: (camp: SummerCamp) => camp.regId || "-",
-    },
-    columnVisibility.regno && {
-      header: "Reg No",
-      render: (camp: SummerCamp) => camp.regno || "-",
+      render: (reg: CIICPData) => reg.registrationId || "-",
     },
     columnVisibility.name && {
       header: "Name",
-      render: (camp: SummerCamp) => camp.name || "-",
+      render: (reg: CIICPData) => reg.name || "-",
     },
-    columnVisibility.mobile && {
-      header: "Mobile",
-      render: (camp: SummerCamp) => camp.mobile_no || "-",
+    columnVisibility.fatherName && {
+      header: "Father Name",
+      render: (reg: CIICPData) => reg.fatherName || "-",
     },
-    columnVisibility.email && {
-      header: "Email",
-      render: (camp: SummerCamp) => camp.email_id || "-",
+    columnVisibility.gender && {
+      header: "Gender",
+      render: (reg: CIICPData) => reg.gender || "-",
     },
-    columnVisibility.sports && {
-      header: "Sports",
-      render: (camp: SummerCamp) => (
+    columnVisibility.dob && {
+      header: "DOB",
+      render: (reg: CIICPData) => reg.dob ? new Date(reg.dob).toLocaleDateString() : "-",
+    },
+    columnVisibility.phone && {
+      header: "Phone",
+      render: (reg: CIICPData) => reg.phone || "-",
+    },
+    columnVisibility.aadhaar && {
+      header: "Aadhaar",
+      render: (reg: CIICPData) => reg.aadhaar ? `****${reg.aadhaar.slice(-4)}` : "-",
+    },
+    columnVisibility.address && {
+      header: "Address",
+      render: (reg: CIICPData) => (
+        <div className="max-w-xs truncate" title={reg.address}>
+          {reg.address || "-"}
+        </div>
+      ),
+    },
+    columnVisibility.district && {
+      header: "District",
+      render: (reg: CIICPData) => reg.district || "-",
+    },
+    columnVisibility.qualification && {
+      header: "Qualification",
+      render: (reg: CIICPData) => reg.qualification || "-",
+    },
+    columnVisibility.courses && {
+      header: "Courses",
+      render: (reg: CIICPData) => (
         <div className="max-w-xs">
-          {camp.sportsData?.map((sport, idx) => (
+          {reg.courses?.map((course, idx) => (
             <span
               key={idx}
               className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mr-1 mb-1"
             >
-              {sport.sport_name}
+              {course}
             </span>
           ))}
         </div>
       ),
     },
-    columnVisibility.totalAmount && {
-      header: "Total Amount",
-      render: (camp: SummerCamp) => (
-        <span className="font-semibold">₹{camp.totalAmt || 0}</span>
-      ),
+    columnVisibility.batch && {
+      header: "Batch",
+      render: (reg: CIICPData) => {
+        const batchMap: Record<string, string> = {
+          FN: "Forenoon",
+          AN: "Afternoon",
+          Full: "Full Day"
+        };
+        return (
+          <span className={`inline-block px-2 py-1 rounded-lg text-xs font-medium ${reg.batch === "FN" ? "bg-blue-100 text-blue-800" :
+            reg.batch === "AN" ? "bg-green-100 text-green-800" :
+              "bg-purple-100 text-purple-800"
+            }`}>
+            {batchMap[reg.batch] || reg.batch}
+          </span>
+        );
+      },
+    },
+    columnVisibility.createdAt && {
+      header: "Registered On",
+      render: (reg: CIICPData) =>
+        reg.createdAt ? new Date(reg.createdAt).toLocaleDateString() : "-",
     },
     columnVisibility.paymentStatus && {
       header: "Payment Status",
-      render: (camp: SummerCamp) => (
+      render: (reg: CIICPData) => (
         <span
           onClick={() => {
-            if (camp.paymentStatus === "unpaid") {
-              setSelectedPaymentCamp(camp);
+            if (reg.paymentStatus === "unpaid") {
+              setSelectedPayment(reg);
               setPaymentConfirmOpen(true);
             }
           }}
-          className={`inline-block w-[90px] text-center px-2 py-1 rounded-lg text-xs font-medium cursor-pointer ${camp.paymentStatus === "paid"
+          className={`inline-block w-[90px] text-center px-2 py-1 rounded-lg text-xs font-medium cursor-pointer ${reg.paymentStatus === "paid"
             ? "bg-green-100 border border-green-400 text-green-800"
             : "bg-red-100 text-red-800 border border-red-400 hover:bg-red-200"
             }`}
         >
-          {camp.paymentStatus || "unpaid"}
+          {reg.paymentStatus || "unpaid"}
         </span>
       ),
     },
-    columnVisibility.registrar && {
-      header: "Registrar",
-      render: (camp: SummerCamp) => camp.registrar || "-",
-    },
-    columnVisibility.createdAt && {
-      header: "Registered On",
-      render: (camp: SummerCamp) =>
-        camp.createdAt ? new Date(camp.createdAt).toLocaleDateString() : "-",
-    },
     {
       header: "Actions",
-      render: (camp: SummerCamp) => (
+      render: (reg: CIICPData) => (
         <div className="flex gap-2">
           <button
             onClick={() => {
-              setSelectedCamp(camp);
+              setSelectedRegistration(reg);
               setViewOpen(true);
             }}
             className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md"
@@ -482,12 +506,10 @@ export default function SummerCampPage() {
             <Eye className="w-4 h-4" />
           </button>
 
-
-
           {(role === "superadmin" || userpermission?.delete) && (
             <button
               onClick={() => {
-                setSelectedCamp(camp);
+                setSelectedRegistration(reg);
                 setConfirmType("delete");
                 setConfirmOpen(true);
               }}
@@ -500,16 +522,36 @@ export default function SummerCampPage() {
         </div>
       ),
     },
-  ].filter(Boolean) as Column<SummerCamp>[];
+  ].filter(Boolean) as Column<CIICPData>[];
 
   const resetFilters = () => {
     setSearchTerm("");
-    setSelectedSports([]);
+    setBatchFilter("all");
+    setDistrictFilter("all");
+    setCourseFilter([]);
     setStartDate("");
     setEndDate("");
-    setRegistrarFilter("all");
-    setPaymentStatusFilter("all");
     setCurrentPage(1);
+  };
+
+  const formattedRegistration = {
+    "Registration ID": selectedRegistration?.registrationId || "-",
+    "Name": selectedRegistration?.name || "-",
+    "Father Name": selectedRegistration?.fatherName || "-",
+    "Gender": selectedRegistration?.gender || "-",
+    "Date of Birth": selectedRegistration?.dob
+      ? new Date(selectedRegistration.dob).toLocaleDateString()
+      : "-",
+    "Phone": selectedRegistration?.phone || "-",
+    "Aadhaar": selectedRegistration?.aadhaar || "-",
+    "Address": selectedRegistration?.address || "-",
+    "District": selectedRegistration?.district || "-",
+    "Qualification": selectedRegistration?.qualification || "-",
+    "Courses": selectedRegistration?.courses?.join(", ") || "-",
+    "Batch": selectedRegistration?.batch || "-",
+    "Registered On": selectedRegistration?.createdAt
+      ? new Date(selectedRegistration.createdAt).toLocaleString()
+      : "-",
   };
 
   if (!hasPermission) {
@@ -520,15 +562,13 @@ export default function SummerCampPage() {
     );
   }
 
-  
   return (
-
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div className="flex items-center gap-2">
-          <TentTree className="w-6 h-6 text-blue-600" />
-          <h1 className="text-2xl font-semibold">Summer Camp Registrations</h1>
+          <GraduationCap className="w-6 h-6 text-blue-600" />
+          <h1 className="text-2xl font-semibold">CIICP Registrations</h1>
         </div>
 
         <div className="flex flex-col gap-3 p-4 bg-white rounded-lg shadow-sm">
@@ -641,7 +681,7 @@ export default function SummerCampPage() {
               <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name, registration number, registration ID, or mobile number..."
+                placeholder="Search by name, father name, phone, aadhaar, or registration ID..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -655,26 +695,64 @@ export default function SummerCampPage() {
           {/* Advanced Filters - Collapsible */}
           {showFilters && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-2 p-4 bg-gray-50 rounded-lg border">
-              {/* Multi-Sport Filter */}
+              {/* Batch Filter */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Batch
+                </label>
+                <select
+                  value={batchFilter}
+                  onChange={(e) => {
+                    setBatchFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                >
+                  {batchOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* District Filter */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  District
+                </label>
+                <select
+                  value={districtFilter}
+                  onChange={(e) => {
+                    setDistrictFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                >
+                  <option value="all">All Districts</option>
+                  {districtOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Multi-Course Filter */}
               <div className="sm:col-span-2">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Sports (Multi-select)
+                  Courses (Multi-select)
                 </label>
                 <Select
                   isMulti
-                  options={allSportOptions}
-                  value={allSportOptions.filter(option => selectedSports.includes(option.value))}
+                  options={courseOptions}
+                  value={courseOptions.filter(option => courseFilter.includes(option.value))}
                   onChange={(selected) => {
-                    setSelectedSports(selected.map(s => s.value));
+                    setCourseFilter(selected.map(s => s.value));
                     setCurrentPage(1);
                   }}
-                  placeholder="Select sports..."
+                  placeholder="Select courses..."
                   className="text-sm"
                   classNamePrefix="react-select"
                 />
               </div>
 
-              {/* Payment Status Filter */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
                   Payment Status
@@ -687,23 +765,26 @@ export default function SummerCampPage() {
                   }}
                   className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
                 >
-                  <option value="all">All</option>
-                  <option value="paid">Paid</option>
-                  <option value="unpaid">Unpaid</option>
+                  {paymentStatusOptions.map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
               </div>
 
+              {/* Gender Filter */}
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Registrar Type</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Gender
+                </label>
                 <select
-                  value={registrarFilter}
+                  value={genderFilter}
                   onChange={(e) => {
-                    setRegistrarFilter(e.target.value);
+                    setGenderFilter(e.target.value);
                     setCurrentPage(1);
                   }}
                   className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
                 >
-                  {registrarOptions.map(option => (
+                  {genderOptions.map(option => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>
@@ -754,7 +835,7 @@ export default function SummerCampPage() {
           )}
 
           {/* Active Filters Summary */}
-          {(searchTerm || selectedSports.length > 0 || startDate || endDate || paymentStatusFilter !== "all") && (
+          {(searchTerm || batchFilter !== "all" || districtFilter !== "all" || courseFilter.length > 0 || startDate || endDate || paymentStatusFilter !== "all" || genderFilter !== "all") && (
             <div className="flex flex-wrap gap-2 mt-2 text-xs">
               {searchTerm && (
                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full flex items-center gap-1">
@@ -770,12 +851,12 @@ export default function SummerCampPage() {
                   </button>
                 </span>
               )}
-              {selectedSports.length > 0 && (
+              {batchFilter !== "all" && (
                 <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full flex items-center gap-1">
-                  Sports: {selectedSports.join(", ")}
+                  Batch: {batchFilter}
                   <button
                     onClick={() => {
-                      setSelectedSports([]);
+                      setBatchFilter("all");
                       setCurrentPage(1);
                     }}
                     className="hover:text-purple-900"
@@ -785,21 +866,64 @@ export default function SummerCampPage() {
                 </span>
               )}
               {paymentStatusFilter !== "all" && (
-                <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full flex items-center gap-1">
-                  Payment: {paymentStatusFilter}
+                <span className="bg-pink-100 text-pink-800 px-2 py-1 rounded-full flex items-center gap-1">
+                  Payment: {paymentStatusFilter === "paid" ? "Paid" : "Unpaid"}
                   <button
                     onClick={() => {
                       setPaymentStatusFilter("all");
                       setCurrentPage(1);
                     }}
-                    className="hover:text-yellow-900"
+                    className="hover:text-pink-900"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+
+              {genderFilter !== "all" && (
+                <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full flex items-center gap-1">
+                  Gender: {genderFilter}
+                  <button
+                    onClick={() => {
+                      setGenderFilter("all");
+                      setCurrentPage(1);
+                    }}
+                    className="hover:text-indigo-900"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {districtFilter !== "all" && (
+                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full flex items-center gap-1">
+                  District: {districtFilter}
+                  <button
+                    onClick={() => {
+                      setDistrictFilter("all");
+                      setCurrentPage(1);
+                    }}
+                    className="hover:text-green-900"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              )}
+              {courseFilter.length > 0 && (
+                <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full flex items-center gap-1">
+                  Courses: {courseFilter.join(", ")}
+                  <button
+                    onClick={() => {
+                      setCourseFilter([]);
+                      setCurrentPage(1);
+                    }}
+                    className="hover:text-orange-900"
                   >
                     <X className="w-3 h-3" />
                   </button>
                 </span>
               )}
               {(startDate || endDate) && (
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full flex items-center gap-1">
+                <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
                   {startDate && `From: ${new Date(startDate).toLocaleDateString()}`}
                   {endDate && ` To: ${new Date(endDate).toLocaleDateString()}`}
@@ -809,7 +933,7 @@ export default function SummerCampPage() {
                       setEndDate("");
                       setCurrentPage(1);
                     }}
-                    className="hover:text-green-900"
+                    className="hover:text-yellow-900"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -820,10 +944,8 @@ export default function SummerCampPage() {
         </div>
       </div>
 
-      {/* Stats Summary - Backend calculated */}
-
-
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      {/* Statistics Summary */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Total Registrations */}
         <div className="bg-white rounded-xl shadow-md p-4 border-b-4 border-blue-500 flex items-center justify-between">
           <div>
@@ -833,38 +955,29 @@ export default function SummerCampPage() {
           <Users className="w-10 h-10 text-blue-500 opacity-70" />
         </div>
 
-        {/* Paid */}
+        {/* Total Course Enrollments */}
         <div className="bg-white rounded-xl shadow-md p-4 border-b-4 border-green-500 flex items-center justify-between">
           <div>
-            <div className="text-sm text-gray-500">Paid</div>
-            <div className="text-2xl font-bold text-green-600">{statistics.totalPaid}</div>
+            <div className="text-sm text-gray-500">Total Course Enrollments</div>
+            <div className="text-2xl font-bold text-green-600">{statistics.totalCourses}</div>
           </div>
-          <CheckCircle className="w-10 h-10 text-green-500 opacity-70" />
+          <BookOpen className="w-10 h-10 text-green-500 opacity-70" />
         </div>
 
-        {/* Unpaid */}
-        <div className="bg-white rounded-xl shadow-md p-4 border-b-4 border-red-500 flex items-center justify-between">
+        {/* Unique Students */}
+        <div className="bg-white rounded-xl shadow-md p-4 border-b-4 border-purple-500 flex items-center justify-between">
           <div>
-            <div className="text-sm text-gray-500">Unpaid</div>
-            <div className="text-2xl font-bold text-red-600">{statistics.totalUnpaid}</div>
+            <div className="text-sm text-gray-500">Unique Students</div>
+            <div className="text-2xl font-bold text-purple-600">{statistics.uniqueStudents}</div>
           </div>
-          <XCircle className="w-10 h-10 text-red-500 opacity-70" />
-        </div>
-
-        {/* Total Revenue */}
-        <div className="bg-white rounded-xl shadow-md p-4 border-b-4 border-amber-500 flex items-center justify-between">
-          <div>
-            <div className="text-sm text-gray-500">Total Revenue</div>
-            <div className="text-2xl font-bold text-amber-600">₹{statistics.totalRevenue.toLocaleString()}</div>
-          </div>
-          <DollarSign className="w-10 h-10 text-amber-500 opacity-70" />
+          <GraduationCap className="w-10 h-10 text-purple-500 opacity-70" />
         </div>
       </div>
 
       {/* Data Table */}
       <DataTable
         columns={columns}
-        data={camps}
+        data={registrations}
         loading={loading}
         totalEntries={totalEntries}
         currentPage={currentPage}
@@ -875,30 +988,39 @@ export default function SummerCampPage() {
       {/* View Dialog */}
       <ViewDialog
         open={viewOpen}
-        title="Summer Camp Registration Details"
-        data={formattedCamp}
+        title="CIICP Registration Details"
+        data={formattedRegistration}
         onClose={() => setViewOpen(false)}
       />
-
-
 
       {/* Delete Confirmation */}
       <ConfirmDialog
         open={confirmOpen}
         title="Delete Registration"
-        message={`Are you sure you want to delete the summer camp registration for "${selectedCamp?.name}"?`}
+        message={`Are you sure you want to delete the CIICP registration for "${selectedRegistration?.name}"?`}
         onConfirm={confirmAction}
         onCancel={() => {
           setConfirmOpen(false);
-          setSelectedCamp(null);
+          setSelectedRegistration(null);
           setConfirmType(null);
+        }}
+      />
+
+      <ConfirmDialog
+        open={paymentConfirmOpen}
+        title="Confirm Payment"
+        message={`Are you sure you want to mark "${selectedPayment?.name}" as PAID?`}
+        onConfirm={handlePaymentConfirm}
+        onCancel={() => {
+          setPaymentConfirmOpen(false);
+          setSelectedPayment(null);
         }}
       />
 
       {/* Export Modal */}
       <ExportModal
         open={exportOpen}
-        title="Summer Camp Registrations"
+        title="CIICP Registrations"
         data={exportData}
         onClose={() => {
           setExportOpen(false);
@@ -918,18 +1040,6 @@ export default function SummerCampPage() {
         onChange={(v) => setColumnVisibility((p) => ({ ...p, ...v }))}
         onClose={() => setCustomizeOpen(false)}
       />
-
-      <ConfirmDialog
-        open={paymentConfirmOpen}
-        title="Confirm Payment"
-        message={`Are you sure you want to mark "${selectedPaymentCamp?.name}" as PAID?`}
-        onConfirm={handlePaymentConfirm}
-        onCancel={() => {
-          setPaymentConfirmOpen(false);
-          setSelectedPaymentCamp(null);
-        }}
-      />
     </div>
-
   );
 }
