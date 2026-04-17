@@ -98,6 +98,67 @@ export default function ApplicationDetailsPage() {
         return String.fromCharCode(97 + index); // 97 is 'a' in ASCII
     };
 
+    // Helper function to check if a value is an image (file path or base64)
+    const isImageValue = (value: any): boolean => {
+        return typeof value === "string" && (
+            /\.(png|jpe?g|webp|gif)$/i.test(value) ||  // file extension
+            value.startsWith('data:image/')            // base64 image
+        );
+    };
+
+    // Helper function to check if a value is a document
+    const isDocumentValue = (value: any): boolean => {
+        return typeof value === "string" && 
+            !value.startsWith('data:image/') &&        // exclude base64 images
+            /\.(pdf|doc|docx|xls|xlsx)$/i.test(value);
+    };
+
+    // Helper function to render value (image, document, or text)
+    const renderValue = (key: string, value: any) => {
+        if (isImageValue(value)) {
+            // Base64 image
+            if (value.startsWith('data:image/')) {
+                return (
+                    <img
+                        src={value}
+                        alt={key}
+                        className="max-h-[60px] max-w-[60px] object-contain cursor-pointer hover:opacity-80 transition"
+                        onClick={() => window.open(value, '_blank')}
+                    />
+                );
+            }
+            // Regular file from server
+            return (
+                <a href={`${BASE_URL}${value}`} target="_blank" rel="noopener noreferrer">
+                    <img
+                        src={`${BASE_URL}${value}`}
+                        alt={key}
+                        className="max-h-[60px] max-w-[60px] object-contain cursor-pointer hover:opacity-80 transition"
+                    />
+                </a>
+            );
+        }
+        
+        if (isDocumentValue(value)) {
+            return (
+                <a
+                    href={`${BASE_URL}${value}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline break-all"
+                >
+                    {value}
+                </a>
+            );
+        }
+        
+        if (value !== undefined && value !== null && value !== "") {
+            return String(value);
+        }
+        
+        return "";
+    };
+
     const renderSubSections = (sections: any[], mainNumber: number) =>
         sections.map((section: any, idx: number) => {
             const subLetter = getSubSectionLetter(idx);
@@ -120,14 +181,6 @@ export default function ApplicationDetailsPage() {
                                     value = value.join(", ");
                                 }
 
-                                const isImage =
-                                    typeof value === "string" &&
-                                    /\.(png|jpe?g|webp|gif)$/i.test(value);
-
-                                const isDocument =
-                                    typeof value === "string" &&
-                                    /\.(pdf|doc|docx|xls|xlsx)$/i.test(value);
-
                                 return (
                                     <div
                                         key={key}
@@ -140,32 +193,7 @@ export default function ApplicationDetailsPage() {
 
                                         {/* VALUE - Flexible column */}
                                         <span className="text-gray-700 px-2 py-1 whitespace-pre-wrap break-words">
-                                            {isImage ? (
-                                                <a
-                                                    href={`${BASE_URL}${value}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
-                                                    <img
-                                                        src={`${BASE_URL}${value}`}
-                                                        alt={key}
-                                                        className="max-h-[60px] max-w-[60px] object-contain cursor-pointer hover:opacity-80 transition"
-                                                    />
-                                                </a>
-                                            ) : isDocument ? (
-                                                <a
-                                                    href={`${BASE_URL}${value}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 underline break-all"
-                                                >
-                                                    {value}
-                                                </a>
-                                            ) : value !== undefined && value !== null && value !== "" ? (
-                                                String(value)
-                                            ) : (
-                                                ""
-                                            )}
+                                            {renderValue(key, value)}
                                         </span>
                                     </div>
                                 );
@@ -208,15 +236,7 @@ export default function ApplicationDetailsPage() {
 
                                     {/* VALUE */}
                                     <div className="text-gray-700 px-3 py-2 whitespace-pre-wrap break-words">
-                                        {typeof value === "string" ? (
-                                            <div className="whitespace-pre-wrap">
-                                                {value.split('\n').map((line, i) => (
-                                                    <div key={i}>{line || <br />}</div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            String(value)
-                                        )}
+                                        {renderValue(key, value)}
                                     </div>
                                 </div>
                             );

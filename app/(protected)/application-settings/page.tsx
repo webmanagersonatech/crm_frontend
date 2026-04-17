@@ -1019,6 +1019,7 @@ text-white px-4 py-2 font-semibold rounded-t">
                     <option value="date">Date</option>
                     <option value="textarea">Textarea</option>
                     <option value="select">Select</option>
+                    <option value="signature">Signature</option>
                     <option value="checkbox">Checkbox</option>
                     <option value="radiobutton">Radio Button</option>
                     <option value="file">File Upload</option>

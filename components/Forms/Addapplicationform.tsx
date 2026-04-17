@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState ,useRef} from "react"
 import { useRouter } from "next/navigation"
 import Select from "react-select"
 import { toast } from "react-toastify";
@@ -9,7 +9,7 @@ import { getActiveInstitutions } from "@/app/lib/request/institutionRequest"
 import { getFormByInstituteId } from "@/app/lib/request/formManager"
 import { createApplication, getApplicationById, updateApplication } from "@/app/lib/request/application"
 import { getSettingsByInstitute } from "@/app/lib/request/settingRequest"
-
+import SignatureCanvas from 'react-signature-canvas';
 import { Country, State, City } from "country-state-city"
 
 
@@ -72,14 +72,25 @@ export default function AddApplicationForm({
     const [academicYear, setAcademicYear] = useState<string>('')
     const [startYear, setStartYear] = useState<OptionType | null>(null)
     const [endYear, setEndYear] = useState<OptionType | null>(null)
-    // Add this with other useState declarations
+    // Add this with your other state declarations
+    const [signatures, setSignatures] = useState<Record<string, SignatureCanvas | null>>({});
+    const [signaturesData, setSignaturesData] = useState<Record<string, string>>({});
+    const signaturesLoaded = useRef<Record<string, boolean>>({}); // Track loaded signatures
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const countryOptions = Country.getAllCountries().map(c => ({
         value: c.isoCode,
         label: c.name,
     }))
 
-
+    const [showInstituteDropdown, setShowInstituteDropdown] = useState(true)
+    const [newField, setNewField] = useState({
+        tab: "personal" as Tab,
+        sectionName: "",
+        fieldName: "",
+        fieldType: "",
+        options: "",
+        required: false,
+    })
     // Add this function after your existing validation functions
     const validateField = (field: any, value: any): string => {
         // Required field validation
@@ -215,25 +226,121 @@ export default function AddApplicationForm({
     }
 
 
-    const [showInstituteDropdown, setShowInstituteDropdown] = useState(true)
-    const [newField, setNewField] = useState({
-        tab: "personal" as Tab,
-        sectionName: "",
-        fieldName: "",
-        fieldType: "",
-        options: "",
-        required: false,
-    })
+
 
     // const BASE_URL = "http://localhost:4000/uploads/";
     const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
 
 
+ const renderSignatureField = (field: any) => {
+    const existingSignature = formData[field.fieldName];
+    const currentSignatureData = signaturesData[field.fieldName] || "";
+    
+    return (
+        <div className="space-y-2">
+            <div className="border rounded p-2 bg-white">
+                <SignatureCanvas
+                    ref={(ref) => {
+                        if (!ref) return;
+                        
+                        // Only update if ref changed
+                        setSignatures(prev => {
+                            if (prev[field.fieldName] === ref) return prev;
+                            return { ...prev, [field.fieldName]: ref };
+                        });
+                        
+                        // Load existing signature if available and not already loaded
+                        if (existingSignature && !signaturesData[field.fieldName] && !signaturesLoaded.current[field.fieldName]) {
+                            signaturesLoaded.current[field.fieldName] = true;
+                            
+                            setTimeout(() => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    ref.clear();
+                                    ref.fromDataURL(existingSignature);
+                                    setSignaturesData(prev => ({ 
+                                        ...prev, 
+                                        [field.fieldName]: existingSignature 
+                                    }));
+                                };
+                                img.src = existingSignature;
+                            }, 100);
+                        }
+                    }}
+                    canvasProps={{
+                        className: "signature-canvas w-full h-32 border rounded",
+                        style: { border: "1px solid #ccc" }
+                    }}
+                    backgroundColor="rgb(255,255,255)"
+                    onEnd={() => {
+                        const currentSig = signatures[field.fieldName];
+                        if (currentSig) {
+                            const dataUrl = currentSig.toDataURL();
+                            setSignaturesData(prev => ({ 
+                                ...prev, 
+                                [field.fieldName]: dataUrl 
+                            }));
+                            setFormData(prev => ({
+                                ...prev,
+                                [field.fieldName]: dataUrl
+                            }));
+                            setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+                        }
+                    }}
+                />
+            </div>
+            {/* Rest of the buttons and preview remain the same */}
+            <div className="flex gap-2">
+                <button
+                    type="button"
+                    onClick={() => {
+                        const currentSig = signatures[field.fieldName];
+                        if (currentSig) {
+                            currentSig.clear();
+                            setSignaturesData(prev => ({ 
+                                ...prev, 
+                                [field.fieldName]: "" 
+                            }));
+                            setFormData(prev => ({
+                                ...prev,
+                                [field.fieldName]: ""
+                            }));
+                            // Reset loaded flag if cleared
+                            signaturesLoaded.current[field.fieldName] = false;
+                        }
+                    }}
+                    className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+                >
+                    Clear
+                </button>
+                {currentSignatureData && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const dataUrl = currentSignatureData;
+                            const link = document.createElement('a');
+                            link.download = `${field.fieldName}.png`;
+                            link.href = dataUrl;
+                            link.click();
+                        }}
+                        className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                        Download
+                    </button>
+                )}
+            </div>
+            {currentSignatureData && (
+                <div className="mt-2">
+                    <p className="text-xs text-gray-500">Preview:</p>
+                    <img src={currentSignatureData} alt={`${field.fieldName} preview`} className="h-16 border rounded mt-1" />
+                </div>
+            )}
+        </div>
+    );
+};
 
     const inputClass =
         "border border-gray-300  w-full p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#5667a8]"
-
-
 
     const fromYear = 2018
     const toYear = 2060
@@ -639,7 +746,7 @@ export default function AddApplicationForm({
         return true
     }
 
-   
+
 
 
 
@@ -930,7 +1037,8 @@ export default function AddApplicationForm({
                             ))}
                         </select>
                     );
-
+                case "signature":
+                    return renderSignatureField(field);
                 /* RADIO */
                 case "radiobutton":
                     return (
@@ -1292,7 +1400,13 @@ export default function AddApplicationForm({
                 else if (field.type === "declaration") {
                     // For declaration fields, send the declarationText from config
                     sectionObj.fields[field.fieldName] = field.declarationText || ""
-                } else {
+                }
+                else if (field.type === "signature") {
+                    // For signature fields, send the base64 data
+                    sectionObj.fields[field.fieldName] = formData[field.fieldName] || ""
+                }
+
+                else {
                     sectionObj.fields[field.fieldName] = formData[field.fieldName] || ""
                 }
             })
