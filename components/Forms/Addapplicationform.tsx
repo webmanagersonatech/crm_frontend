@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState ,useRef} from "react"
+import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Select from "react-select"
 import { toast } from "react-toastify";
@@ -232,112 +232,112 @@ export default function AddApplicationForm({
     const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
 
 
- const renderSignatureField = (field: any) => {
-    const existingSignature = formData[field.fieldName];
-    const currentSignatureData = signaturesData[field.fieldName] || "";
-    
-    return (
-        <div className="space-y-2">
-            <div className="border rounded p-2 bg-white">
-                <SignatureCanvas
-                    ref={(ref) => {
-                        if (!ref) return;
-                        
-                        // Only update if ref changed
-                        setSignatures(prev => {
-                            if (prev[field.fieldName] === ref) return prev;
-                            return { ...prev, [field.fieldName]: ref };
-                        });
-                        
-                        // Load existing signature if available and not already loaded
-                        if (existingSignature && !signaturesData[field.fieldName] && !signaturesLoaded.current[field.fieldName]) {
-                            signaturesLoaded.current[field.fieldName] = true;
-                            
-                            setTimeout(() => {
-                                const img = new Image();
-                                img.onload = () => {
-                                    ref.clear();
-                                    ref.fromDataURL(existingSignature);
-                                    setSignaturesData(prev => ({ 
-                                        ...prev, 
-                                        [field.fieldName]: existingSignature 
-                                    }));
-                                };
-                                img.src = existingSignature;
-                            }, 100);
-                        }
-                    }}
-                    canvasProps={{
-                        className: "signature-canvas w-full h-32 border rounded",
-                        style: { border: "1px solid #ccc" }
-                    }}
-                    backgroundColor="rgb(255,255,255)"
-                    onEnd={() => {
-                        const currentSig = signatures[field.fieldName];
-                        if (currentSig) {
-                            const dataUrl = currentSig.toDataURL();
-                            setSignaturesData(prev => ({ 
-                                ...prev, 
-                                [field.fieldName]: dataUrl 
-                            }));
-                            setFormData(prev => ({
-                                ...prev,
-                                [field.fieldName]: dataUrl
-                            }));
-                            setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
-                        }
-                    }}
-                />
-            </div>
-            {/* Rest of the buttons and preview remain the same */}
-            <div className="flex gap-2">
-                <button
-                    type="button"
-                    onClick={() => {
-                        const currentSig = signatures[field.fieldName];
-                        if (currentSig) {
-                            currentSig.clear();
-                            setSignaturesData(prev => ({ 
-                                ...prev, 
-                                [field.fieldName]: "" 
-                            }));
-                            setFormData(prev => ({
-                                ...prev,
-                                [field.fieldName]: ""
-                            }));
-                            // Reset loaded flag if cleared
-                            signaturesLoaded.current[field.fieldName] = false;
-                        }
-                    }}
-                    className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
-                >
-                    Clear
-                </button>
-                {currentSignatureData && (
+    const renderSignatureField = (field: any) => {
+        const existingSignature = formData[field.fieldName];
+        const currentSignatureData = signaturesData[field.fieldName] || "";
+
+        return (
+            <div className="space-y-2">
+                <div className="border rounded p-2 bg-white">
+                    <SignatureCanvas
+                        ref={(ref) => {
+                            if (!ref) return;
+
+                            // Only update if ref changed
+                            setSignatures(prev => {
+                                if (prev[field.fieldName] === ref) return prev;
+                                return { ...prev, [field.fieldName]: ref };
+                            });
+
+                            // Load existing signature if available and not already loaded
+                            if (existingSignature && !signaturesData[field.fieldName] && !signaturesLoaded.current[field.fieldName]) {
+                                signaturesLoaded.current[field.fieldName] = true;
+
+                                setTimeout(() => {
+                                    const img = new Image();
+                                    img.onload = () => {
+                                        ref.clear();
+                                        ref.fromDataURL(existingSignature);
+                                        setSignaturesData(prev => ({
+                                            ...prev,
+                                            [field.fieldName]: existingSignature
+                                        }));
+                                    };
+                                    img.src = existingSignature;
+                                }, 100);
+                            }
+                        }}
+                        canvasProps={{
+                            className: "signature-canvas w-full h-32 border rounded",
+                            style: { border: "1px solid #ccc" }
+                        }}
+                        backgroundColor="rgb(255,255,255)"
+                        onEnd={() => {
+                            const currentSig = signatures[field.fieldName];
+                            if (currentSig) {
+                                const dataUrl = currentSig.toDataURL();
+                                setSignaturesData(prev => ({
+                                    ...prev,
+                                    [field.fieldName]: dataUrl
+                                }));
+                                setFormData(prev => ({
+                                    ...prev,
+                                    [field.fieldName]: dataUrl
+                                }));
+                                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+                            }
+                        }}
+                    />
+                </div>
+                {/* Rest of the buttons and preview remain the same */}
+                <div className="flex gap-2">
                     <button
                         type="button"
                         onClick={() => {
-                            const dataUrl = currentSignatureData;
-                            const link = document.createElement('a');
-                            link.download = `${field.fieldName}.png`;
-                            link.href = dataUrl;
-                            link.click();
+                            const currentSig = signatures[field.fieldName];
+                            if (currentSig) {
+                                currentSig.clear();
+                                setSignaturesData(prev => ({
+                                    ...prev,
+                                    [field.fieldName]: ""
+                                }));
+                                setFormData(prev => ({
+                                    ...prev,
+                                    [field.fieldName]: ""
+                                }));
+                                // Reset loaded flag if cleared
+                                signaturesLoaded.current[field.fieldName] = false;
+                            }
                         }}
-                        className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                        className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
                     >
-                        Download
+                        Clear
                     </button>
+                    {currentSignatureData && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const dataUrl = currentSignatureData;
+                                const link = document.createElement('a');
+                                link.download = `${field.fieldName}.png`;
+                                link.href = dataUrl;
+                                link.click();
+                            }}
+                            className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                            Download
+                        </button>
+                    )}
+                </div>
+                {currentSignatureData && (
+                    <div className="mt-2">
+                        <p className="text-xs text-gray-500">Preview:</p>
+                        <img src={currentSignatureData} alt={`${field.fieldName} preview`} className="h-16 border rounded mt-1" />
+                    </div>
                 )}
             </div>
-            {currentSignatureData && (
-                <div className="mt-2">
-                    <p className="text-xs text-gray-500">Preview:</p>
-                    <img src={currentSignatureData} alt={`${field.fieldName} preview`} className="h-16 border rounded mt-1" />
-                </div>
-            )}
-        </div>
-    );
-};
+        );
+    };
 
     const inputClass =
         "border border-gray-300  w-full p-2 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#5667a8]"
