@@ -131,7 +131,7 @@ export default function AddApplicationForm({
         if (!formConfig?.educationDetails) return;
 
         const cutoffSection = formConfig.educationDetails.find(
-            (section: any) => section.sectionName === "Cutoff Details"
+            (section: any) => section.sectionName === "Cutoff Details (12th)"
         );
 
         if (!cutoffSection) return;
@@ -174,23 +174,23 @@ export default function AddApplicationForm({
         if (physics > 0 || chemistry > 0 || thirdSubject > 0) {
             const roundedCutoff = Math.round(cutoff * 100) / 100;
 
-            const currentCutoff = parseFloat(formData["Overall Cutoff"] || "0");
+            const currentCutoff = parseFloat(formData["Cutoff"] || "0");
 
             if (Math.abs(roundedCutoff - currentCutoff) > 0.01) {
                 setFormData(prev => ({
                     ...prev,
-                    "Overall Cutoff": roundedCutoff.toString()
+                    "Cutoff": roundedCutoff.toString()
                 }));
 
                 setFieldErrors(prev => ({
                     ...prev,
-                    "Overall Cutoff": ''
+                    "Cutoff": ''
                 }));
             }
         } else {
             setFormData(prev => ({
                 ...prev,
-                "Overall Cutoff": ""
+                "Cutoff": ""
             }));
         }
 
@@ -773,7 +773,7 @@ export default function AddApplicationForm({
         return isValid;
     }
 
-    // Input handlers
+    // Input handler
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => {
@@ -851,7 +851,7 @@ export default function AddApplicationForm({
         const error = fieldErrors[field.fieldName];
         const hasError = !!error;
 
-        if (field.fieldName === "Overall Cutoff") {
+        if (field.fieldName === "Cutoff") {
             return (
                 <div>
                     <input

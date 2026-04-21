@@ -44,6 +44,11 @@ export default function ApplicationDetailsPage() {
     // const BASE_URL = "http://localhost:4000/uploads/";
     const BASE_URL = "https://hikabackend.sonastar.com/uploads/";
 
+    // Helper function to remove any text within parentheses (including the parentheses)
+    const cleanSectionName = (sectionName: string) => {
+        return sectionName.replace(/\s*\([^)]*\)\s*/g, '').trim();
+    };
+
     // Helper function to check if a section has any non-empty values
     const isSectionEmpty = (section: any) => {
         if (!section || !section.fields) return true;
@@ -162,7 +167,8 @@ export default function ApplicationDetailsPage() {
     const renderSubSections = (sections: any[], mainNumber: number) =>
         sections.map((section: any, idx: number) => {
             const subLetter = getSubSectionLetter(idx);
-            const displayTitle = `${mainNumber}(${subLetter}). ${section.sectionName}`;
+            const cleanedName = cleanSectionName(section.sectionName);
+            const displayTitle = `${mainNumber}(${subLetter}). ${cleanedName}`;
 
             return (
                 <div key={section.sectionName} className="mb-6 border rounded-md overflow-hidden">
@@ -205,10 +211,11 @@ export default function ApplicationDetailsPage() {
         });
 
     const renderFullWidthSection = (section: any, mainNumber: number) => {
+        const cleanedName = cleanSectionName(section.sectionName);
         return (
             <div key={section.sectionName} className="mb-6 border rounded-md overflow-hidden">
                 <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
-                    {mainNumber}. {section.sectionName}
+                    {mainNumber}. {cleanedName}
                 </div>
                 <div className="p-3 overflow-x-auto">
                     <div className="space-y-2 text-sm">
