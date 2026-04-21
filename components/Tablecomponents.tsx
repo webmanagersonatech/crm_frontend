@@ -16,6 +16,7 @@ interface DataTableProps<T> {
     totalPages?: number;
     totalEntries?: number;
     onPageChange?: (page: number) => void;
+    highlightToday?: boolean;
 }
 
 export function DataTable<T extends { _id?: string }>({
@@ -25,8 +26,22 @@ export function DataTable<T extends { _id?: string }>({
     currentPage = 1,
     totalEntries = 0,
     totalPages = 1,
+    highlightToday = false,
     onPageChange,
 }: DataTableProps<T>) {
+
+    const isToday = (dateString?: string) => {
+        if (!dateString) return false;
+
+        const today = new Date();
+        const date = new Date(dateString);
+
+        return (
+            date.getDate() === today.getDate() &&
+            date.getMonth() === today.getMonth() &&
+            date.getFullYear() === today.getFullYear()
+        );
+    };
     return (
         <div className="bg-white dark:bg-neutral-900 rounded-lg shadow border border-gray-200 dark:border-neutral-800 overflow-hidden">
             <div className="overflow-x-auto">
@@ -65,16 +80,21 @@ export function DataTable<T extends { _id?: string }>({
                                     key={row._id || idx}
                                     className={`
     border-b border-gray-200 dark:border-neutral-800
-
-    ${(row as any).isduplicate
-                                            ? "bg-red-100 border-red-400 hover:bg-red-200"
-                                            : (row as any).status === "inactive"
-                                                ? "bg-red-50 hover:bg-red-100 dark:bg-red-900/20"
-                                                : "hover:bg-gray-50 dark:hover:bg-neutral-800"
+    transition-colors duration-150
+    ${highlightToday && isToday((row as any).createdAt)
+                                            ? // Today's lead highlight
+                                            "bg-green-100 hover:bg-green-200 dark:bg-green-900/30 border-l-4 border-green-500"
+                                            : (row as any).isduplicate
+                                                ? // Duplicate lead
+                                                "bg-red-100 border-red-400 hover:bg-red-200 dark:bg-red-900/30"
+                                                : (row as any).status === "inactive"
+                                                    ? // Inactive lead
+                                                    "bg-red-50 hover:bg-red-100 dark:bg-red-900/20"
+                                                    : // Default row
+                                                    "hover:bg-gray-50 dark:hover:bg-neutral-800"
                                         }
   `}
                                 >
-
                                     {columns.map((col, colIdx) => (
                                         <td key={colIdx} className="px-4 py-2">
                                             {col.render
