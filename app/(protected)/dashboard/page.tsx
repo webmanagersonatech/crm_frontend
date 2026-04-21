@@ -798,6 +798,7 @@ export default function DashboardPage() {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
+                highlightToday
               />
               <DuplicatePopup
                 open={duplicatePopupOpen}

@@ -586,7 +586,7 @@ export default function SettingsPage() {
         { fieldName: 'Physics Cutoff', fieldType: 'decimal', required: true },
         { fieldName: 'Chemistry Cutoff', fieldType: 'decimal', required: true },
         { fieldName: 'Mathematics Cutoff', fieldType: 'decimal', required: true },
-        { fieldName: 'Overall Cutoff', fieldType: 'decimal', required: true },
+        { fieldName: 'Cutoff', fieldType: 'decimal', required: true },
       ],
     },
 
