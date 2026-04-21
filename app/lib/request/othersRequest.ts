@@ -28,7 +28,7 @@ api.interceptors.response.use(
         if (typeof window !== "undefined") {
             if (error.response?.status === 401) {
                 const message = error.response?.data?.message;
-             
+
                 if (
                     message === "Session expired. Please login again." ||
                     message === "Token invalid" ||
@@ -79,6 +79,7 @@ export async function createOther(data: Partial<Other>) {
         throw new Error(error.response?.data?.message || "Failed to create record.");
     }
 }
+// Add this to your leadRequest.ts file if not already present
 
 // Import CSV/XLSX
 // othersRequest.ts
@@ -191,15 +192,16 @@ export async function getOtherById(id: string) {
     }
 }
 // Create Lead from Other (by recordId)
-export async function createLeadFromOther(recordId: string) {
+export async function createLeadFromOther(data: {
+    recordId: string;
+    [key: string]: any;
+}) {
     try {
-        const response = await api.post(
-            `/others/create-lead/${recordId}`
-        );
+        const response = await api.post("/others/create-lead", data); // ✅ same pattern
         return response.data;
     } catch (error: any) {
         throw new Error(
-            error.response?.data?.message || "Failed to create lead"
+            error.response?.data?.message || "Failed to create lead from other."
         );
     }
 }

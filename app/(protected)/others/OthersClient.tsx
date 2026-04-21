@@ -14,6 +14,9 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import ExportModal from "@/components/ExportModal";
 import Link from "next/link";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
+import CreateLeadFormothers from "@/components/Forms/Createleadfromothers";
+import { motion, AnimatePresence } from "framer-motion";
+
 type ImportErrors = {
     missingFields: any[];
     duplicatesInSheet: {
@@ -50,7 +53,7 @@ export default function Otherspages() {
     const [open, setOpen] = useState(false);
     const [dataSources, setDataSources] = useState<{ value: string; label: string }[]>([]);
     const [isImporting, setIsImporting] = useState(false);
-
+    const [leadFormOpen, setLeadFormOpen] = useState(false);
     /* ---------------- Table ---------------- */
     const [others, setOthers] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -634,20 +637,7 @@ export default function Otherspages() {
             toast.error(err.message || "Failed to delete record");
         }
     };
-    const handleCreateLead = async () => {
-        if (!selected?.recordId) return;
 
-        try {
-            await createLeadFromOther(selected.recordId);
-
-            toast.success("Lead created successfully");
-            setLeadConfirmOpen(false);
-            setSelected(null);
-            fetchOthers();
-        } catch (err: any) {
-            toast.error(err.message || "Failed to create lead");
-        }
-    };
 
 
     const downloadRecommendedSheet = () => {
@@ -1001,13 +991,7 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                 onConfirm={handleDelete}
                 onCancel={() => setConfirmOpen(false)}
             />
-            <ConfirmDialog
-                open={leadConfirmOpen}
-                title="Create Lead"
-                message={`Create lead for "${selected?.name}"?`}
-                onConfirm={handleCreateLead}
-                onCancel={() => setLeadConfirmOpen(false)}
-            />
+           
 
 
             <ViewDialog
@@ -1054,6 +1038,38 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                 }}
                 data={filteredExportData}  // Use the filtered export data
             />
+
+
+            <AnimatePresence>
+                {leadConfirmOpen && selected && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    >
+                        <motion.div
+                            initial={{ y: -50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: -50, opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                            className="bg-white rounded-2xl shadow-xl w-full max-w-4xl h-[80vh] relative flex flex-col"
+                        >
+                            <button
+                                onClick={() => setLeadConfirmOpen(false)}
+                                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+
+                            <div className="overflow-y-auto p-6 flex-1">
+
+                                <CreateLeadFormothers refetch={fetchOthers} instituteId={selected.instituteId} selectedotherdata={selected} leadSource="offline" onSuccess={() => setLeadConfirmOpen(false)} />
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* ---------------- Import Modal ---------------- */}
             {showImportModal && (

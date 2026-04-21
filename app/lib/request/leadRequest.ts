@@ -52,6 +52,7 @@ export interface Lead {
   _id?: string;
   instituteId: string;
   applicationId: string;
+  email?: string;
   leadSource: string;
   programId: string;
   counsellorName: string;
