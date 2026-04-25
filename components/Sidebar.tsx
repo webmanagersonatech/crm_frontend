@@ -26,6 +26,7 @@ import {
   GraduationCap,
   ChevronDown,
   ChevronRight,
+  ClipboardList
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -55,6 +56,7 @@ const allItems: MenuItem[] = [
     submenu: [
       { href: "/ciicp", label: "CIICP", icon: FlaskConical },
       { href: "/summercamp", label: "Summer Camp", icon: TentTree },
+      { href: "/mat-registration", label: "MAT Registration", icon: ClipboardList },
     ]
   },
   { href: "/events", label: "Events", icon: CalendarDays },

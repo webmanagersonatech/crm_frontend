@@ -14,6 +14,7 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [tempAdmin, setTempAdmin] = useState(false);
+  const [permissions, setPermissions] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchTempAccess = async () => {
@@ -22,6 +23,9 @@ export default function DashboardLayout({
 
         if (res?.tempAdminAccess) {
           setTempAdmin(true);
+        }
+        if (res?.permissions) {
+          setPermissions(res.permissions);
         }
       } catch (err) {
         console.error(err);
@@ -45,7 +49,7 @@ export default function DashboardLayout({
       <div className="lg:pl-72">
         <Header onMenuOpen={() => setSidebarOpen(true)} tempAdmin={tempAdmin} />
         <main className="p-4 md:p-6">{children}</main>
-        <Footer /> 
+        <Footer />
       </div>
     </div>
   );

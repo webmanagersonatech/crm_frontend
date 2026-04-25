@@ -39,6 +39,7 @@ export default function PermissionsPage() {
     { id: 11, moduleName: "Events", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     { id: 17, moduleName: "Summer Camp", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     { id: 18, moduleName: "CIICP", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+     { id: 19, moduleName: "MAT Registration", view: false, create: false, edit: false, delete: false, filter: false, download: false }, 
     { id: 12, moduleName: "Others", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     { id: 13, moduleName: "Settings", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     { id: 15, moduleName: "Email templates", view: false, create: false, edit: false, delete: false, filter: false, download: false },

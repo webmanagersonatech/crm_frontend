@@ -33,14 +33,18 @@ export function DataTable<T extends { _id?: string }>({
     const isToday = (dateString?: string) => {
         if (!dateString) return false;
 
-        const today = new Date();
+        const now = new Date();
         const date = new Date(dateString);
 
-        return (
-            date.getDate() === today.getDate() &&
-            date.getMonth() === today.getMonth() &&
-            date.getFullYear() === today.getFullYear()
-        );
+        // Start of today (12:00 AM)
+        const startOfDay = new Date(now);
+        startOfDay.setHours(0, 0, 0, 0);
+
+        // End of today (11:59:59 PM)
+        const endOfDay = new Date(now);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        return date >= startOfDay && date <= endOfDay;
     };
     return (
         <div className="bg-white dark:bg-neutral-900 rounded-lg shadow border border-gray-200 dark:border-neutral-800 overflow-hidden">
