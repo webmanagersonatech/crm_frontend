@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -38,6 +39,29 @@ type MenuItem = {
   submenu?: MenuItem[];
 };
 
+// Map menu labels to permission names for matching
+const labelToPermissionMap: Record<string, string> = {
+  "Dashboard": "Dashboard",
+  "Institution": "Institution",
+  "Users": "Users",
+  "Permissions": "Permissions",
+  "Students": "Students",
+  "Applications Manager": "Application",
+  "Leads Manager": "Lead Manager",
+  "Communications": "Communication",
+  "Email Templates": "Email templates",
+  "Reports": "Reports",
+  "Login History": "Login History",
+  "CIICP": "CIICP",
+  "Summer Camp": "Summer Camp",
+  "MAT Registration": "MAT Registration",
+  "Events": "Events",
+  "Others": "Others",
+  "Dynamic Forms": "Dynamic Forms",
+  "Settings": "Settings",
+  "Application Settings": "Application Settings",
+};
+
 const allItems: MenuItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/institution", label: "Institution", icon: Building },
@@ -62,70 +86,52 @@ const allItems: MenuItem[] = [
   { href: "/events", label: "Events", icon: CalendarDays },
   { href: "/others", label: "Others", icon: Grid },
   { href: "/dynamic-forms", label: "Dynamic Forms", icon: Layers },
-  { href: "/settings", label: "Settings", icon: Settings },
+  // { href: "/settings", label: "Settings", icon: Settings },
   { href: "/application-settings", label: "Application Settings", icon: Settings2 },
 ];
 
-// Flatten menu items for role-based filtering (keeping submenu structure)
-const roleMenus = {
-  superadmin: allItems,
-  admin: allItems.filter(item => {
-    const allowedPaths = [
-      "/dashboard",
-      "/students",
-      "/applications",
-      "/leads",
-      "/reports",
-      "/login-history",
-      "/communications",
-      "/templates",
-      "/dynamic-forms",
-      "/events",
-      "/others",
-      "/ciicp",
-      "/summercamp"
-    ];
+// Function to filter menu items based on permissions
+const filterItemsByPermissions = (items: MenuItem[], permissions: string[]): MenuItem[] => {
+  // If permissions is empty or undefined, return empty array
+  if (!permissions || permissions.length === 0) {
+    return [];
+  }
 
-    // Check if the item itself has an href and is allowed
-    if (item.href && allowedPaths.includes(item.href)) return true;
-
-    // Check if item has submenu with any allowed items
-    if (item.submenu) {
-      const hasAllowedSubmenu = item.submenu.some(sub =>
-        sub.href && allowedPaths.includes(sub.href)
-      );
-      if (hasAllowedSubmenu) return true;
+  return items.reduce((acc: MenuItem[], item) => {
+    // Super admin can see everything
+    if (permissions.includes("superadmin") || permissions.includes("*")) {
+      acc.push(item);
+      return acc;
     }
 
-    // Check if it's a parent item without href (like Registrations)
-    if (!item.href && item.submenu) return true;
+    // For regular users, filter based on permissions
+    const permissionKey = labelToPermissionMap[item.label];
 
-    return false;
-  }),
-  user: allItems.filter(item => {
-    const allowedPaths = [
-      "/dashboard",
-      "/applications",
-      "/leads",
-      "/communications",
-      "/templates",
-      "/dynamic-forms",
-      "/events",
-      "/others",
-      "/ciicp",
-      "/summercamp"
-    ];
-
-    if (item.href && allowedPaths.includes(item.href)) return true;
-    if (item.submenu) {
-      const hasAllowedSubmenu = item.submenu.some(sub =>
-        sub.href && allowedPaths.includes(sub.href)
-      );
-      if (hasAllowedSubmenu) return true;
+    // Check if this item has a matching permission
+    if (item.href && permissionKey && permissions.includes(permissionKey)) {
+      acc.push(item);
+      return acc;
     }
-    if (!item.href && item.submenu) return true;
-    return false;
-  }),
+
+    // Check if it's a parent item with submenu
+    if (item.submenu) {
+      // Filter submenu items based on permissions
+      const filteredSubmenu = item.submenu.filter(subItem => {
+        const subPermissionKey = labelToPermissionMap[subItem.label];
+        return subPermissionKey && permissions.includes(subPermissionKey);
+      });
+
+      // Only include parent if it has any visible submenu items
+      if (filteredSubmenu.length > 0) {
+        acc.push({
+          ...item,
+          submenu: filteredSubmenu
+        });
+      }
+    }
+
+    return acc;
+  }, []);
 };
 
 // Recursive component to render menu items with submenus
@@ -211,15 +217,19 @@ function MenuItemComponent({
 
 export default function Sidebar({
   open,
+  permissions,
   tempAdmin,
   onClose,
 }: {
   open: boolean;
   tempAdmin: boolean;
+  permissions: string[];
   onClose: () => void;
 }) {
   const pathname = usePathname();
   const [role, setRole] = useState<string>("");
+
+  console.log(permissions, "permissionsxx")
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -246,10 +256,26 @@ export default function Sidebar({
     }
   }, []);
 
-  const items =
-    role === "admin" && tempAdmin
-      ? roleMenus["user"]
-      : roleMenus[role as keyof typeof roleMenus] || [];
+  // Determine which items to show
+  let itemsToShow: MenuItem[] = [];
+
+  if (role === "superadmin") {
+    // Super admin sees everything
+    itemsToShow = allItems;
+  } else if (role === "admin" && tempAdmin) {
+    // Temp admin uses permissions array
+    itemsToShow = filterItemsByPermissions(allItems, permissions);
+  } else if (role === "admin") {
+    // Regular admin uses permissions array
+    itemsToShow = filterItemsByPermissions(allItems, permissions);
+  } else if (role === "user") {
+    // Regular user uses permissions array
+    itemsToShow = filterItemsByPermissions(allItems, permissions);
+  } else {
+    itemsToShow = [];
+  }
+
+  console.log("Filtered items to show:", itemsToShow.map(i => i.label));
 
   return (
     <aside
@@ -283,8 +309,8 @@ export default function Sidebar({
 
       {/* Navigation */}
       <nav className="p-4 space-y-1 overflow-y-auto h-[calc(100%-70px)]">
-        {items.length > 0 ? (
-          items.map((item) => (
+        {itemsToShow.length > 0 ? (
+          itemsToShow.map((item) => (
             <MenuItemComponent
               key={item.href || item.label}
               item={item}

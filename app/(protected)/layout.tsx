@@ -45,7 +45,7 @@ export default function DashboardLayout({
           }`}
         onClick={() => setSidebarOpen(false)}
       />
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} tempAdmin={tempAdmin} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} tempAdmin={tempAdmin} permissions={permissions}  />
       <div className="lg:pl-72">
         <Header onMenuOpen={() => setSidebarOpen(true)} tempAdmin={tempAdmin} />
         <main className="p-4 md:p-6">{children}</main>
