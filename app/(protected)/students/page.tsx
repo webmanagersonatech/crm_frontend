@@ -421,8 +421,12 @@ export default function StudentsPage() {
         setAcademicYears(res.academicYears);
       }
     } catch (err: any) {
-      console.error(err);
-      toast.error("Failed to load students");
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to load students";
+
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

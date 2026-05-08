@@ -52,7 +52,7 @@ export default function AddUserPage() {
   });
   const defaultPermissions: Permission[] = [
     { id: 1, moduleName: "Dashboard", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-
+    { id: 2, moduleName: "Students", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     { id: 6, moduleName: "Application", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     { id: 7, moduleName: "Lead Manager", view: false, create: false, edit: false, delete: false, filter: false, download: false },
     { id: 8, moduleName: "Communication", view: false, create: false, edit: false, delete: false, filter: false, download: false },

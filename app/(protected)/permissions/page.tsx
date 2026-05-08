@@ -23,29 +23,24 @@ interface OptionType {
   value: string;
   label: string;
 }
+ const defaultPermissions: Permission[] = [
+  { id: 1, moduleName: "Dashboard", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 2, moduleName: "Students", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 6, moduleName: "Application", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 7, moduleName: "Lead Manager", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 8, moduleName: "Communication", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 9, moduleName: "Reports", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 11, moduleName: "Events", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 17, moduleName: "Summer Camp", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 18, moduleName: "CIICP", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 19, moduleName: "MAT Registration", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 12, moduleName: "Others", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 15, moduleName: "Email templates", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 16, moduleName: "Dynamic Forms", view: false, create: false, edit: false, delete: false, filter: false, download: false },
 
+];
 export default function PermissionsPage() {
-  const defaultPermissions: Permission[] = [
-    { id: 1, moduleName: "Dashboard", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    // { id: 2, moduleName: "Institution", view: false, create: false, edit: false, delete: false, filter: false, download: false },
 
-    // { id: 4, moduleName: "Users", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    // { id: 5, moduleName: "Permission", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    { id: 6, moduleName: "Application", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    { id: 7, moduleName: "Lead Manager", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    { id: 8, moduleName: "Communication", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    { id: 9, moduleName: "Reports", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    // { id: 10, moduleName: "Login History", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    { id: 11, moduleName: "Events", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    { id: 17, moduleName: "Summer Camp", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    { id: 18, moduleName: "CIICP", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-     { id: 19, moduleName: "MAT Registration", view: false, create: false, edit: false, delete: false, filter: false, download: false }, 
-    { id: 12, moduleName: "Others", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    { id: 13, moduleName: "Settings", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    { id: 15, moduleName: "Email templates", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    { id: 16, moduleName: "Dynamic Forms", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-    // { id: 14, moduleName: "Applications Settings", view: false, create: false, edit: false, delete: false, filter: false, download: false },
-  ];
 
   const [permissions, setPermissions] = useState<Permission[]>(defaultPermissions);
   const [institutions, setInstitutions] = useState<OptionType[]>([]);
@@ -56,7 +51,6 @@ export default function PermissionsPage() {
 
 
 
-  // 🟦 Load Active Institutions
   useEffect(() => {
     (async () => {
       try {
@@ -109,7 +103,21 @@ export default function PermissionsPage() {
           });
 
           if (response.data && response.data.length > 0) {
-            setPermissions(response.data[0].permissions);
+
+            const savedPermissions = response.data[0].permissions;
+
+            const mergedPermissions = defaultPermissions.map((defaultPerm) => {
+              const existingPerm = savedPermissions.find(
+                (p: any) => p.moduleName === defaultPerm.moduleName
+              );
+
+              return existingPerm
+                ? { ...defaultPerm, ...existingPerm }
+                : defaultPerm;
+            });
+
+            setPermissions(mergedPermissions);
+
             setIsUpdating(true);
             toast.success("Existing permissions loaded ");
           } else {

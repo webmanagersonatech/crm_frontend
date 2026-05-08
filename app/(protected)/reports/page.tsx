@@ -14,7 +14,11 @@ import { Column } from "@/components/Tablecomponents";
 import { Country, State, City } from "country-state-city";
 import { listStudentsRequest, exportStudentsRequest } from "@/app/lib/request/studentRequest";
 import AsyncSelect from "react-select/async";
+
 import Select from "react-select";
+
+
+
 interface Application {
   _id?: string;
   instituteId: any;
@@ -112,7 +116,7 @@ export default function ReportsPage() {
   const [studentTotalEntries, setStudentTotalEntries] = useState(0);
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
-  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [totalEntries, setTotalEntries] = useState(0);
   const [selectedApplicationSource, setSelectedApplicationSource] = useState("");
   const [selectedInteraction, setSelectedInteraction] = useState("");
@@ -142,6 +146,7 @@ export default function ReportsPage() {
   const [familyOccupationFilter, setFamilyOccupationFilter] = useState("all");
   const [studentCurrentPage, setStudentCurrentPage] = useState(1);
 
+  const [locationCondition, setLocationCondition] = useState("equals");
 
   const [institutions, setInstitutions] = useState<
     { value: string; label: string }[]
@@ -249,6 +254,102 @@ export default function ReportsPage() {
 
     return [];
   }, [selectedCountry, selectedState]);
+
+  const loadStatesapplication = useCallback(async (inputValue: string) => {
+    let countryName = selectedCountry || "India";
+
+    const country = Country.getAllCountries().find(
+      c => c.name === countryName
+    );
+
+    if (country) {
+      const states = State.getStatesOfCountry(country.isoCode);
+
+      return states
+        .filter((s) =>
+          s.name.toLowerCase().includes(inputValue.toLowerCase())
+        )
+        .slice(0, 200)
+        .map((s) => ({
+          value: s.name,
+          label: s.name,
+        }));
+    }
+
+    return [];
+  }, [selectedCountry]);
+
+  const loadCitiesapplication = useCallback(async (inputValue: string) => {
+    const countryName = selectedCountry || "India";
+
+    const country = Country.getAllCountries().find(
+      (c) => c.name === countryName
+    );
+
+    if (!country) return [];
+
+    let allCities: { value: string; label: string }[] = [];
+
+    // ✅ No state selected → default Tamil Nadu cities
+    if (!selectedStates.length) {
+
+      const defaultState = State.getStatesOfCountry(country.isoCode).find(
+        (s) => s.name === "Tamil Nadu"
+      );
+
+      if (defaultState) {
+
+        const cities = City.getCitiesOfState(
+          country.isoCode,
+          defaultState.isoCode
+        );
+
+        const mapped = cities.map((c) => ({
+          value: c.name,
+          label: c.name,
+        }));
+
+        allCities.push(...mapped);
+      }
+
+    } else {
+
+      // ✅ Selected states only
+      selectedStates.forEach((stateName) => {
+
+        const state = State.getStatesOfCountry(country.isoCode).find(
+          (s) => s.name === stateName
+        );
+
+        if (state) {
+
+          const cities = City.getCitiesOfState(
+            country.isoCode,
+            state.isoCode
+          );
+
+          const mapped = cities.map((c) => ({
+            value: c.name,
+            label: c.name,
+          }));
+
+          allCities.push(...mapped);
+        }
+      });
+    }
+
+    // ✅ Remove duplicates
+    const uniqueCities = Array.from(
+      new Map(allCities.map((c) => [c.value, c])).values()
+    );
+
+    return uniqueCities
+      .filter((c) =>
+        c.label.toLowerCase().includes(inputValue.toLowerCase())
+      )
+      .slice(0, 200);
+
+  }, [selectedCountry, selectedStates]);
 
 
   useEffect(() => {
@@ -483,8 +584,9 @@ export default function ReportsPage() {
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         country: selectedCountry || undefined,
+        locationCondition,
         program: selectedPrograms.length ? selectedPrograms : undefined,
-        state: selectedState || undefined,
+        state: selectedStates.length ? selectedStates : undefined,
         city: selectedCities.length ? selectedCities : undefined,
         applicationSource: selectedApplicationSource || undefined,
         interactions: selectedInteraction || undefined,
@@ -512,7 +614,7 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, selectedYear, startCutoff, endCutoff, selectedPrograms, selectedInstitution, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName, searchProgram]);
+  }, [currentPage, selectedYear, startCutoff, endCutoff, locationCondition, selectedPrograms, selectedInstitution, limit, selectedPayment, selectedCountry, selectedStates, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, startDate, endDate, searchApplicationId, searchApplicantName, searchProgram]);
 
   useEffect(() => {
     if (activeTab === "application") {
@@ -532,6 +634,8 @@ export default function ReportsPage() {
     setSelectedPrograms([]);
     setEndCutoff("")
     setStartCutoff("")
+    setSelectedCities([])
+    setSelectedStates([])
     setCurrentPage(1);
     setleadCurrentPage(1);
     setStudentCurrentPage(1);
@@ -665,8 +769,9 @@ export default function ReportsPage() {
         applicantName: searchApplicantName.trim() || undefined,
         country: selectedCountry || undefined,
         program: selectedPrograms.length ? selectedPrograms : undefined,
-        state: selectedState || undefined,
+        state: selectedStates.length ? selectedStates : undefined,
         city: selectedCities.length ? selectedCities : undefined,
+        locationCondition,
         applicationSource: selectedApplicationSource || undefined,
         interactions: selectedInteraction || undefined,
         startCutoff: startCutoff ? Number(startCutoff) : undefined,
@@ -1448,87 +1553,186 @@ export default function ReportsPage() {
           )}
 
           {/* Country AsyncSelect */}
-          <div className="w-full">
-            <AsyncSelect
-              key="country-select"
-              placeholder="Search Country..."
-              cacheOptions
-              defaultOptions={countryOptions}
-              loadOptions={(inputValue) => {
-                return Promise.resolve(
-                  countryOptions.filter(option =>
-                    option.label.toLowerCase().includes(inputValue.toLowerCase())
-                  )
-                );
-              }}
-              value={countryOptions.find(c => c.value === selectedCountry) || null}
-              onChange={(opt) => {
-                setSelectedCountry(opt?.value || "");
-                setSelectedState("");
-                setSelectedCities([]);
-                if (activeTab === "application") setCurrentPage(1);
-                if (activeTab === "lead") setleadCurrentPage(1);
-                if (activeTab === "student") setStudentCurrentPage(1);
-              }}
-              isClearable
-              className="text-sm"
-              styles={{
-                control: (base) => ({ ...base, minHeight: '38px' })
-              }}
-            />
-          </div>
 
-          {/* State AsyncSelect */}
-          <div className="w-full">
-            <AsyncSelect
-              key={`state-select-${selectedCountry}`}
-              placeholder="Search State..."
-              cacheOptions
-              defaultOptions
-              loadOptions={loadStates}
-              value={
-                selectedState
-                  ? { value: selectedState, label: selectedState }
-                  : null
-              }
-              onChange={(opt) => {
-                setSelectedState(opt?.value || "");
-                setSelectedCities([]);
-                if (activeTab === "application") setCurrentPage(1);
-                if (activeTab === "lead") setleadCurrentPage(1);
-                if (activeTab === "student") setStudentCurrentPage(1);
-              }}
-              isClearable
-              className="text-sm"
-              styles={{
-                control: (base) => ({ ...base, minHeight: '38px' })
-              }}
-            />
-          </div>
 
-          {/* City AsyncSelect - Multi */}
-          <div className="w-full">
-            <AsyncSelect
-              key={`city-select-${selectedCountry}-${selectedState}`}
-              placeholder="Search Cities..."
-              cacheOptions
-              defaultOptions
-              loadOptions={loadCities}
-              isMulti
-              value={selectedCities.map((c) => ({ value: c, label: c }))}
-              onChange={(opts) => {
-                setSelectedCities(opts ? opts.map((o) => o.value) : []);
-                if (activeTab === "application") setCurrentPage(1);
-                if (activeTab === "lead") setleadCurrentPage(1);
-                if (activeTab === "student") setStudentCurrentPage(1);
-              }}
-              isClearable
-              className="text-sm"
-              styles={{
-                control: (base) => ({ ...base, minHeight: '38px' })
-              }}
-            />
-          </div>
+
+
+          {activeTab === "application" && (
+            <>
+              <select
+                value={locationCondition}
+                onChange={(e) => {
+                  setLocationCondition(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-1.5 text-xs border border-gray-200 rounded-md bg-white shadow-sm focus:ring-1 focus:ring-[#3a4480]"
+              >
+                <option value="equals">Equals To</option>
+                <option value="not_equals">Not Equals To</option>
+              </select>
+
+
+              <AsyncSelect
+                key={`country-select-${selectedCountry}`}
+                placeholder="Search Country..."
+                cacheOptions
+                defaultOptions={countryOptions}
+                loadOptions={(inputValue) => {
+                  return Promise.resolve(
+                    countryOptions.filter(option =>
+                      option.label.toLowerCase().includes(inputValue.toLowerCase())
+                    )
+                  );
+                }}
+                value={countryOptions.find(c => c.value === selectedCountry) || null}
+                onChange={(opt) => {
+                  setSelectedCountry(opt?.value || "");
+                  setSelectedStates([]); // Reset state when country changes
+                  setSelectedCities([]); // Reset cities when country changes
+                  setCurrentPage(1);
+                }}
+                isClearable
+                className="text-xs"
+                styles={{
+                  control: (base) => ({ ...base, minHeight: '32px' })
+                }}
+              />
+
+
+
+
+              <AsyncSelect
+                key={`state-select-${selectedCountry}`}
+                placeholder="Search States..."
+                cacheOptions
+                defaultOptions
+                loadOptions={loadStatesapplication}
+                isMulti
+                value={selectedStates.map((s) => ({
+                  value: s,
+                  label: s,
+                }))}
+                onChange={(opts) => {
+                  setSelectedStates(opts ? opts.map((o) => o.value) : []);
+                  setSelectedCities([]);
+                  setCurrentPage(1);
+                }}
+                isClearable
+                className="text-xs"
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    minHeight: "32px",
+                  }),
+                }}
+              />
+
+
+
+
+
+              <AsyncSelect
+                key={`city-select-${selectedCountry}-${selectedStates.join("-")}`}
+                placeholder="Search Cities..."
+                cacheOptions
+                defaultOptions   // ✅ this is important
+                loadOptions={loadCitiesapplication}
+                isMulti
+                value={selectedCities.map((c) => ({ value: c, label: c }))}
+                onChange={(opts) => {
+                  setSelectedCities(opts ? opts.map((o) => o.value) : []);
+                  setCurrentPage(1);
+                }}
+              />
+            </>
+          )}
+
+
+          {activeTab !== "application" && (
+            <>
+              <div className="w-full">
+                <AsyncSelect
+                  key="country-select"
+                  placeholder="Search Country..."
+                  cacheOptions
+                  defaultOptions={countryOptions}
+                  loadOptions={(inputValue) => {
+                    return Promise.resolve(
+                      countryOptions.filter(option =>
+                        option.label.toLowerCase().includes(inputValue.toLowerCase())
+                      )
+                    );
+                  }}
+                  value={countryOptions.find(c => c.value === selectedCountry) || null}
+                  onChange={(opt) => {
+                    setSelectedCountry(opt?.value || "");
+                    setSelectedState("");
+                    setSelectedCities([]);
+
+                    if (activeTab === "lead") setleadCurrentPage(1);
+                    if (activeTab === "student") setStudentCurrentPage(1);
+                  }}
+                  isClearable
+                  className="text-sm"
+                  styles={{
+                    control: (base) => ({ ...base, minHeight: '38px' })
+                  }}
+                />
+              </div>
+
+
+              <div className="w-full">
+                <AsyncSelect
+                  key={`state-select-${selectedCountry}`}
+                  placeholder="Search State..."
+                  cacheOptions
+                  defaultOptions
+                  loadOptions={loadStates}
+                  value={
+                    selectedState
+                      ? { value: selectedState, label: selectedState }
+                      : null
+                  }
+                  onChange={(opt) => {
+                    setSelectedState(opt?.value || "");
+                    setSelectedCities([]);
+
+                    if (activeTab === "lead") setleadCurrentPage(1);
+                    if (activeTab === "student") setStudentCurrentPage(1);
+                  }}
+                  isClearable
+                  className="text-sm"
+                  styles={{
+                    control: (base) => ({ ...base, minHeight: '38px' })
+                  }}
+                />
+              </div>
+
+              {/* City AsyncSelect - Multi */}
+              <div className="w-full">
+                <AsyncSelect
+                  key={`city-select-${selectedCountry}-${selectedState}`}
+                  placeholder="Search Cities..."
+                  cacheOptions
+                  defaultOptions
+                  loadOptions={loadCities}
+                  isMulti
+                  value={selectedCities.map((c) => ({ value: c, label: c }))}
+                  onChange={(opts) => {
+                    setSelectedCities(opts ? opts.map((o) => o.value) : []);
+
+                    if (activeTab === "lead") setleadCurrentPage(1);
+                    if (activeTab === "student") setStudentCurrentPage(1);
+                  }}
+                  isClearable
+                  className="text-sm"
+                  styles={{
+                    control: (base) => ({ ...base, minHeight: '38px' })
+                  }}
+                />
+              </div>
+            </>
+          )}
 
           {/* Payment Filter */}
           {activeTab !== "lead" && activeTab !== "student" && (

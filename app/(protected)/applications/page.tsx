@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import CreateLeadform from "@/components/Forms/CreateLeadForm";
 import Select from "react-select";
 import { Country, State, City } from "country-state-city";
-import BulkUploadForm from "@/components/sheetupload";
+import LocationStatsCard from "@/components/LocationStatsCard";
 import AsyncSelect from "react-select/async";
 
 interface Application {
@@ -55,10 +55,6 @@ export interface UiFilter extends FilterMeta {
 }
 
 
-
-
-
-
 export default function ApplicationsPage() {
   const router = useRouter();
   const [applications, setApplications] = useState<Application[]>([]);
@@ -87,12 +83,12 @@ export default function ApplicationsPage() {
   const [selectedNewStatus, setSelectedNewStatus] = useState<string>("");
   const [searchProgram, setSearchProgram] = useState("");
   const [selectedFormStatus, setSelectedFormStatus] = useState("all");
-  const [startYear, setStartYear] = useState<string>("")
+
   const [academicYears, setAcademicYears] = useState<string[]>([]);
-  const [endYear, setEndYear] = useState<string>("")
+
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [selectedCountry, setSelectedCountry] = useState("");
-  const [selectedState, setSelectedState] = useState("");
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [exportData, setExportData] = useState<any[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
   const [programs, setPrograms] = useState<any[]>([]);
@@ -108,6 +104,14 @@ export default function ApplicationsPage() {
   const [availableFilterFields, setAvailableFilterFields] =
     useState<FilterMeta[]>([]);
   const [searchAny, setSearchAny] = useState("");
+  const [locationCondition, setLocationCondition] = useState("equals");
+  const [locationStats, setLocationStats] = useState<any>({
+    countries: [],
+    states: [],
+    cities: [],
+  });
+
+
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -133,6 +137,7 @@ export default function ApplicationsPage() {
     { value: "country", label: "Country" },
     { value: "state", label: "State" },
     { value: "city", label: "City" },
+    { value: "locationStats", label: "Location Stats" },
     { value: "applicationSource", label: "Application Source" },
     { value: "interactions", label: "Follow-up Interaction" },
     { value: "applicationId", label: "Application ID" },
@@ -166,38 +171,76 @@ export default function ApplicationsPage() {
   }, [selectedCountry]);
 
   const loadCities = useCallback(async (inputValue: string) => {
-    let countryName = selectedCountry || "India";
-    let stateName = selectedState || "Tamil Nadu";
+    const countryName = selectedCountry || "India";
 
     const country = Country.getAllCountries().find(
-      c => c.name === countryName
+      (c) => c.name === countryName
     );
 
-    if (country) {
-      const state = State.getStatesOfCountry(country.isoCode).find(
-        s => s.name === stateName
+    if (!country) return [];
+
+    let allCities: { value: string; label: string }[] = [];
+
+    // ✅ No state selected → default Tamil Nadu cities
+    if (!selectedStates.length) {
+
+      const defaultState = State.getStatesOfCountry(country.isoCode).find(
+        (s) => s.name === "Tamil Nadu"
       );
 
-      if (state) {
+      if (defaultState) {
+
         const cities = City.getCitiesOfState(
           country.isoCode,
-          state.isoCode
+          defaultState.isoCode
         );
 
-        return cities
-          .filter((c) =>
-            c.name.toLowerCase().includes(inputValue.toLowerCase())
-          )
-          .slice(0, 200)
-          .map((c) => ({
+        const mapped = cities.map((c) => ({
+          value: c.name,
+          label: c.name,
+        }));
+
+        allCities.push(...mapped);
+      }
+
+    } else {
+
+      // ✅ Selected states only
+      selectedStates.forEach((stateName) => {
+
+        const state = State.getStatesOfCountry(country.isoCode).find(
+          (s) => s.name === stateName
+        );
+
+        if (state) {
+
+          const cities = City.getCitiesOfState(
+            country.isoCode,
+            state.isoCode
+          );
+
+          const mapped = cities.map((c) => ({
             value: c.name,
             label: c.name,
           }));
-      }
+
+          allCities.push(...mapped);
+        }
+      });
     }
 
-    return [];
-  }, [selectedCountry, selectedState]);
+    // ✅ Remove duplicates
+    const uniqueCities = Array.from(
+      new Map(allCities.map((c) => [c.value, c])).values()
+    );
+
+    return uniqueCities
+      .filter((c) =>
+        c.label.toLowerCase().includes(inputValue.toLowerCase())
+      )
+      .slice(0, 200);
+
+  }, [selectedCountry, selectedStates]);
 
   // Use useMemo for countryOptions
   const countryOptions = useMemo(() =>
@@ -283,14 +326,6 @@ export default function ApplicationsPage() {
   }, []);
 
 
-  useEffect(() => {
-    if (startYear && endYear) {
-      setSelectedYear(`${startYear}-${endYear}`)
-      setCurrentPage(1)
-    }
-  }, [startYear, endYear])
-
-
   const handleChangePaymentStatus = async () => {
     if (!selectedPaymentApp?._id || !selectedNewStatus) return;
     try {
@@ -322,13 +357,15 @@ export default function ApplicationsPage() {
         applicantName: searchApplicantName.trim() || undefined,
         program: selectedPrograms.length ? selectedPrograms : undefined,
         country: selectedCountry || undefined,
-        state: selectedState || undefined,
+        state: selectedStates.length ? selectedStates : undefined,
+        locationCondition,
         city: selectedCities.length ? selectedCities : undefined,
         applicationSource: selectedApplicationSource || undefined,
         interactions: selectedInteraction || undefined,
         startCutoff: startCutoff ? Number(startCutoff) : undefined,
         endCutoff: endCutoff ? Number(endCutoff) : undefined,
         q: searchAny.trim() || undefined,
+        showCountryStateCityStats: activeFilters.includes("locationStats"),
       });
       setApplications((res.data as Application[]) || []);
       setTotalPages(res.pagination?.totalPages || 1);
@@ -362,7 +399,9 @@ export default function ApplicationsPage() {
         setAvailableFilterFields(merged);
       }
 
-
+      if (res.locationStats) {
+        setLocationStats(res.locationStats);
+      }
 
 
     } catch (err: any) {
@@ -372,7 +411,7 @@ export default function ApplicationsPage() {
       setLoading(false);
     }
   }, [currentPage, searchAny,
-    selectedYear, selectedInstitution, startCutoff, endCutoff, selectedPrograms, limit, selectedPayment, selectedCountry, selectedState, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
+    selectedYear, selectedInstitution, locationCondition, activeFilters.includes("locationStats"), startCutoff, endCutoff, selectedPrograms, limit, selectedPayment, selectedCountry, selectedStates, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
 
   const handleExport = async () => {
     try {
@@ -388,8 +427,9 @@ export default function ApplicationsPage() {
         applicantName: searchApplicantName.trim() || undefined,
         program: selectedPrograms.length ? selectedPrograms : undefined,
         country: selectedCountry || undefined,
-        state: selectedState || undefined,
+        state: selectedStates.length ? selectedStates : undefined,
         city: selectedCities.length ? selectedCities : undefined,
+        locationCondition,
         applicationSource: selectedApplicationSource || undefined,
         interactions: selectedInteraction || undefined,
         startCutoff: startCutoff ? Number(startCutoff) : undefined,
@@ -1045,6 +1085,7 @@ export default function ApplicationsPage() {
         </div>
 
         {/* Right Card - Data Table Controls - 7 columns on large screens */}
+
         <div className="lg:col-span-7 w-full bg-white rounded-xl shadow-md border border-gray-200 p-4 md:p-6">
           {/* Header Section */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1141,7 +1182,7 @@ export default function ApplicationsPage() {
                           case "formStatus": setSelectedFormStatus("all"); break;
                           case "paymentStatus": setSelectedPayment("all"); break;
                           case "country": setSelectedCountry(""); break;
-                          case "state": setSelectedState(""); break;
+                          case "state": setSelectedStates([]); break;
                           case "city": setSelectedCities([]); break;
                           case "applicationSource": setSelectedApplicationSource(""); break;
                           case "interactions": setSelectedInteraction(""); break;
@@ -1248,6 +1289,18 @@ export default function ApplicationsPage() {
                   {/* Location Filters Group */}
                   {(activeFilters.includes("country") || activeFilters.includes("state") || activeFilters.includes("city")) && (
                     <div className="flex flex-wrap items-center gap-2 p-1.5 bg-white rounded-md border border-gray-200 shadow-sm">
+
+                      <select
+                        value={locationCondition}
+                        onChange={(e) => {
+                          setLocationCondition(e.target.value);
+                          setCurrentPage(1);
+                        }}
+                        className="px-3 py-1.5 text-xs border border-gray-200 rounded-md bg-white shadow-sm focus:ring-1 focus:ring-[#3a4480]"
+                      >
+                        <option value="equals">Equals To</option>
+                        <option value="not_equals">Not Equals To</option>
+                      </select>
                       {activeFilters.includes("country") && (
                         <div className="min-w-[120px]">
                           <AsyncSelect
@@ -1265,7 +1318,7 @@ export default function ApplicationsPage() {
                             value={countryOptions.find(c => c.value === selectedCountry) || null}
                             onChange={(opt) => {
                               setSelectedCountry(opt?.value || "");
-                              setSelectedState("");  // Reset state when country changes
+                              setSelectedStates([]); // Reset state when country changes
                               setSelectedCities([]); // Reset cities when country changes
                               setCurrentPage(1);
                             }}
@@ -1279,27 +1332,30 @@ export default function ApplicationsPage() {
                       )}
 
                       {activeFilters.includes("state") && (
-                        <div className="min-w-[120px]">
+                        <div className="min-w-[180px]">
                           <AsyncSelect
                             key={`state-select-${selectedCountry}`}
-                            placeholder="Search State..."
+                            placeholder="Search States..."
                             cacheOptions
                             defaultOptions
                             loadOptions={loadStates}
-                            value={
-                              selectedState
-                                ? { value: selectedState, label: selectedState }
-                                : null
-                            }
-                            onChange={(opt) => {
-                              setSelectedState(opt?.value || "");
-                              setSelectedCities([]); // Reset cities when state changes
+                            isMulti
+                            value={selectedStates.map((s) => ({
+                              value: s,
+                              label: s,
+                            }))}
+                            onChange={(opts) => {
+                              setSelectedStates(opts ? opts.map((o) => o.value) : []);
+                              setSelectedCities([]);
                               setCurrentPage(1);
                             }}
                             isClearable
                             className="text-xs"
                             styles={{
-                              control: (base) => ({ ...base, minHeight: '32px' })
+                              control: (base) => ({
+                                ...base,
+                                minHeight: "32px",
+                              }),
                             }}
                           />
                         </div>
@@ -1308,7 +1364,7 @@ export default function ApplicationsPage() {
                       {activeFilters.includes("city") && (
                         <div className="min-w-[140px]">
                           <AsyncSelect
-                            key={`city-select-${selectedCountry}-${selectedState}`}
+                            key={`city-select-${selectedCountry}-${selectedStates.join("-")}`}
                             placeholder="Search Cities..."
                             cacheOptions
                             defaultOptions   // ✅ this is important
@@ -1324,6 +1380,8 @@ export default function ApplicationsPage() {
                       )}
                     </div>
                   )}
+
+
 
                   {/* Application Source Filter */}
                   {activeFilters.includes("applicationSource") && (
@@ -1438,6 +1496,7 @@ export default function ApplicationsPage() {
                       />
                     </div>
                   )}
+
                   {activeFilters.includes("cutoff") && (
                     <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-md border border-gray-200 shadow-sm">
                       <span className="text-xs font-medium text-gray-600">Cutoff:</span>
@@ -1474,6 +1533,91 @@ export default function ApplicationsPage() {
           )}
         </div>
       </div>
+
+
+      {activeFilters.includes("locationStats") && locationStats && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+
+          {/* Countries */}
+          <LocationStatsCard
+            title="Countries"
+            subtitle="Geographic distribution"
+            items={locationStats.countries || []}
+            color="blue"
+            emptyText="No country data available"
+            icon={
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M21 10.5a2.5 2.5 0 01-2.5 2.5H17m2-6h2.5M3 13.5h2.5M21 18.5h-2.5M5 3.5h2.5"
+                />
+              </svg>
+            }
+          />
+
+          {/* States */}
+          <LocationStatsCard
+            title="States / Regions"
+            subtitle="Regional breakdown"
+            items={locationStats.states || []}
+            color="indigo"
+            emptyText="No state data available"
+            icon={
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                />
+              </svg>
+            }
+          />
+
+          {/* Cities */}
+          <LocationStatsCard
+            title="Cities"
+            subtitle="Urban analytics"
+            items={locationStats.cities || []}
+            color="emerald"
+            emptyText="No city data available"
+            icon={
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+            }
+          />
+        </div>
+      )}
+
 
 
 

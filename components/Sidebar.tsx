@@ -86,7 +86,7 @@ const allItems: MenuItem[] = [
   { href: "/events", label: "Events", icon: CalendarDays },
   { href: "/others", label: "Others", icon: Grid },
   { href: "/dynamic-forms", label: "Dynamic Forms", icon: Layers },
-  // { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/settings", label: "Settings", icon: Settings },
   { href: "/application-settings", label: "Application Settings", icon: Settings2 },
 ];
 
@@ -229,7 +229,6 @@ export default function Sidebar({
   const pathname = usePathname();
   const [role, setRole] = useState<string>("");
 
-  console.log(permissions, "permissionsxx")
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -275,7 +274,6 @@ export default function Sidebar({
     itemsToShow = [];
   }
 
-  console.log("Filtered items to show:", itemsToShow.map(i => i.label));
 
   return (
     <aside

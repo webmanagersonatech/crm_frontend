@@ -54,10 +54,10 @@ export default function ApplicationDetailsPage() {
         if (!section || !section.fields) return true;
         const values = Object.values(section.fields);
         // Check if all values are empty strings, null, undefined, or empty arrays
-        return values.every(value => 
-            value === "" || 
-            value === null || 
-            value === undefined || 
+        return values.every(value =>
+            value === "" ||
+            value === null ||
+            value === undefined ||
             (Array.isArray(value) && value.length === 0)
         );
     };
@@ -68,9 +68,6 @@ export default function ApplicationDetailsPage() {
         return sections.filter(section => !isSectionEmpty(section));
     };
 
-    // Check if education details exist and filter out empty sections
-    const hasEducationDetails = data?.educationDetails && data.educationDetails.length > 0;
-    
     // Filter out empty sections from personalDetails and educationDetails
     const filteredPersonalDetailsRaw = data?.personalDetails ? filterNonEmptySections(data.personalDetails) : [];
     const filteredEducationDetailsRaw = data?.educationDetails ? filterNonEmptySections(data.educationDetails) : [];
@@ -98,11 +95,6 @@ export default function ApplicationDetailsPage() {
         (section: any) => !["Declaration", "Enclosures"].includes(section.sectionName)
     );
 
-    // Function to get sub-section letter (a, b, c, d, ...)
-    const getSubSectionLetter = (index: number) => {
-        return String.fromCharCode(97 + index); // 97 is 'a' in ASCII
-    };
-
     // Helper function to check if a value is an image (file path or base64)
     const isImageValue = (value: any): boolean => {
         return typeof value === "string" && (
@@ -113,7 +105,7 @@ export default function ApplicationDetailsPage() {
 
     // Helper function to check if a value is a document
     const isDocumentValue = (value: any): boolean => {
-        return typeof value === "string" && 
+        return typeof value === "string" &&
             !value.startsWith('data:image/') &&        // exclude base64 images
             /\.(pdf|doc|docx|xls|xlsx)$/i.test(value);
     };
@@ -143,7 +135,7 @@ export default function ApplicationDetailsPage() {
                 </a>
             );
         }
-        
+
         if (isDocumentValue(value)) {
             return (
                 <a
@@ -156,25 +148,75 @@ export default function ApplicationDetailsPage() {
                 </a>
             );
         }
-        
+
         if (value !== undefined && value !== null && value !== "") {
             return String(value);
         }
-        
+
         return "";
     };
 
-    const renderSubSections = (sections: any[], mainNumber: number) =>
-        sections.map((section: any, idx: number) => {
-            const subLetter = getSubSectionLetter(idx);
+    // ---------- FIELD NUMBERING LOGIC (excludes Declaration & Enclosures) ----------
+    // Build a sequential list of all fields that should have numbers:
+    // 1. Personal Details sections
+    // 2. Education Details sections (if any)
+    // 3. Program Details fields
+    const fieldNumberMap = new Map<string, number>();
+
+    if (data) {
+        const fieldsInOrder: { sectionKey: string; fieldKey: string }[] = [];
+
+        // 1. Personal Details sections (all sections, all fields)
+        for (const section of filteredPersonalDetails) {
+            const sectionKey = section.sectionName;
+            const fieldKeys = Object.keys(section.fields);
+            for (const fieldKey of fieldKeys) {
+                fieldsInOrder.push({ sectionKey, fieldKey });
+            }
+        }
+
+        // 2. Education Details sections
+        for (const section of filteredEducationDetails) {
+            const sectionKey = section.sectionName;
+            const fieldKeys = Object.keys(section.fields);
+            for (const fieldKey of fieldKeys) {
+                fieldsInOrder.push({ sectionKey, fieldKey });
+            }
+        }
+
+        // 3. Program Details fields
+        const programFields = ["program", "academicYear", "paymentStatus"];
+        for (const fieldKey of programFields) {
+            fieldsInOrder.push({ sectionKey: "PROGRAM_DETAILS", fieldKey });
+        }
+
+        // Assign numbers (1,2,3,...)
+        fieldsInOrder.forEach((item, idx) => {
+            const mapKey = `${item.sectionKey}_${item.fieldKey}`;
+            fieldNumberMap.set(mapKey, idx + 1);
+        });
+    }
+
+    // Helper to get the field number for display (returns null if not found)
+    const getFieldNumber = (sectionName: string, fieldKey: string): number | null => {
+        // Never assign numbers to Declaration or Enclosures sections
+        if (sectionName === "Declaration" || sectionName === "Enclosures") {
+            return null;
+        }
+        const mapKey = `${sectionName}_${fieldKey}`;
+        return fieldNumberMap.get(mapKey) || null;
+    };
+    // ---------- END NUMBERING LOGIC ----------
+
+    const renderSubSections = (sections: any[]) =>
+        sections.map((section: any) => {
             const cleanedName = cleanSectionName(section.sectionName);
-            const displayTitle = `${mainNumber}(${subLetter}). ${cleanedName}`;
 
             return (
                 <div key={section.sectionName} className="mb-6 border rounded-md overflow-hidden">
                     {/* BLUE HEADER */}
                     <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
-                        {displayTitle}
+                        {cleanedName}
                     </div>
 
                     {/* CONTENT */}
@@ -187,6 +229,9 @@ export default function ApplicationDetailsPage() {
                                     value = value.join(", ");
                                 }
 
+                                const fieldNumber = getFieldNumber(section.sectionName, key);
+                                const displayKey = fieldNumber ? `${fieldNumber}. ${key.replace(/_/g, " ")}` : key.replace(/_/g, " ");
+
                                 return (
                                     <div
                                         key={key}
@@ -194,7 +239,7 @@ export default function ApplicationDetailsPage() {
                                     >
                                         {/* KEY - Fixed width column */}
                                         <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
-                                            {key.replace(/_/g, " ")}
+                                            {displayKey}
                                         </span>
 
                                         {/* VALUE - Flexible column */}
@@ -210,12 +255,12 @@ export default function ApplicationDetailsPage() {
             );
         });
 
-    const renderFullWidthSection = (section: any, mainNumber: number) => {
+    const renderFullWidthSection = (section: any) => {
         const cleanedName = cleanSectionName(section.sectionName);
         return (
             <div key={section.sectionName} className="mb-6 border rounded-md overflow-hidden">
                 <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
-                    {mainNumber}. {cleanedName}
+                    {cleanedName}
                 </div>
                 <div className="p-3 overflow-x-auto">
                     <div className="space-y-2 text-sm">
@@ -231,6 +276,10 @@ export default function ApplicationDetailsPage() {
                                 return null;
                             }
 
+                            // For Declaration/Enclosures, we DO NOT show numbers (getFieldNumber returns null)
+                            const fieldNumber = getFieldNumber(section.sectionName, key);
+                            const displayKey = fieldNumber ? `${fieldNumber}. ${key.replace(/_/g, " ")}` : key.replace(/_/g, " ");
+
                             return (
                                 <div
                                     key={key}
@@ -238,7 +287,7 @@ export default function ApplicationDetailsPage() {
                                 >
                                     {/* KEY */}
                                     <div className="font-semibold text-gray-800 bg-gray-100 px-3 py-2 border-b border-gray-300">
-                                        {key.replace(/_/g, " ")}
+                                        {displayKey}
                                     </div>
 
                                     {/* VALUE */}
@@ -253,14 +302,6 @@ export default function ApplicationDetailsPage() {
             </div>
         );
     };
-
-    // Calculate section numbers dynamically based on what sections exist
-    let currentNumber = 1;
-    const personalNumber = currentNumber++;
-    const educationNumber = filteredEducationDetails.length > 0 ? currentNumber++ : null;
-    const programNumber = currentNumber++;
-    const declarationNumber = declarationSection ? currentNumber++ : null;
-    const enclosuresNumber = enclosuresSection ? currentNumber++ : null;
 
     // Check if education section should be rendered
     const shouldShowEducation = filteredEducationDetails.length > 0;
@@ -284,32 +325,30 @@ export default function ApplicationDetailsPage() {
                 ref={printRef}
                 className="a4-page bg-white shadow-xl rounded-lg p-4 md:p-10 border border-gray-300 overflow-x-auto"
             >
-                {/* HEADER */}
-                <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
+                {/* HEADER - Fixed for print: logo left, title center, application ID right */}
+                <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4 print:flex-row print:justify-between print:items-center print:gap-0">
                     <img
                         src={data?.instituteLogo || "/logo.png"}
                         alt="Logo"
-                        className="w-20 h-20 object-contain"
+                        className="w-20 h-20 object-contain print:w-16 print:h-16"
                     />
 
-                    <h1 className="text-xl font-bold text-center flex-1">
+                    <h1 className="text-xl font-bold text-center flex-1 print:flex-1 print:text-center">
                         APPLICATION FORM <span>| </span>
-                        <span>
-                            {data?.academicYear}
-                        </span>
+                        <span>{data?.academicYear}</span>
                     </h1>
 
-                    <div className="text-right text-sm text-gray-600">
+                    <div className="text-right text-sm text-gray-600 print:text-right">
                         Application ID
                         <div className="font-semibold">{data?.applicationId || "-"}</div>
                     </div>
                 </div>
 
-                {/* 1. PERSONAL DETAILS */}
+                {/* STUDENT DETAILS */}
                 <section className="mb-6">
-                    <h2 className="section-title">{personalNumber}. STUDENT PERSONAL DETAILS</h2>
+                    <h2 className="section-title">STUDENT DETAILS</h2>
                     {filteredPersonalDetails && filteredPersonalDetails.length > 0 ? (
-                        renderSubSections(filteredPersonalDetails, personalNumber)
+                        renderSubSections(filteredPersonalDetails)
                     ) : (
                         <div className="text-center text-gray-500 py-8 border rounded-md">
                             No Student personal details available
@@ -317,18 +356,18 @@ export default function ApplicationDetailsPage() {
                     )}
                 </section>
 
-                {/* 2. EDUCATION DETAILS - Only show if exists and has non-empty sections */}
+                {/* EDUCATION DETAILS - Only show if exists and has non-empty sections */}
                 {shouldShowEducation && (
                     <section className="mb-6">
-                        <h2 className="section-title">{educationNumber}. EDUCATION DETAILS</h2>
-                        {renderSubSections(filteredEducationDetails, educationNumber as number)}
+                        <h2 className="section-title">EDUCATION DETAILS</h2>
+                        {renderSubSections(filteredEducationDetails)}
                     </section>
                 )}
 
-                {/* PROGRAM DETAILS */}
+                {/* PROGRAM DETAILS (with numbering) */}
                 <section className="mb-8 border rounded-md overflow-hidden">
                     <div className="bg-blue-700 text-white px-4 py-2 font-semibold">
-                        {programNumber}. PROGRAM DETAILS
+                        PROGRAM DETAILS
                     </div>
 
                     <div className="p-4 overflow-x-auto">
@@ -336,7 +375,7 @@ export default function ApplicationDetailsPage() {
                             {/* Program */}
                             <div className="grid grid-cols-[160px_1fr] border border-gray-300 overflow-hidden print:grid-cols-[160px_1fr] print:border print:border-gray-300">
                                 <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
-                                    Program Applied For
+                                    {getFieldNumber("PROGRAM_DETAILS", "program") ? `${getFieldNumber("PROGRAM_DETAILS", "program")}. Program Applied For` : "Program Applied For"}
                                 </span>
                                 <span className="text-gray-700 px-2 py-1 break-words">
                                     {data?.program || ""}
@@ -346,7 +385,7 @@ export default function ApplicationDetailsPage() {
                             {/* Academic Year */}
                             <div className="grid grid-cols-[160px_1fr] border border-gray-300 overflow-hidden print:grid-cols-[160px_1fr] print:border print:border-gray-300">
                                 <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
-                                    Academic Year
+                                    {getFieldNumber("PROGRAM_DETAILS", "academicYear") ? `${getFieldNumber("PROGRAM_DETAILS", "academicYear")}. Academic Year` : "Academic Year"}
                                 </span>
                                 <span className="text-gray-700 px-2 py-1 break-words">
                                     {data?.academicYear || ""}
@@ -356,7 +395,7 @@ export default function ApplicationDetailsPage() {
                             {/* Payment Status */}
                             <div className="grid grid-cols-[160px_1fr] border border-gray-300 overflow-hidden print:grid-cols-[160px_1fr] print:border print:border-gray-300">
                                 <span className="font-semibold text-gray-800 bg-gray-100 px-2 py-1 border-r border-gray-300 print:border-r print:border-gray-300">
-                                    Payment Status
+                                    {getFieldNumber("PROGRAM_DETAILS", "paymentStatus") ? `${getFieldNumber("PROGRAM_DETAILS", "paymentStatus")}. Payment Status` : "Payment Status"}
                                 </span>
                                 <span className="text-gray-700 px-2 py-1 break-words">
                                     {data?.paymentStatus || ""}
@@ -366,15 +405,11 @@ export default function ApplicationDetailsPage() {
                     </div>
                 </section>
 
-                {/* DECLARATION SECTION */}
-                {declarationSection && (
-                    renderFullWidthSection(declarationSection, declarationNumber as number)
-                )}
+                {/* DECLARATION SECTION - No numbers */}
+                {declarationSection && renderFullWidthSection(declarationSection)}
 
-                {/* ENCLOSURES SECTION */}
-                {enclosuresSection && (
-                    renderFullWidthSection(enclosuresSection, enclosuresNumber as number)
-                )}
+                {/* ENCLOSURES SECTION - No numbers */}
+                {enclosuresSection && renderFullWidthSection(enclosuresSection)}
 
                 {/* SIGNATURES */}
                 <div className="mt-16 flex justify-between text-center">
@@ -389,7 +424,7 @@ export default function ApplicationDetailsPage() {
                 </div>
             </div>
 
-            {/* PRINT STYLES */}
+            {/* PRINT STYLES (unchanged) */}
             <style jsx global>{`
     .section-title {
         font-size: 1rem;
@@ -434,6 +469,14 @@ export default function ApplicationDetailsPage() {
             flex-wrap: nowrap !important;
         }
         
+        /* Force header row layout and correct spacing */
+        .flex-col {
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            gap: 0 !important;
+        }
+        
         /* Consistent borders in print */
         .border, .border-r, .border-gray-300 {
             border-color: #d1d1d1 !important;
@@ -446,8 +489,8 @@ export default function ApplicationDetailsPage() {
         
         /* Keep images sized properly */
         img {
-            max-width: 60px !important;
-            max-height: 60px !important;
+            max-width: 64px !important;
+            max-height: 64px !important;
         }
         
         /* Prevent page breaks inside entries */

@@ -582,6 +582,7 @@ export default function SettingsPage() {
         { fieldName: 'Diploma Percentage / CGPA', fieldType: 'number', required: false },
         { fieldName: 'Diploma Certificate', fieldType: 'file', required: false },
       ],
+      
       'Cutoff Details': [
         { fieldName: 'Physics Cutoff', fieldType: 'decimal', required: true },
         { fieldName: 'Chemistry Cutoff', fieldType: 'decimal', required: true },

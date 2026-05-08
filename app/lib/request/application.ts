@@ -185,10 +185,12 @@ export async function getApplications(params?: {
   startDate?: string;
   endDate?: string;
   country?: string;
-  state?: string;
+  state?: string | string[];
   city?: string | string[];
   applicationSource?: string;
   interactions?: string;
+  locationCondition?: string;
+  showCountryStateCityStats?: boolean;
   q?: string;
   filters?: ApplicationFilters;
 }) {
@@ -201,7 +203,12 @@ export async function getApplications(params?: {
     if (params?.instituteId) queryParams.append("instituteId", params.instituteId);
     if (params?.paymentStatus) queryParams.append("paymentStatus", params.paymentStatus);
     if (params?.formStatus) queryParams.append("formStatus", params.formStatus);
-
+    if (params?.showCountryStateCityStats) {
+      queryParams.append("showCountryStateCityStats", "true");
+    }
+    if (params?.locationCondition) {
+      queryParams.append("locationCondition", params.locationCondition);
+    }
     if (params?.applicationId) queryParams.append("applicationId", params.applicationId);
     if (params?.applicantName) queryParams.append("applicantName", params.applicantName);
     if (params?.program) {
@@ -216,7 +223,13 @@ export async function getApplications(params?: {
     if (params?.q) queryParams.append("q", params.q);
 
     if (params?.country) queryParams.append("country", params.country);
-    if (params?.state) queryParams.append("state", params.state);
+    if (params?.state) {
+      if (Array.isArray(params.state)) {
+        params.state.forEach((s) => queryParams.append("state", s));
+      } else {
+        queryParams.append("state", params.state);
+      }
+    }
     if (params?.city) {
       if (Array.isArray(params.city)) {
         params.city.forEach(c => queryParams.append("city", c));
@@ -236,10 +249,29 @@ export async function getApplications(params?: {
     }
 
     const response = await api.get<PaginatedResponse<Application> & {
-      academicYears: string[]; courses: {
+      academicYears: string[];
+
+      courses: {
         name: string;
         courseId: string;
       }[];
+
+      locationStats: {
+        countries: {
+          name: string;
+          count: number;
+        }[];
+
+        states: {
+          name: string;
+          count: number;
+        }[];
+
+        cities: {
+          name: string;
+          count: number;
+        }[];
+      };
     }>(
       `/application?${queryParams.toString()}`
     );
@@ -265,10 +297,12 @@ export async function exportApplications(params?: {
   startDate?: string;
   endDate?: string;
   country?: string;
-  state?: string;
+  state?: string | string[];
   city?: string | string[];
   applicationSource?: string;
   interactions?: string;
+  locationCondition?: string;
+  showCountryStateCityStats?: boolean;
   q?: string;
 }) {
   try {
@@ -292,8 +326,16 @@ export async function exportApplications(params?: {
     if (params?.endDate) queryParams.append("endDate", params.endDate);
     if (params?.q) queryParams.append("q", params.q);
     if (params?.country) queryParams.append("country", params.country);
-    if (params?.state) queryParams.append("state", params.state);
-
+    if (params?.state) {
+      if (Array.isArray(params.state)) {
+        params.state.forEach((s) => queryParams.append("state", s));
+      } else {
+        queryParams.append("state", params.state);
+      }
+    }
+    if (params?.locationCondition) {
+      queryParams.append("locationCondition", params.locationCondition);
+    }
     if (params?.city) {
       if (Array.isArray(params.city)) {
         params.city.forEach(c => queryParams.append("city", c));
