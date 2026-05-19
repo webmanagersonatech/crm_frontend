@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { Eye, Plus, Loader2, Pencil, Trash2, FileDown, FileText, Settings, Edit2, PlusCircle, X } from "lucide-react";
+import { Eye, Plus, Loader2, ArrowRight, Pencil, Trash2, FileDown, FileText, Settings, Edit2, PlusCircle, X } from "lucide-react";
 import { DataTable } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import ViewDialog from "@/components/ViewDialog";
@@ -47,11 +47,13 @@ export interface FilterMeta {
   type: string;
   options?: string[];
   multiple?: boolean;
+  searchfieldno?: string;
 }
 
 export interface UiFilter extends FilterMeta {
   searchKey: string; // normalized key (bloodgroup)
   value: string;
+  searchFieldNo: string;
 }
 
 
@@ -83,7 +85,8 @@ export default function ApplicationsPage() {
   const [selectedNewStatus, setSelectedNewStatus] = useState<string>("");
   const [searchProgram, setSearchProgram] = useState("");
   const [selectedFormStatus, setSelectedFormStatus] = useState("all");
-
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [academicYears, setAcademicYears] = useState<string[]>([]);
 
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
@@ -104,13 +107,13 @@ export default function ApplicationsPage() {
   const [availableFilterFields, setAvailableFilterFields] =
     useState<FilterMeta[]>([]);
   const [searchAny, setSearchAny] = useState("");
+  const [searchFieldNo, setSearchFieldNo] = useState("");
   const [locationCondition, setLocationCondition] = useState("equals");
   const [locationStats, setLocationStats] = useState<any>({
     countries: [],
     states: [],
     cities: [],
   });
-
 
 
   const [isOpen, setIsOpen] = useState(false);
@@ -138,6 +141,7 @@ export default function ApplicationsPage() {
     { value: "state", label: "State" },
     { value: "city", label: "City" },
     { value: "locationStats", label: "Location Stats" },
+    { value: "date", label: "Date Range" },
     { value: "applicationSource", label: "Application Source" },
     { value: "interactions", label: "Follow-up Interaction" },
     { value: "applicationId", label: "Application ID" },
@@ -145,6 +149,10 @@ export default function ApplicationsPage() {
     { value: "cutoff", label: "Cutoff Range" },
     { value: "program", label: "Program" },
   ];
+
+  const filteredAvailableFields = searchFieldNo
+    ? availableFilterFields.filter(f => f.searchfieldno === searchFieldNo)
+    : availableFilterFields;
 
   const loadStates = useCallback(async (inputValue: string) => {
     let countryName = selectedCountry || "India";
@@ -361,6 +369,8 @@ export default function ApplicationsPage() {
         locationCondition,
         city: selectedCities.length ? selectedCities : undefined,
         applicationSource: selectedApplicationSource || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
         interactions: selectedInteraction || undefined,
         startCutoff: startCutoff ? Number(startCutoff) : undefined,
         endCutoff: endCutoff ? Number(endCutoff) : undefined,
@@ -393,7 +403,8 @@ export default function ApplicationsPage() {
           label: f.label,
           type: f.type,
           options: f.options || [],
-          multiple: f.multiple || false
+          multiple: f.multiple || false,
+          searchfieldno: f.searchNumber || ""
         }));
 
         setAvailableFilterFields(merged);
@@ -411,7 +422,7 @@ export default function ApplicationsPage() {
       setLoading(false);
     }
   }, [currentPage, searchAny,
-    selectedYear, selectedInstitution, locationCondition, activeFilters.includes("locationStats"), startCutoff, endCutoff, selectedPrograms, limit, selectedPayment, selectedCountry, selectedStates, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
+    selectedYear, selectedInstitution, startDate, endDate, locationCondition, activeFilters.includes("locationStats"), startCutoff, endCutoff, selectedPrograms, limit, selectedPayment, selectedCountry, selectedStates, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
 
   const handleExport = async () => {
     try {
@@ -431,6 +442,8 @@ export default function ApplicationsPage() {
         city: selectedCities.length ? selectedCities : undefined,
         locationCondition,
         applicationSource: selectedApplicationSource || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
         interactions: selectedInteraction || undefined,
         startCutoff: startCutoff ? Number(startCutoff) : undefined,
         endCutoff: endCutoff ? Number(endCutoff) : undefined,
@@ -503,7 +516,8 @@ export default function ApplicationsPage() {
         searchKey: "",
         label: "",
         type: "text",
-        value: ""
+        value: "",
+        searchFieldNo: ""
       }
     ]);
   };
@@ -938,17 +952,72 @@ export default function ApplicationsPage() {
             {uiFilters.map((filter, index) => {
               const meta = availableFilterFields.find(f => f.metaKey === filter.metaKey);
 
+              // Get filtered fields for this specific row based on its search input
+              const filteredFieldsForRow = filter.searchFieldNo
+                ? availableFilterFields.filter(f =>
+                  f.searchfieldno && f.searchfieldno.toString() === filter.searchFieldNo.toString()
+                )
+                : availableFilterFields;
+
               return (
                 <div
                   key={index}
                   className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start bg-gray-50 rounded-lg p-3 border border-gray-200 hover:shadow-md transition"
                 >
+                  {/* SEARCH INPUT FOR THIS ROW */}
+                  <div className="md:col-span-12 mb-2">
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-medium text-gray-600">Search field by No:</label>
+                      <input
+                        type="text"
+                        placeholder="1,2,3..."
+                        value={filter.searchFieldNo || ""}
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setUiFilters(prev => {
+                            const copy = [...prev];
+                            copy[index] = {
+                              ...copy[index],
+                              searchFieldNo: newValue,
+                              metaKey: "",
+                              value: ""
+                            };
+                            return copy;
+                          });
+                        }}
+                        className="w-24 border border-gray-300 rounded px-2 py-1 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                      />
+                      {filter.searchFieldNo && (
+                        <button
+                          onClick={() => {
+                            setUiFilters(prev => {
+                              const copy = [...prev];
+                              copy[index] = {
+                                ...copy[index],
+                                searchFieldNo: "",
+                                metaKey: "",
+                                value: ""
+                              };
+                              return copy;
+                            });
+                          }}
+                          className="text-red-500 hover:text-red-700 text-xs"
+                        >
+                          clear
+                        </button>
+                      )}
+                      <span className="text-xs text-blue-600">
+                        ({filteredFieldsForRow.length} fields)
+                      </span>
+                    </div>
+                  </div>
+
                   {/* FIELD SELECT - 5 columns on medium screens */}
                   <div className="md:col-span-5">
                     <select
                       value={filter.metaKey}
                       onChange={(e) => {
-                        const selected = availableFilterFields.find(f => f.metaKey === e.target.value);
+                        const selected = filteredFieldsForRow.find(f => f.metaKey === e.target.value);
                         if (!selected) return;
                         setUiFilters(prev => {
                           const copy = [...prev];
@@ -956,7 +1025,8 @@ export default function ApplicationsPage() {
                             ...selected,
                             metaKey: selected.metaKey,
                             searchKey: normalizeKey(selected.label),
-                            value: ""
+                            value: "",
+                            searchFieldNo: copy[index].searchFieldNo // Preserve the search value
                           };
                           return copy;
                         });
@@ -964,9 +1034,9 @@ export default function ApplicationsPage() {
                       className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition bg-white"
                     >
                       <option value="">Select field</option>
-                      {availableFilterFields.map(f => (
+                      {filteredFieldsForRow.map(f => (
                         <option key={f.metaKey} value={f.metaKey}>
-                          {f.label}
+                          {f.label} {f.searchfieldno && `(No: ${f.searchfieldno})`}
                         </option>
                       ))}
                     </select>
@@ -1074,10 +1144,10 @@ export default function ApplicationsPage() {
           </div>
 
           {/* ACTIONS */}
-          <div className="flex justify-start mt-6">
+          <div className="flex justify-between items-center mt-6">
             <button
               onClick={addUiFilter}
-              className="bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-6 py-2 rounded-lg text-sm font-medium shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               + Add Filter
             </button>
@@ -1111,7 +1181,18 @@ export default function ApplicationsPage() {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2">
+
+              {/* Customize Button */}
+              <button
+                onClick={() => setCustomizeOpen(true)}
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91]   rounded-md hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm lg:w-auto"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>Customize Columns</span>
+              </button>
               {/* Export Button */}
+
+
               {(userpermission === "superadmin" || userpermission?.download) && (
                 <button
                   onClick={handleExport}
@@ -1153,14 +1234,7 @@ export default function ApplicationsPage() {
             <div className="space-y-4 mt-4">
               {/* Filter Controls Row */}
               <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-                {/* Customize Button */}
-                <button
-                  onClick={() => setCustomizeOpen(true)}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm lg:w-auto"
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  <span>Customize Columns</span>
-                </button>
+
 
                 {/* Filter Selector - flex-1 to take remaining space */}
                 <div className="flex-1">
@@ -1495,6 +1569,24 @@ export default function ApplicationsPage() {
                         }}
                       />
                     </div>
+                  )}
+
+                  {activeFilters.includes("date") && (
+                    <>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480]"
+                      />
+                      <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480]"
+                      />
+                    </>
                   )}
 
                   {activeFilters.includes("cutoff") && (

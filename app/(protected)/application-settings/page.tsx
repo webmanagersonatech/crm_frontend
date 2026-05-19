@@ -44,6 +44,7 @@ interface FieldConfig {
   maxLength?: number
   minLength?: number
   acceptedFileTypes?: string[]
+  searchNumber?: string
   declarationText?: string
 }
 
@@ -175,6 +176,7 @@ const buildSectionPayload = (
         minLength: f.minLength,
         maxLength: f.maxLength,
         multiple: false,
+        searchNumber: f.searchNumber ?? "",
         declarationText: f.declarationText,
       })
     })
@@ -618,6 +620,7 @@ export default function SettingsPage() {
             minLength: field.minLength,
             maxLength: field.maxLength,
             declarationText: field.declarationText,
+            searchNumber: field.searchNumber ?? ""
           })
         })
       })
