@@ -220,6 +220,7 @@ export async function getLeads({
   candidateName,
   communication,
   startDate,
+  medium,
   endDate,
   userId,
   phoneNumber, //  added
@@ -238,6 +239,7 @@ export async function getLeads({
   candidateName?: string;
   communication?: string;
   startDate?: string;
+  medium?: string;
   endDate?: string;
   userId?: string;
   program?: string | string[];
@@ -263,6 +265,7 @@ export async function getLeads({
     if (endDate) params.append("endDate", endDate);
     if (userId) params.append("userId", userId);
     if (phoneNumber) params.append("phoneNumber", phoneNumber);
+    if (medium) params.append("medium", medium);
     if (leadId) params.append("leadId", leadId);
     if (isduplicate) params.append("isduplicate", isduplicate);
     if (country) params.append("country", country);
@@ -373,6 +376,7 @@ export async function exportLeads({
   userId,
   phoneNumber,
   leadId,
+  medium,
   leadSource,
   country,
   program,
@@ -394,6 +398,7 @@ export async function exportLeads({
   country?: string;
   state?: string;
   isduplicate?: string;
+  medium?: string;
   city?: string | string[];
 }) {
   try {
@@ -409,6 +414,7 @@ export async function exportLeads({
     if (phoneNumber) params.append("phoneNumber", phoneNumber);
     if (isduplicate) params.append("isduplicate", isduplicate);
     if (leadId) params.append("leadId", leadId);
+    if (medium) params.append("medium", medium);
     if (country) params.append("country", country);
     if (state) params.append("state", state);
     if (city) {

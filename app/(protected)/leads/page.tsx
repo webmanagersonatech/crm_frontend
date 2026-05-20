@@ -111,6 +111,8 @@ export default function LeadsPage() {
   const [institute, setInstitute] = useState<string>("");
   const [nonDuplicateConfirmOpen, setNonDuplicateConfirmOpen] = useState(false);
   const [selectedNonDuplicateLead, setSelectedNonDuplicateLead] = useState<Lead | null>(null);
+  const [mediumSources, setMediumSources] = useState<string[]>([]);
+  const [selectedMediumSource, setSelectedMediumSource] = useState("all");
 
 
   const toggleFilter = (value: string) => {
@@ -150,7 +152,9 @@ export default function LeadsPage() {
     ...(userpermission === "superadmin"
       ? [{ value: "institution", label: "Institution" }] : []),
     { value: "user", label: "User" },
+
     { value: "leadSource", label: "Lead Source" },
+    { value: "medium", label: "Medium Source" },
     { value: "country", label: "Country" },
     { value: "state", label: "State" },
     { value: "city", label: "City" },
@@ -477,10 +481,15 @@ export default function LeadsPage() {
         country: selectedCountry || undefined,   // 
         state: selectedState || undefined,       // 
         city: selectedCities.length ? selectedCities : undefined,
+        medium:
+          selectedMediumSource !== "all"
+            ? selectedMediumSource
+            : undefined,
         isduplicate: selectedDuplicate !== "all" ? selectedDuplicate : undefined,
       });
       setLeads(res.docs || []);
       setTotalPages(res.totalPages || 1);
+      setMediumSources(res.mediumsources || []);
       setTotalEntries(res?.totalDocs || 0);
       setStatusCounts(res.statusCounts || []);
       if (res.courses) {
@@ -496,7 +505,7 @@ export default function LeadsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, limit, selectedDuplicate, selectedPrograms, selectedInstitution, selectedStatus, selectedCommunication, selectedCountry, selectedState, selectedCities, searchTerm, selectedLeadSource, startDate, endDate, selectedUserId, phoneSearch, leadIdSearch]);
+  }, [currentPage, limit, selectedDuplicate, selectedMediumSource, selectedPrograms, selectedInstitution, selectedStatus, selectedCommunication, selectedCountry, selectedState, selectedCities, searchTerm, selectedLeadSource, startDate, endDate, selectedUserId, phoneSearch, leadIdSearch]);
 
 
   useEffect(() => {
@@ -521,6 +530,10 @@ export default function LeadsPage() {
         phoneNumber: phoneSearch || undefined,
         leadSource: selectedLeadSource !== "all" ? selectedLeadSource : undefined,
         leadId: leadIdSearch || undefined,
+        medium:
+          selectedMediumSource !== "all"
+            ? selectedMediumSource
+            : undefined,
         country: selectedCountry || undefined,
         state: selectedState || undefined,
         city: selectedCities.length ? selectedCities : undefined,
@@ -1110,7 +1123,22 @@ export default function LeadsPage() {
                       <option value="application">Application</option>
                     </select>
                   )}
+                  {/* Medium Source Filter */}
+                  {activeFilter.includes("medium") && (
+                    <select
+                      value={selectedMediumSource}
+                      onChange={(e) => setSelectedMediumSource(e.target.value)}
+                      className="px-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white dark:bg-gray-800 min-w-[160px]"
+                    >
+                      <option value="all">All Medium Sources</option>
 
+                      {mediumSources.map((medium: string) => (
+                        <option key={medium} value={medium}>
+                          {medium}
+                        </option>
+                      ))}
+                    </select>
+                  )}
 
                   {/* Country/State/City Group with AsyncSelect */}
                   <div className="flex items-center gap-2">
