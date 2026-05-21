@@ -1734,7 +1734,11 @@ export default function AddApplicationForm({
                 {formConfig?.[`${activeTab}Details`]?.map((section: any) => (
                     <div key={section.sectionName} className="border p-3 rounded mb-4">
                         <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-semibold">{section.sectionName}</h3>
+                            <h3 className="font-semibold">
+                                {section.sectionName === "Personal Details"
+                                    ? "Student Details"
+                                    : section.sectionName}
+                            </h3>
 
                             {section.sectionName === "Permanent Address Details" && (
                                 <label className="flex items-center gap-2 text-sm">

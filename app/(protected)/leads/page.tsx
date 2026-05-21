@@ -281,6 +281,7 @@ export default function LeadsPage() {
     lead?: Lead;
     status?: string;
     communication?: string;
+    counsellorName?: string;
     followUpDate?: string;
     description?: string;
   }>({});
@@ -1023,14 +1024,7 @@ export default function LeadsPage() {
           <div className="flex-1 flex flex-wrap items-center gap-3 justify-end">
             {(userpermission === "superadmin" || userpermission?.filter) && (
               <>
-                {/* Customize Columns Button */}
-                <button
-                  onClick={() => setCustomizeOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all shadow-sm"
-                >
-                  <Settings className="w-3.5 h-3.5" />
-                  <span>Customize</span>
-                </button>
+
 
                 {/* Filter Selector */}
                 <div className="min-w-[180px]">
@@ -1058,6 +1052,15 @@ export default function LeadsPage() {
                     }}
                   />
                 </div>
+
+                {/* Customize Columns Button */}
+                <button
+                  onClick={() => setCustomizeOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] hover:from-[#2a3970] hover:to-[#4a5d9e] text-white rounded-lg transition-all shadow-sm"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  <span>Customize</span>
+                </button>
 
                 {/* Dynamic Filters Section */}
                 <div className="flex flex-wrap items-center gap-3">
@@ -1510,13 +1513,34 @@ export default function LeadsPage() {
               className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative"
             >
               <button
-                onClick={() => setStatusUpdateOpen(false)}
+                onClick={() => {
+                  setStatusUpdateOpen(false);
+                  fetchLeads();
+                }}
                 className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
               >
                 <X className="w-6 h-6" />
               </button>
 
               <h2 className="text-lg font-semibold mb-4">Update follow up Status</h2>
+
+              {/* Counsellor Name */}
+              <label className="block mb-2 text-sm font-medium">
+                Counsellor Name
+              </label>
+
+              <input
+                type="text"
+                value={statusUpdateData.counsellorName || ""}
+                onChange={(e) =>
+                  setStatusUpdateData((prev) => ({
+                    ...prev,
+                    counsellorName: e.target.value,
+                  }))
+                }
+                className="w-full border rounded-md p-2 mb-4"
+                placeholder="Enter counsellor name"
+              />
 
               {/* Communication */}
               <label className="block mb-2 text-sm font-medium">Communication</label>
@@ -1572,7 +1596,10 @@ export default function LeadsPage() {
 
               <div className="flex justify-end gap-2">
                 <button
-                  onClick={() => setStatusUpdateOpen(false)}
+                  onClick={() => {
+                    setStatusUpdateOpen(false);
+                    fetchLeads();
+                  }}
                   className="px-4 py-2 rounded-md border border-gray-300"
                 >
                   Cancel
@@ -1581,6 +1608,11 @@ export default function LeadsPage() {
                   onClick={async () => {
                     if (!statusUpdateData.lead || !statusUpdateData.status) return;
                     try {
+
+                      if (!statusUpdateData.counsellorName?.trim()) {
+                        toast.error("Counsellor name is required");
+                        return;
+                      }
                       if (!statusUpdateData.status) {
                         toast.error("Status is required");
                         return;
@@ -1597,6 +1629,7 @@ export default function LeadsPage() {
 
                       await updateLead(statusUpdateData.lead._id, {
                         status: statusUpdateData.status,
+                        counsellorName: statusUpdateData.counsellorName || "",
                         communication: statusUpdateData.communication,
                         followUpDate: statusUpdateData.followUpDate || "",
                         description: statusUpdateData.description,
