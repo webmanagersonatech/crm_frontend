@@ -220,6 +220,37 @@ export default function AddApplicationForm({
         formData["Subject3(Mathematics)"],
         formConfig
     ]);
+
+    useEffect(() => {
+        const dob = formData["Date of Birth"];
+
+        if (!dob) {
+            setFormData((prev) => ({
+                ...prev,
+                Age: "",
+            }));
+            return;
+        }
+
+        const birthDate = new Date(dob);
+        const today = new Date();
+
+        let age = today.getFullYear() - birthDate.getFullYear();
+
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+
+        if (
+            monthDiff < 0 ||
+            (monthDiff === 0 && today.getDate() < birthDate.getDate())
+        ) {
+            age--;
+        }
+
+        setFormData((prev) => ({
+            ...prev,
+            Age: age > 0 ? age.toString() : "",
+        }));
+    }, [formData["Date of Birth"]]);
     // Add this function after handleFileChange
     const handleBlur = (
         e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
