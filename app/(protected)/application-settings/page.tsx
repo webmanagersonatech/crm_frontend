@@ -46,6 +46,10 @@ interface FieldConfig {
   acceptedFileTypes?: string[]
   searchNumber?: string
   declarationText?: string
+  showWhen?: {
+    field: string
+    value: string
+  }
 }
 
 
@@ -178,6 +182,7 @@ const buildSectionPayload = (
         multiple: false,
         searchNumber: f.searchNumber ?? "",
         declarationText: f.declarationText,
+        showWhen: f.showWhen || undefined,
       })
     })
 
@@ -584,7 +589,7 @@ export default function SettingsPage() {
         { fieldName: 'Diploma Percentage / CGPA', fieldType: 'number', required: false },
         { fieldName: 'Diploma Certificate', fieldType: 'file', required: false },
       ],
-      
+
       'Cutoff Details': [
         { fieldName: 'Physics Cutoff', fieldType: 'decimal', required: true },
         { fieldName: 'Chemistry Cutoff', fieldType: 'decimal', required: true },
@@ -620,7 +625,8 @@ export default function SettingsPage() {
             minLength: field.minLength,
             maxLength: field.maxLength,
             declarationText: field.declarationText,
-            searchNumber: field.searchNumber ?? ""
+            searchNumber: field.searchNumber ?? "",
+            showWhen: field.showWhen || undefined,
           })
         })
       })

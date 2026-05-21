@@ -1717,34 +1717,50 @@ export default function AddApplicationForm({
                         <h3 className="font-semibold mb-3">{section.sectionName}</h3>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {section.fields.map((f: any) => (
-                                <div
-                                    key={f.fieldName}
-                                    className={`flex flex-col relative border rounded p-2 ${f.type === "declaration" ? "col-span-1 sm:col-span-2 lg:col-span-3" : ""
-                                        }`}
-                                >
-                                    {/*  REMOVE BUTTON (only for manually added fields) */}
-                                    {f.isCustom && (
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                removeField(activeTab, section.sectionName, f.fieldName)
-                                            }
-                                            className="absolute top-1 right-1 text-red-600 font-bold text-sm"
-                                            title="Remove field"
-                                        >
-                                            ✕
-                                        </button>
-                                    )}
+                            {section.fields
+                                .filter((f: any) => {
+                                    // Show normally if no condition
+                                    if (!f.showWhen) return true;
 
-                                    <label className="text-xs font-semibold mb-1">
-                                        {f.fieldName}
-                                        {f.required && <span className="text-red-500"> *</span>}
-                                    </label>
+                                    // Show only when condition matches
+                                    return formData[f.showWhen.field] === f.showWhen.value;
+                                })
+                                .map((f: any) => (
+                                    <div
+                                        key={f.fieldName}
+                                        className={`flex flex-col relative border rounded p-2 ${f.type === "declaration"
+                                            ? "col-span-1 sm:col-span-2 lg:col-span-3"
+                                            : ""
+                                            }`}
+                                    >
+                                        {/* REMOVE BUTTON */}
+                                        {f.isCustom && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    removeField(
+                                                        activeTab,
+                                                        section.sectionName,
+                                                        f.fieldName
+                                                    )
+                                                }
+                                                className="absolute top-1 right-1 text-red-600 font-bold text-sm"
+                                                title="Remove field"
+                                            >
+                                                ✕
+                                            </button>
+                                        )}
 
-                                    {renderField(f)}
-                                </div>
-                            ))}
+                                        <label className="text-xs font-semibold mb-1">
+                                            {f.fieldName}
+                                            {f.required && (
+                                                <span className="text-red-500"> *</span>
+                                            )}
+                                        </label>
+
+                                        {renderField(f)}
+                                    </div>
+                                ))}
                         </div>
                     </div>
                 ))}
