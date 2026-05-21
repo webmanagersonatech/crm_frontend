@@ -72,7 +72,7 @@ export default function AddApplicationForm({
     const [academicYear, setAcademicYear] = useState<string>('')
     const [startYear, setStartYear] = useState<OptionType | null>(null)
     const [endYear, setEndYear] = useState<OptionType | null>(null)
-    // Add this with your other state declarations
+    const [sameAddress, setSameAddress] = useState(false);
     const [signatures, setSignatures] = useState<Record<string, SignatureCanvas | null>>({});
     const [signaturesData, setSignaturesData] = useState<Record<string, string>>({});
     const signaturesLoaded = useRef<Record<string, boolean>>({}); // Track loaded signatures
@@ -125,7 +125,26 @@ export default function AddApplicationForm({
         return "";
     };
 
+    useEffect(() => {
+        if (sameAddress) {
+            setFormData((prev) => ({
+                ...prev,
 
+                "Permanent  Country": prev["Country"] || "",
+                "Permanent  State": prev["State"] || "",
+                "Permanent City": prev["City"] || "",
+                "Permanent Pincode": prev["Pincode"] || "",
+                "Permanent Address": prev["Address"] || "",
+            }));
+        }
+    }, [
+        sameAddress,
+        formData["Country"],
+        formData["State"],
+        formData["City"],
+        formData["Pincode"],
+        formData["Address"],
+    ]);
 
     useEffect(() => {
         if (!formConfig?.educationDetails) return;
@@ -1714,7 +1733,34 @@ export default function AddApplicationForm({
 
                 {formConfig?.[`${activeTab}Details`]?.map((section: any) => (
                     <div key={section.sectionName} className="border p-3 rounded mb-4">
-                        <h3 className="font-semibold mb-3">{section.sectionName}</h3>
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold">{section.sectionName}</h3>
+
+                            {section.sectionName === "Permanent Address Details" && (
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                        type="checkbox"
+                                        checked={sameAddress}
+                                        onChange={(e) => {
+                                            const checked = e.target.checked;
+                                            setSameAddress(checked);
+
+                                            if (checked) {
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    "Permanent  Country": prev["Country"] || "",
+                                                    "Permanent  State": prev["State"] || "",
+                                                    "Permanent City": prev["City"] || "",
+                                                    "Permanent Pincode": prev["Pincode"] || "",
+                                                    "Permanent Address": prev["Address"] || "",
+                                                }));
+                                            }
+                                        }}
+                                    />
+                                    Same as Current Address
+                                </label>
+                            )}
+                        </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {section.fields
