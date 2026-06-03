@@ -1917,98 +1917,110 @@ export default function AddApplicationForm({
                     {activeTab === "personal" ? "Personal Details" : "Education Details"}
                 </h2>
 
-                {formConfig?.[`${activeTab}Details`]?.map((section: any) => (
-                    <div key={section.sectionName} className="border p-3 rounded mb-4">
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-semibold">
-                                {section.sectionName === "Personal Details"
-                                    ? "Student Details"
-                                    : section.sectionName}
-                            </h3>
+                {formConfig?.[`${activeTab}Details`]
+                    ?.filter((section: any) => {
+                        const visibleFields = section.fields.filter((f: any) => {
+                            if (!f.showWhen) return true;
 
-                            {section.sectionName === "Permanent Address Details" && (
-                                <label className="flex items-center gap-2 text-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={sameAddress}
-                                        onChange={(e) => {
-                                            const checked = e.target.checked;
-                                            setSameAddress(checked);
+                            return (
+                                formData[f.showWhen.field] === f.showWhen.value
+                            );
+                        });
 
-                                            if (checked) {
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    "Permanent  Country": prev["Country"] || "",
-                                                    "Permanent  State": prev["State"] || "",
-                                                    "Permanent City": prev["City"] || "",
-                                                    "Permanent Pincode": prev["Pincode"] || "",
-                                                    "Permanent Address": prev["Address"] || "",
-                                                }));
-                                            } else {
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    "Permanent  Country": "",
-                                                    "Permanent  State": "",
-                                                    "Permanent City": "",
-                                                    "Permanent Pincode": "",
-                                                    "Permanent Address": "",
-                                                }));
-                                            }
-                                        }}
-                                    />
-                                    Same as Current Address
-                                </label>
-                            )}
-                        </div>
+                        return visibleFields.length > 0;
+                    })
+                    .map((section: any) => (
+                        <div key={section.sectionName} className="border p-3 rounded mb-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="font-semibold">
+                                    {section.sectionName === "Personal Details"
+                                        ? "Student Details"
+                                        : section.sectionName}
+                                </h3>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {section.fields
-                                .filter((f: any) => {
-                                    // Show normally if no condition
-                                    if (!f.showWhen) return true;
+                                {section.sectionName === "Permanent Address Details" && (
+                                    <label className="flex items-center gap-2 text-sm">
+                                        <input
+                                            type="checkbox"
+                                            checked={sameAddress}
+                                            onChange={(e) => {
+                                                const checked = e.target.checked;
+                                                setSameAddress(checked);
 
-                                    // Show only when condition matches
-                                    return formData[f.showWhen.field] === f.showWhen.value;
-                                })
-                                .map((f: any) => (
-                                    <div
-                                        key={f.fieldName}
-                                        className={`flex flex-col relative border rounded p-2 ${f.type === "declaration"
-                                            ? "col-span-1 sm:col-span-2 lg:col-span-3"
-                                            : ""
-                                            }`}
-                                    >
-                                        {/* REMOVE BUTTON */}
-                                        {f.isCustom && (
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    removeField(
-                                                        activeTab,
-                                                        section.sectionName,
-                                                        f.fieldName
-                                                    )
+                                                if (checked) {
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        "Permanent  Country": prev["Country"] || "",
+                                                        "Permanent  State": prev["State"] || "",
+                                                        "Permanent City": prev["City"] || "",
+                                                        "Permanent Pincode": prev["Pincode"] || "",
+                                                        "Permanent Address": prev["Address"] || "",
+                                                    }));
+                                                } else {
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        "Permanent  Country": "",
+                                                        "Permanent  State": "",
+                                                        "Permanent City": "",
+                                                        "Permanent Pincode": "",
+                                                        "Permanent Address": "",
+                                                    }));
                                                 }
-                                                className="absolute top-1 right-1 text-red-600 font-bold text-sm"
-                                                title="Remove field"
-                                            >
-                                                ✕
-                                            </button>
-                                        )}
+                                            }}
+                                        />
+                                        Same as Current Address
+                                    </label>
+                                )}
+                            </div>
 
-                                        <label className="text-xs font-semibold mb-1">
-                                            {f.fieldName}
-                                            {f.required && (
-                                                <span className="text-red-500"> *</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {section.fields
+                                    .filter((f: any) => {
+                                        if (!f.showWhen) return true;
+
+                                        return (
+                                            formData[f.showWhen.field] === f.showWhen.value
+                                        );
+                                    })
+                                    .map((f: any) => (
+                                        <div
+                                            key={f.fieldName}
+                                            className={`flex flex-col relative border rounded p-2 ${f.type === "declaration"
+                                                ? "col-span-1 sm:col-span-2 lg:col-span-3"
+                                                : ""
+                                                }`}
+                                        >
+                                            {/* REMOVE BUTTON */}
+                                            {f.isCustom && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        removeField(
+                                                            activeTab,
+                                                            section.sectionName,
+                                                            f.fieldName
+                                                        )
+                                                    }
+                                                    className="absolute top-1 right-1 text-red-600 font-bold text-sm"
+                                                    title="Remove field"
+                                                >
+                                                    ✕
+                                                </button>
                                             )}
-                                        </label>
 
-                                        {renderField(f)}
-                                    </div>
-                                ))}
+                                            <label className="text-xs font-semibold mb-1">
+                                                {f.fieldName}
+                                                {f.required && (
+                                                    <span className="text-red-500"> *</span>
+                                                )}
+                                            </label>
+
+                                            {renderField(f)}
+                                        </div>
+                                    ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    ))}
 
             </div>
 
