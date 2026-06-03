@@ -42,6 +42,9 @@ interface FieldConfig {
   visibility: 'Yes' | 'No'
   options?: string[]
   maxLength?: number
+  // NEW
+  minValue?: number
+  maxValue?: number
   minLength?: number
   acceptedFileTypes?: string[]
   searchNumber?: string
@@ -179,6 +182,8 @@ const buildSectionPayload = (
         options: f.options,
         minLength: f.minLength,
         maxLength: f.maxLength,
+        minValue: f.minValue,
+        maxValue: f.maxValue,
         multiple: false,
         searchNumber: f.searchNumber ?? "",
         declarationText: f.declarationText,
@@ -213,6 +218,8 @@ export default function SettingsPage() {
   const [minLength, setMinLength] = useState<number | ''>('')
   const [fieldType, setFieldType] = useState('')
   const [required, setRequired] = useState(false)
+  const [minValue, setMinValue] = useState<number | ''>('')
+  const [maxValue, setMaxValue] = useState<number | ''>('')
   const [options, setOptions] = useState('')
   const [showDeclarationModal, setShowDeclarationModal] = useState(false)
   const [declarationFor, setDeclarationFor] = useState<'Personal' | 'Education'>('Personal')
@@ -624,6 +631,8 @@ export default function SettingsPage() {
             options: field.options ?? [],
             minLength: field.minLength,
             maxLength: field.maxLength,
+            minValue: field.minValue,
+            maxValue: field.maxValue,
             declarationText: field.declarationText,
             searchNumber: field.searchNumber ?? "",
             showWhen: field.showWhen || undefined,
@@ -711,7 +720,11 @@ export default function SettingsPage() {
         fieldType: field.fieldType,
         required: field.required,
         visibility: 'Yes',
+        minLength: field.minLength ?? undefined,
         maxLength: field.maxLength ?? undefined,
+
+        minValue: field.minValue ?? undefined,
+        maxValue: field.maxValue ?? undefined,
 
         options: field.options || [],
       },
@@ -763,6 +776,17 @@ export default function SettingsPage() {
         maxLength: ['text', 'number', 'email', 'decimal'].includes(fieldType) && maxLength
           ? Number(maxLength)
           : undefined,
+        minValue:
+          ['number', 'decimal'].includes(fieldType) &&
+            minValue !== ''
+            ? Number(minValue)
+            : undefined,
+
+        maxValue:
+          ['number', 'decimal'].includes(fieldType) &&
+            maxValue !== ''
+            ? Number(maxValue)
+            : undefined,
         options:
           ['select', 'checkbox', 'radiobutton'].includes(fieldType)
             ? options.split(',').map((o) => o.trim())
@@ -1012,7 +1036,29 @@ text-white px-4 py-2 font-semibold rounded-t">
                       />
                     </div>
                   )}
+                  {['number', 'decimal'].includes(fieldType) && (
+                    <div className="space-y-2">
+                      <input
+                        type="number"
+                        className={inputClass}
+                        placeholder="Minimum Value"
+                        value={minValue}
+                        onChange={(e) =>
+                          setMinValue(e.target.value ? Number(e.target.value) : '')
+                        }
+                      />
 
+                      <input
+                        type="number"
+                        className={inputClass}
+                        placeholder="Maximum Value"
+                        value={maxValue}
+                        onChange={(e) =>
+                          setMaxValue(e.target.value ? Number(e.target.value) : '')
+                        }
+                      />
+                    </div>
+                  )}
 
                   <select
                     className={inputClass}

@@ -120,7 +120,25 @@ export default function AddApplicationForm({
             if (field.maxLength && value.toString().length > field.maxLength) {
                 return `${field.fieldName} cannot exceed ${field.maxLength} characters`;
             }
+
+            if (
+                field.minValue !== undefined &&
+                !isNaN(Number(value)) &&
+                Number(value) < field.minValue
+            ) {
+                return `${field.fieldName} must be at least ${field.minValue}`;
+            }
+
+            // Max Value
+            if (
+                field.maxValue !== undefined &&
+                !isNaN(Number(value)) &&
+                Number(value) > field.maxValue
+            ) {
+                return `${field.fieldName} cannot exceed ${field.maxValue}`;
+            }
         }
+
 
         return "";
     };
@@ -1302,55 +1320,101 @@ export default function AddApplicationForm({
                     );
 
                 /* NUMBER */
+                /* NUMBER */
                 case "number":
                     return (
                         <input
                             type="text"
                             name={field.fieldName}
                             value={value}
-                            className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+                            className={`${inputClass} ${hasError ? "border-red-500" : ""}`}
                             inputMode="numeric"
                             maxLength={field.maxLength ?? 15}
                             onChange={(e) => {
-                                let numericValue = e.target.value.replace(/\D/g, "");
+                                const numericValue = e.target.value.replace(/\D/g, "");
 
-                                // PREVENT STARTING WITH ZERO
-                                if (numericValue.length > 1 && numericValue.startsWith('0')) {
-                                    numericValue = numericValue.replace(/^0+/, '');
-                                }
-                                // If it's a single zero, don't allow
-                                if (numericValue === '0') {
-                                    numericValue = '';
+                                // Prevent leading zero
+                                if (
+                                    numericValue.length > 1 &&
+                                    numericValue.startsWith("0")
+                                ) {
+                                    return;
                                 }
 
-                                setFormData(p => ({ ...p, [field.fieldName]: numericValue }));
-                                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+                                const num = Number(numericValue);
+
+                                // Max value restriction while typing
+                                if (
+                                    numericValue &&
+                                    field.maxValue !== undefined &&
+                                    num > field.maxValue
+                                ) {
+                                    return;
+                                }
+
+                                setFormData((p) => ({
+                                    ...p,
+                                    [field.fieldName]: numericValue,
+                                }));
+
+                                setFieldErrors((prev) => ({
+                                    ...prev,
+                                    [field.fieldName]: "",
+                                }));
                             }}
                             onBlur={(e) => {
                                 const val = e.target.value;
+                                const num = Number(val);
 
-                                // Check if starts with zero
-                                if (val.length > 0 && val.startsWith('0')) {
-                                    setFieldErrors(prev => ({
+                                if (val.length > 0 && val.startsWith("0")) {
+                                    setFieldErrors((prev) => ({
                                         ...prev,
-                                        [field.fieldName]: `${field.fieldName} cannot start with zero`
+                                        [field.fieldName]:
+                                            `${field.fieldName} cannot start with zero`,
                                     }));
                                 }
-                                // Check min length if specified
-                                else if (field.minLength && val.length < field.minLength) {
-                                    setFieldErrors(prev => ({
+                                else if (
+                                    field.minLength &&
+                                    val.length < field.minLength
+                                ) {
+                                    setFieldErrors((prev) => ({
                                         ...prev,
-                                        [field.fieldName]: `${field.fieldName} must be at least ${field.minLength} digits`
+                                        [field.fieldName]:
+                                            `${field.fieldName} must be at least ${field.minLength} digits`,
                                     }));
                                 }
-                                // Check max length if specified
-                                else if (field.maxLength && val.length > field.maxLength) {
-                                    setFieldErrors(prev => ({
+                                else if (
+                                    field.maxLength &&
+                                    val.length > field.maxLength
+                                ) {
+                                    setFieldErrors((prev) => ({
                                         ...prev,
-                                        [field.fieldName]: `${field.fieldName} cannot exceed ${field.maxLength} digits`
+                                        [field.fieldName]:
+                                            `${field.fieldName} cannot exceed ${field.maxLength} digits`,
                                     }));
                                 }
-                                // Run the main validation
+                                else if (
+                                    val &&
+                                    field.minValue !== undefined &&
+                                    num < field.minValue
+                                ) {
+                                    setFieldErrors((prev) => ({
+                                        ...prev,
+                                        [field.fieldName]:
+                                            `${field.fieldName} must be at least ${field.minValue}`,
+                                    }));
+                                }
+                                else if (
+                                    val &&
+                                    field.maxValue !== undefined &&
+                                    num > field.maxValue
+                                ) {
+                                    setFieldErrors((prev) => ({
+                                        ...prev,
+                                        [field.fieldName]:
+                                            `${field.fieldName} cannot exceed ${field.maxValue}`,
+                                    }));
+                                }
                                 else {
                                     handleBlur(e);
                                 }
@@ -1358,14 +1422,14 @@ export default function AddApplicationForm({
                         />
                     );
 
-
+                /* DECIMAL */
                 case "decimal":
                     return (
                         <input
                             type="text"
                             name={field.fieldName}
                             value={value}
-                            className={`${inputClass} ${hasError ? 'border-red-500' : ''}`}
+                            className={`${inputClass} ${hasError ? "border-red-500" : ""}`}
                             inputMode="decimal"
                             onChange={(e) => {
                                 let val = e.target.value;
@@ -1373,16 +1437,62 @@ export default function AddApplicationForm({
                                 // Allow only numbers + one decimal point
                                 val = val.replace(/[^0-9.]/g, "");
 
-                                // Prevent multiple dots
                                 const parts = val.split(".");
                                 if (parts.length > 2) {
                                     val = parts[0] + "." + parts[1];
                                 }
 
-                                setFormData(p => ({ ...p, [field.fieldName]: val }));
-                                setFieldErrors(prev => ({ ...prev, [field.fieldName]: '' }));
+                                const num = Number(val);
+
+                                // Max value restriction while typing
+                                if (
+                                    val &&
+                                    field.maxValue !== undefined &&
+                                    num > field.maxValue
+                                ) {
+                                    return;
+                                }
+
+                                setFormData((p) => ({
+                                    ...p,
+                                    [field.fieldName]: val,
+                                }));
+
+                                setFieldErrors((prev) => ({
+                                    ...prev,
+                                    [field.fieldName]: "",
+                                }));
                             }}
-                            onBlur={handleBlur}
+                            onBlur={(e) => {
+                                const val = e.target.value;
+                                const num = Number(val);
+
+                                if (
+                                    val &&
+                                    field.minValue !== undefined &&
+                                    num < field.minValue
+                                ) {
+                                    setFieldErrors((prev) => ({
+                                        ...prev,
+                                        [field.fieldName]:
+                                            `${field.fieldName} must be at least ${field.minValue}`,
+                                    }));
+                                }
+                                else if (
+                                    val &&
+                                    field.maxValue !== undefined &&
+                                    num > field.maxValue
+                                ) {
+                                    setFieldErrors((prev) => ({
+                                        ...prev,
+                                        [field.fieldName]:
+                                            `${field.fieldName} cannot exceed ${field.maxValue}`,
+                                    }));
+                                }
+                                else {
+                                    handleBlur(e);
+                                }
+                            }}
                         />
                     );
                 /* TEXT */
