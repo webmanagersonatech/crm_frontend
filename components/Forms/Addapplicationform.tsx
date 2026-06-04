@@ -560,6 +560,253 @@ export default function AddApplicationForm({
     }, [formData["Sibling Count"]])
 
 
+    // Auto-calculate 10th Standard Total Marks
+    useEffect(() => {
+        if (!formConfig?.educationDetails) return;
+
+        // Check if 10th standard section exists
+        const tenthSection = formConfig.educationDetails.find(
+            (section: any) => section.sectionName === "10th Standard  – Marks Details"
+        );
+
+        if (!tenthSection) return;
+
+        // Get all subject marks for 10th
+        const subjects = [
+            "10th Standard First Language Marks",
+            "10th Standard English Marks",
+            "10th Standard Mathematics Marks",
+            "10th Standard Science Marks",
+            "10th Standard Social Science Marks"
+        ];
+
+        let total = 0;
+        let hasAnyValue = false;
+
+        subjects.forEach(subject => {
+            const value = parseFloat(formData[subject] || "0");
+            if (!isNaN(value) && value > 0) {
+                total += value;
+                hasAnyValue = true;
+            }
+        });
+
+        // Only calculate if at least one subject has a value
+        if (hasAnyValue) {
+            const currentTotal = parseFloat(formData["10th Standard Total Marks"] || "0");
+
+            // Only update if value changed significantly
+            if (Math.abs(total - currentTotal) > 0.01) {
+                setFormData(prev => ({
+                    ...prev,
+                    "10th Standard Total Marks": total.toString()
+                }));
+
+                // Clear any error for this field
+                setFieldErrors(prev => ({
+                    ...prev,
+                    "10th Standard Total Marks": ''
+                }));
+            }
+        } else {
+            // Clear total if no marks entered
+            if (formData["10th Standard Total Marks"] && formData["10th Standard Total Marks"] !== "") {
+                setFormData(prev => ({
+                    ...prev,
+                    "10th Standard Total Marks": ""
+                }));
+            }
+        }
+    }, [
+        formData["10th Standard First Language Marks"],
+        formData["10th Standard English Marks"],
+        formData["10th Standard Mathematics Marks"],
+        formData["10th Standard Science Marks"],
+        formData["10th Standard Social Science Marks"],
+        formConfig
+    ]);
+
+    // Auto-calculate 11th Standard Obtained Total Mark
+    useEffect(() => {
+        if (!formConfig?.educationDetails) return;
+
+        // Check if 11th marks section exists
+        const eleventhMarksSection = formConfig.educationDetails.find(
+            (section: any) => section.sectionName === "11th Standard(HSC) – Marks Details"
+        );
+
+        if (!eleventhMarksSection) return;
+
+        // Get all subject marks for 11th (excluding optional subjects that might be empty)
+        const subjects = [
+            "11th Language Mark",
+            "11th English Mark",
+            "11th Mathematics Mark",
+            "11th Physics Mark",
+            "11th Chemistry Mark"
+        ];
+
+        // Optional subjects (only add if they have values)
+        const optionalSubjects = [
+            "11th Biology Mark",
+            "11th Computer Science Mark"
+        ];
+
+        let total = 0;
+        let hasAnyValue = false;
+
+        // Add required subjects
+        subjects.forEach(subject => {
+            const value = parseFloat(formData[subject] || "0");
+            if (!isNaN(value) && value > 0) {
+                total += value;
+                hasAnyValue = true;
+            }
+        });
+
+        // Add optional subjects only if they have values
+        optionalSubjects.forEach(subject => {
+            const value = parseFloat(formData[subject] || "0");
+            if (!isNaN(value) && value > 0) {
+                total += value;
+                hasAnyValue = true;
+            }
+        });
+
+        // Only calculate if at least one subject has a value
+        if (hasAnyValue) {
+            const currentTotal = parseFloat(formData["11th Obtained Total Mark"] || "0");
+
+            // Only update if value changed significantly
+            if (Math.abs(total - currentTotal) > 0.01) {
+                setFormData(prev => ({
+                    ...prev,
+                    "11th Obtained Total Mark": total.toString()
+                }));
+
+                // Clear any error for this field
+                setFieldErrors(prev => ({
+                    ...prev,
+                    "11th Obtained Total Mark": ''
+                }));
+            }
+        } else {
+            // Clear total if no marks entered
+            if (formData["11th Obtained Total Mark"] && formData["11th Obtained Total Mark"] !== "") {
+                setFormData(prev => ({
+                    ...prev,
+                    "11th Obtained Total Mark": ""
+                }));
+            }
+        }
+    }, [
+        formData["11th Language Mark"],
+        formData["11th English Mark"],
+        formData["11th Mathematics Mark"],
+        formData["11th Physics Mark"],
+        formData["11th Chemistry Mark"],
+        formData["11th Biology Mark"],
+        formData["11th Computer Science Mark"],
+        formConfig
+    ]);
+
+    // Auto-calculate 12th Standard Obtained Total Mark
+    useEffect(() => {
+        if (!formConfig?.educationDetails) return;
+
+        // Check if 12th marks section exists
+        const twelfthMarksSection = formConfig.educationDetails.find(
+            (section: any) => section.sectionName === "12th Standard  – Marks Details"
+        );
+
+        if (!twelfthMarksSection) return;
+
+        // Check if result is declared before calculating
+        const resultStatus = formData["12th Result Status"];
+        if (resultStatus !== "Declared") {
+            // Clear total if result not declared
+            if (formData["12th Obtained Total Mark"] && formData["12th Obtained Total Mark"] !== "") {
+                setFormData(prev => ({
+                    ...prev,
+                    "12th Obtained Total Mark": ""
+                }));
+            }
+            return;
+        }
+
+        // Get all subject marks for 12th
+        const subjects = [
+            "12th Language Mark",
+            "12th English Mark",
+            "12th Mathematics Mark",
+            "12th Physics Mark",
+            "12th Chemistry Mark"
+        ];
+
+        // Optional subjects (only add if they have values)
+        const optionalSubjects = [
+            "12th Biology Mark",
+            "12th Computer Science Mark"
+        ];
+
+        let total = 0;
+        let hasAnyValue = false;
+
+        // Add required subjects
+        subjects.forEach(subject => {
+            const value = parseFloat(formData[subject] || "0");
+            if (!isNaN(value) && value > 0) {
+                total += value;
+                hasAnyValue = true;
+            }
+        });
+
+        // Add optional subjects only if they have values
+        optionalSubjects.forEach(subject => {
+            const value = parseFloat(formData[subject] || "0");
+            if (!isNaN(value) && value > 0) {
+                total += value;
+                hasAnyValue = true;
+            }
+        });
+
+        // Only calculate if at least one subject has a value
+        if (hasAnyValue) {
+            const currentTotal = parseFloat(formData["12th Obtained Total Mark"] || "0");
+
+            // Only update if value changed significantly
+            if (Math.abs(total - currentTotal) > 0.01) {
+                setFormData(prev => ({
+                    ...prev,
+                    "12th Obtained Total Mark": total.toString()
+                }));
+
+                // Clear any error for this field
+                setFieldErrors(prev => ({
+                    ...prev,
+                    "12th Obtained Total Mark": ''
+                }));
+            }
+        } else {
+            // Clear total if no marks entered
+            if (formData["12th Obtained Total Mark"] && formData["12th Obtained Total Mark"] !== "") {
+                setFormData(prev => ({
+                    ...prev,
+                    "12th Obtained Total Mark": ""
+                }));
+            }
+        }
+    }, [
+        formData["12th Result Status"],
+        formData["12th Language Mark"],
+        formData["12th English Mark"],
+        formData["12th Mathematics Mark"],
+        formData["12th Physics Mark"],
+        formData["12th Chemistry Mark"],
+        formData["12th Biology Mark"],
+        formData["12th Computer Science Mark"],
+        formConfig
+    ]);
     // Load token-based institute
     useEffect(() => {
         const token = localStorage.getItem("token")
