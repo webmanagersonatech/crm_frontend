@@ -92,6 +92,33 @@ export default function AddApplicationForm({
         required: false,
     })
     // Add this function after your existing validation functions
+
+    useEffect(() => {
+        if (!formConfig) return;
+
+        const updateRequiredFields = (details: any[]) => {
+            return details.map((section: any) => ({
+                ...section,
+                fields: section.fields.map((field: any) => {
+                    if (!field.showWhen) return field;
+
+                    const conditionMet =
+                        formData[field.showWhen.field] === field.showWhen.value;
+
+                    return {
+                        ...field,
+                        required: conditionMet ? true : false,
+                    };
+                }),
+            }));
+        };
+
+        setFormConfig((prev: any) => ({
+            ...prev,
+            personalDetails: updateRequiredFields(prev.personalDetails || []),
+            educationDetails: updateRequiredFields(prev.educationDetails || []),
+        }));
+    }, [formData]);
     const validateField = (field: any, value: any): string => {
         // Required field validation
         if (field.required && (!value || value.toString().trim() === "")) {
