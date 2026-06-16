@@ -22,6 +22,8 @@ interface StudentCleanupFormProps {
 interface FormState {
     quota: string;
     universityRegNo: string;
+    admissionNumber: string; // New field
+    classSection: string; // New field
 
     internshipType: string;
     internshipCompany: string;
@@ -64,6 +66,12 @@ const bloodOptions = [
     "Unknown"
 ];
 
+const classSectionOptions = [
+    { value: "a", label: "Section A" },
+    { value: "b", label: "Section B" },
+    { value: "c", label: "Section C" },
+    { value: "d", label: "Section D" },
+];
 
 const occupationOptions = [
     { value: "farmer", label: "Farmer / Agriculture" },
@@ -95,6 +103,8 @@ export default function StudentCleanupForm({
     const [form, setForm] = useState<FormState>({
         quota: "",
         universityRegNo: "",
+        admissionNumber: "",
+        classSection: "",
         internshipType: "",
         internshipCompany: "",
         internshipDuration: "",
@@ -193,6 +203,8 @@ export default function StudentCleanupForm({
                 setForm({
                     quota: data.admissionQuota ?? "",
                     universityRegNo: data.admissionUniversityRegNo ?? "",
+                    admissionNumber: data.admissionNumber ?? "", // New field
+                    classSection: data.classSection ?? "", // New field
 
                     internshipType: data.internshipType ?? "",
                     internshipCompany: data.internshipCompany ?? "",
@@ -297,6 +309,8 @@ export default function StudentCleanupForm({
         const payload = {
             admissionQuota: form.quota,
             admissionUniversityRegNo: form.universityRegNo,
+            admissionNumber: form.admissionNumber, // New field
+            classSection: form.classSection, // New field
             internshipType: form.internshipType,
             internshipCompany: form.internshipCompany,
             internshipDuration: form.internshipDuration,
@@ -454,12 +468,36 @@ export default function StudentCleanupForm({
                             </div>
 
                             <div className="flex flex-col">
-                                <label className={labelClass}>University Reg No</label>
+                                <label className={labelClass}> Reg No</label>
                                 <input
                                     className={inputClass}
                                     value={form.universityRegNo}
                                     onChange={e => handleChange("universityRegNo", e.target.value)}
                                 />
+                            </div>
+
+                            <div className="flex flex-col">
+                                <label className={labelClass}>Admission Number</label>
+                                <input
+                                    className={inputClass}
+                                    value={form.admissionNumber}
+                                    onChange={e => handleChange("admissionNumber", e.target.value)}
+                                    placeholder="Enter admission number"
+                                />
+                            </div>
+
+                            <div className="flex flex-col">
+                                <label className={labelClass}>Class Section</label>
+                                <select
+                                    className={inputClass}
+                                    value={form.classSection}
+                                    onChange={e => handleChange("classSection", e.target.value)}
+                                >
+                                    <option value="">Select Section</option>
+                                    {classSectionOptions.map(s => (
+                                        <option key={s.value} value={s.value}>{s.label}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
                     </section>
