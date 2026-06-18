@@ -34,6 +34,7 @@ interface OptionType {
   { id: 17, moduleName: "Summer Camp", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 18, moduleName: "CIICP", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 19, moduleName: "MAT Registration", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 20, moduleName: "Fee Configuration", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 12, moduleName: "Others", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 15, moduleName: "Email templates", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 16, moduleName: "Dynamic Forms", view: false, create: false, edit: false, delete: false, filter: false, download: false },

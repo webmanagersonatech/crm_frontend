@@ -40,11 +40,13 @@ export interface InstamojoCredentials {
 export interface Settings {
   _id?: string;
   instituteId: string;
+  
   logo?: string; // Base64 string
   courses?: {
     name: string;
     courseId: string;
   }[];
+  courseYears?: number
   paymentMethod: PaymentMethod
   paymentCredentials: RazorpayCredentials | InstamojoCredentials
   isApplicationOpen?: boolean;
@@ -56,6 +58,7 @@ export interface Settings {
   createdAt?: string;
   updatedAt?: string;
   applicationFee: number
+  
   academicYear: string
   applicantAge: number
 }

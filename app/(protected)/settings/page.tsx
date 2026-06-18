@@ -31,7 +31,7 @@ export default function SettingsPage() {
   const [batchName, setBatchName] = useState('')
   const [isApplicationOpen, setIsApplicationOpen] = useState<boolean>(false)
   const [gstPercentage, setGstPercentage] = useState<number | ''>('')
-
+  const [courseYears, setCourseYears] = useState<number | ''>('')
   const [formData, setFormData] = useState({
     image: ''
   })
@@ -103,6 +103,7 @@ export default function SettingsPage() {
         setApplicationFee(data.applicationFee || '')
         setApplicantAge(data.applicantAge || '')
         setGstPercentage(data.gstPercentage || '')
+        setCourseYears(data.courseYears || '')
 
         if (data.academicYear) {
           const [start, end] = data.academicYear.split('-')
@@ -282,6 +283,9 @@ export default function SettingsPage() {
 
     if (!paymentMethod)
       return toast.error('Please select payment method')
+ if (!courseYears || ![1, 2, 3, 4, 5, 6].includes(Number(courseYears))) {
+  return toast.error('Course years must be between 1 and 6')
+}
 
     if (paymentMethod === 'razorpay') {
       if (!paymentData.razorpay.keyId || !paymentData.razorpay.keySecret)
@@ -304,6 +308,7 @@ export default function SettingsPage() {
       academicYear,
       gstPercentage,
       batchName,
+      courseYears,
       isApplicationOpen,
       paymentMethod,
       paymentCredentials:
@@ -481,6 +486,27 @@ export default function SettingsPage() {
                   {isApplicationOpen ? 'Open' : 'Closed'}
                 </span>
               </div>
+            </div>
+            <div className="flex flex-col">
+              <label className="text-sm font-semibold text-gray-700 mb-2">
+                Total Course Years <span className="text-red-500">*</span>
+              </label>
+
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                className={inputClass}
+                placeholder="1 to 6"
+                value={courseYears}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  if (value === '' || ['1', '2', '3', '4', '5', '6'].includes(value)) {
+                    setCourseYears(value === '' ? '' : Number(value));
+                  }
+                }}
+              />
             </div>
           </div>
 

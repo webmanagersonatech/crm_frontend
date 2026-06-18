@@ -27,7 +27,8 @@ import {
   GraduationCap,
   ChevronDown,
   ChevronRight,
-  ClipboardList
+  ClipboardList,
+  Receipt
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -55,6 +56,7 @@ const labelToPermissionMap: Record<string, string> = {
   "CIICP": "CIICP",
   "Summer Camp": "Summer Camp",
   "MAT Registration": "MAT Registration",
+  "Fee Configuration": "Fee Configuration",
   "Events": "Events",
   "Others": "Others",
   "Dynamic Forms": "Dynamic Forms",
@@ -85,12 +87,13 @@ const allItems: MenuItem[] = [
   },
   { href: "/events", label: "Events", icon: CalendarDays },
   { href: "/others", label: "Others", icon: Grid },
-  { href: "/dynamic-forms", label: "Dynamic Forms", icon: Layers },
+  // { href: "/dynamic-forms", label: "Dynamic Forms", icon: Layers },
+  { href: "/fees", label: "Fee Configuration", icon: Receipt },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/application-settings", label: "Application Settings", icon: Settings2 },
 ];
 
-// Function to filter menu items based on permissions
+
 const filterItemsByPermissions = (items: MenuItem[], permissions: string[]): MenuItem[] => {
   // If permissions is empty or undefined, return empty array
   if (!permissions || permissions.length === 0) {
