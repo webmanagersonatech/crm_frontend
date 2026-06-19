@@ -238,7 +238,44 @@ export default function AddApplicationForm({
         formData["Guardian Name"],
         formData["Guardian Contact No"],
     ]);
+// Set default values for Country, State, and Date
+useEffect(() => {
+  // Only set defaults if formConfig is loaded and we're not editing an existing application
+  if (!formConfig || isEdit) return;
 
+  const updates: Record<string, string> = {};
+
+  // Set default country (India)
+  if (!formData["Country"] || formData["Country"].trim() === "") {
+    updates["Country"] = "India";
+    if (!formData["Permanent  Country"] || formData["Permanent  Country"].trim() === "") {
+      updates["Permanent  Country"] = "India";
+    }
+  }
+
+  // Set default state (Tamil Nadu)
+  if (!formData["State"] || formData["State"].trim() === "") {
+    updates["State"] = "Tamil Nadu";
+    if (!formData["Permanent  State"] || formData["Permanent  State"].trim() === "") {
+      updates["Permanent  State"] = "Tamil Nadu";
+    }
+  }
+
+  // Set default date to today
+  if (!formData["Date "] || formData["Date "].trim() === "") {
+    const today = new Date();
+    updates["Date "] = today.toISOString().split('T')[0];
+  }
+
+  // Apply all updates at once
+  if (Object.keys(updates).length > 0) {
+    setFormData(prev => ({
+      ...prev,
+      ...updates
+    }));
+  }
+
+}, [formConfig, isEdit]);
     useEffect(() => {
         if (!formConfig?.educationDetails) return;
 
