@@ -93,6 +93,9 @@ export default function AddApplicationForm({
     })
     // Add this function after your existing validation functions
 
+    const signatureRefs = useRef<Record<string, SignatureCanvas | null>>({});
+
+
     useEffect(() => {
         if (!formConfig) return;
 
@@ -384,10 +387,14 @@ export default function AddApplicationForm({
                             if (!ref) return;
 
                             // Only update if ref changed
-                            setSignatures(prev => {
-                                if (prev[field.fieldName] === ref) return prev;
-                                return { ...prev, [field.fieldName]: ref };
-                            });
+                            if (signatureRefs.current[field.fieldName] !== ref) {
+                                signatureRefs.current[field.fieldName] = ref;
+                                // Only update state if needed for other components
+                                setSignatures(prev => ({
+                                    ...prev,
+                                    [field.fieldName]: ref
+                                }));
+                            }
 
                             // Load existing signature if available and not already loaded
                             if (existingSignature && !signaturesData[field.fieldName] && !signaturesLoaded.current[field.fieldName]) {
