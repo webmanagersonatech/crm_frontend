@@ -85,6 +85,7 @@ export async function listStudentsRequest({
   country = "all",
   state = "all",
   city = "all",
+  program,
   feedbackRating = "all",
   familyOccupation = "all",
   startCutoff,
@@ -97,6 +98,7 @@ export async function listStudentsRequest({
   instituteId?: string;
   academicYear?: string;
   bloodGroup?: string;
+  program?: string | string[];
   bloodDonate?: string;
   hostelWilling?: string;
   quota?: string;
@@ -134,7 +136,9 @@ export async function listStudentsRequest({
     if (startCutoff !== undefined) {
       params.startCutoff = startCutoff;
     }
-
+    if (program) {
+      params.program = program;
+    }
     if (endCutoff !== undefined) {
       params.endCutoff = endCutoff;
     }
@@ -158,6 +162,7 @@ export async function exportStudentsRequest({
   hostelWilling = "all",
   quota = "all",
   country = "all",
+  program,
   state = "all",
   city = "all",
   feedbackRating = "all",
@@ -169,6 +174,7 @@ export async function exportStudentsRequest({
   status?: string;
   instituteId?: string;
   academicYear?: string;
+  program?: string | string[];
   bloodGroup?: string;
   bloodDonate?: string;
   hostelWilling?: string;
@@ -205,7 +211,9 @@ export async function exportStudentsRequest({
     if (startCutoff !== undefined) {
       params.startCutoff = startCutoff;
     }
-
+    if (program) {
+      params.program = program;
+    }
 
     if (endCutoff !== undefined) {
       params.endCutoff = endCutoff;

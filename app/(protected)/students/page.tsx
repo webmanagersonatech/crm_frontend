@@ -26,7 +26,7 @@ import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { deleteStudentRequest, toggleStudentStatusRequest, exportStudentsRequest } from "@/app/lib/request/studentRequest";
 import { motion, AnimatePresence } from "framer-motion";
 import { Country, State, City } from "country-state-city";
-import Select from "react-select";
+
 
 interface Sibling {
   _id: string
@@ -100,7 +100,8 @@ export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedInstitution, setSelectedInstitution] = useState("all");
   const [role, setRole] = useState<string>("")
-
+  const [programs, setPrograms] = useState<any[]>([]);
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [institutions, setInstitutions] = useState<
     { value: string; label: string }[]
   >([]);
@@ -161,6 +162,7 @@ export default function StudentsPage() {
         quota: quotaFilter,
         country: selectedCountry,
         state: selectedState,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
         city: selectedCities.length ? selectedCities : undefined,
         feedbackRating: feedbackFilter,
         familyOccupation: familyOccupationFilter,
@@ -404,6 +406,7 @@ export default function StudentsPage() {
         bloodGroup: bloodGroupFilter,
         bloodDonate: bloodDonateFilter,
         hostelWilling: hostelWillingFilter,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
         quota: quotaFilter,
         country: selectedCountry,
         state: selectedState,
@@ -419,6 +422,14 @@ export default function StudentsPage() {
       setTotalEntries(res.students?.totalDocs || 0);
       if (res.academicYears) {
         setAcademicYears(res.academicYears);
+      }
+      if (res.courses) {
+        const formatted = res.courses.map((c: any) => ({
+          value: c.courseId,
+          label: c.name
+        }));
+
+        setPrograms(formatted);
       }
     } catch (err: any) {
       const errorMessage =
@@ -446,6 +457,7 @@ export default function StudentsPage() {
     feedbackFilter,
     selectedYear,
     familyOccupationFilter,
+    selectedPrograms,
     startCutoff,
     endCutoff
   ]);
@@ -983,6 +995,34 @@ export default function StudentsPage() {
                 }}
               />
             </div>
+
+
+
+            <div className="w-full">
+              <AsyncSelect
+                placeholder="Select Programs..."
+                cacheOptions
+                defaultOptions={programs}
+                isMulti
+                loadOptions={(inputValue) => {
+                  return Promise.resolve(
+                    programs.filter((p: any) =>
+                      p.label.toLowerCase().includes(inputValue.toLowerCase())
+                    )
+                  );
+                }}
+                value={programs.filter((p: any) =>
+                  selectedPrograms.includes(p.value)
+                )}
+                onChange={(opts) => {
+                  setSelectedPrograms(
+                    opts ? opts.map((o: any) => o.value) : []
+                  );
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+
           </div>
 
           {/* Active Filters Summary (optional) */}
