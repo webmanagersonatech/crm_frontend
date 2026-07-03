@@ -19,6 +19,8 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import StudentViewDialog from "@/components/StudentViewDialog";
 import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
+
+import FeesConcessionDialog from "@/components/FeesConcessionDialog";
 import StudentCleanupForm from "@/components/Forms/Studentdatacleanform";
 import { listStudentsRequest } from "@/app/lib/request/studentRequest";
 import AsyncSelect from "react-select/async";
@@ -129,6 +131,8 @@ export default function StudentsPage() {
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [exportData, setExportData] = useState<any[]>([]);
   const [exportLoading, setExportLoading] = useState(false);
+  const [concessionOpen, setConcessionOpen] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [limit, setLimit] = useState(10);
 
   useEffect(() => {
@@ -604,7 +608,18 @@ export default function StudentsPage() {
           >
             {s.status === "active" ? "Deactivate" : "Activate"}
           </button>
-
+          {s.instituteId === "INS-3-ZXYXKM" && (
+            <button
+              onClick={() => {
+                setSelectedStudentId(s._id);
+                setConcessionOpen(true);
+              }}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-0.5"
+              title="Fees Concession"
+            >
+              <span>₹</span> Concession
+            </button>
+          )}
 
           <button
             onClick={() => {
@@ -1087,6 +1102,14 @@ export default function StudentsPage() {
         )}
       </AnimatePresence>
 
+      <FeesConcessionDialog
+        open={concessionOpen}
+        studentId={selectedStudentId}
+        onClose={() => {
+          setConcessionOpen(false);
+          setSelectedStudentId(null);
+        }}
+      />
       <StudentViewDialog
         open={viewOpen}
         title="Student Details"

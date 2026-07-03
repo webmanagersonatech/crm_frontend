@@ -41,7 +41,11 @@ export interface Referral {
   name: string;
   percentage: number;
 }
-
+export interface Installment {
+  number: number;
+  amount: number;
+  dueDate: string;
+}
 export interface FeeConfiguration {
   _id?: string;
   instituteId: string;

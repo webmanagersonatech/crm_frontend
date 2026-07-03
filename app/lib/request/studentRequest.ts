@@ -267,7 +267,22 @@ export async function uploadStudentImageByAdmin(
     );
   }
 }
+/** 🎓 Get Overall Referrals By Institute (Student ID based) */
+export async function getOverallReferralsByInstitute(studentId: string) {
+  try {
+    const response = await api.get(
+      `/student/overall-referrals/${studentId}`
+    );
 
+    return response.data;
+
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message ||
+      "Failed to fetch referrals."
+    );
+  }
+}
 export function validateStudentImage(file: File): boolean {
   // Allowed file types
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
