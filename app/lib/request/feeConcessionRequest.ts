@@ -49,6 +49,74 @@ export interface FeeConcession {
     updatedAt: Date;
 }
 
+export interface FeeConcessionListResponsenew {
+    success: boolean;
+    data: {
+        docs: FeeConcessionDoc[];
+        stats: {
+            total: number;
+            pending: number;
+            approved: number;
+            rejected: number;
+        };
+        totalDocs: number;
+        limit: number;
+        totalPages: number;
+        page: number;
+        pagingCounter: number;
+        hasPrevPage: boolean;
+        hasNextPage: boolean;
+        prevPage: number | null;
+        nextPage: number | null;
+    };
+}
+
+export interface FeeConcessionDoc {
+    _id: string;
+    student: {
+        _id: string;
+        studentId: string;
+        applicationId: string;
+        programId: string;
+        firstname: string;
+        lastname: string;
+        fullName: string;
+        email: string;
+        mobileNo: string;
+        institute: string;
+        feeConcessiondeatils: {
+            courseId: string;
+            name: string;
+            amount: number;
+            referrals: Array<{
+                referralId: string;
+                name: string;
+                percentage: number;
+            }>;
+            reason: string;
+            counsellorName: string;
+            status: string;
+            createdAt: string;
+            totalDiscountPercentage: number;
+            discountAmount: number;
+            finalAmount: number;
+        };
+    };
+    createdBy: {
+        _id: string;
+        firstname: string;
+        lastname: string;
+        designation: string;
+        role: string;
+    } | null;
+    approvedBy: {
+        _id: string;
+        firstname: string;
+        lastname: string;
+        designation: string;
+        role: string;
+    } | null;
+}
 export interface CreateFeeConcessionData {
     studentId: string;
     reason: string;
@@ -80,6 +148,11 @@ export interface FeeConcessionListResponse {
     };
 }
 
+export interface StatusUpdateResponse {
+    success: boolean;
+    message: string;
+    data: FeeConcession;
+}
 export interface FeeConcessionSingleResponse {
     success: boolean;
     data: FeeConcession;
@@ -132,11 +205,13 @@ export async function listFeeConcessionsRequest({
     limit = 10,
     search = "",
     status = "all",
+    instituteId = "all", // Added instituteId parameter for superadmin
 }: {
     page?: number;
     limit?: number;
     search?: string;
     status?: string;
+    instituteId?: string; // Optional for superadmin
 }) {
     try {
         const params: any = {
@@ -146,7 +221,12 @@ export async function listFeeConcessionsRequest({
             status,
         };
 
-        const response = await api.get<FeeConcessionListResponse>(
+        // Only add instituteId if it's provided and not "all"
+        if (instituteId && instituteId !== "all") {
+            params.instituteId = instituteId;
+        }
+
+        const response = await api.get<FeeConcessionListResponsenew>(
             "/fee-concession",
             { params }
         );
@@ -195,7 +275,26 @@ export async function getFeeConcessionRequest(id: string) {
         );
     }
 }
-
+/**
+ * 🔄 Update Fee Concession Status (Approve/Reject)
+ * This is the new unified endpoint that replaces approve/reject
+ */
+export async function updateFeeConcessionStatusRequest(
+    id: string,
+    status: 'approved' | 'rejected'
+) {
+    try {
+        const response = await api.patch<StatusUpdateResponse>(
+            `/fee-concession/${id}/status`,
+            { status }
+        );
+        return response.data;
+    } catch (error: any) {
+        throw new Error(
+            error.response?.data?.message || `Failed to ${status} fee concession.`
+        );
+    }
+}
 /**
  * ➕ Create or Update Fee Concession (Upsert)
  */

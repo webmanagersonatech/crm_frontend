@@ -23,10 +23,17 @@ interface OptionType {
   label: string
 }
 
+interface PaymentOption {
+  number: number
+  type: 'full_payment' | 'installment'
+  amount: number
+  dueDate: string
+}
+
 interface YearFee {
   year: string
   amount: number
-  installments?: Installment[]
+  paymentoptions?: PaymentOption[]
 }
 
 interface Installment {
@@ -85,9 +92,10 @@ export default function FeeStructurePage() {
     yearIndex: number
     amount: number
     installments: Installment[]
+    hasInstallments: boolean
   } | null>(null)
 
-  const [installmentCount, setInstallmentCount] = useState<number>(2)
+  const [installmentCount, setInstallmentCount] = useState<number>(0)
   const [installmentDueDates, setInstallmentDueDates] = useState<string[]>([])
 
   const inputClass =
@@ -126,6 +134,14 @@ export default function FeeStructurePage() {
     if (num === 4) return '4th Year';
     return `${year}th Year`;
   }
+
+  // Helper function to get default full payment option (number: 0)
+  const getDefaultFullPayment = (amount: number): PaymentOption => ({
+    number: 0,
+    type: 'full_payment',
+    amount: amount,
+    dueDate: new Date().toISOString().split('T')[0]
+  });
 
   // Set mounted state
   useEffect(() => {
@@ -243,14 +259,14 @@ export default function FeeStructurePage() {
               const yearMap = new Map();
               years.forEach((yearFee: any) => {
                 const yearStr = String(yearFee.year);
-                // Format installments dates for display
-                const formattedInstallments = (yearFee.installments || []).map((inst: any) => ({
-                  ...inst,
-                  dueDate: formatDateForInput(inst.dueDate)
+                // Format payment options dates for display
+                const formattedPaymentOptions = (yearFee.paymentoptions || []).map((opt: any) => ({
+                  ...opt,
+                  dueDate: formatDateForInput(opt.dueDate)
                 }));
                 yearMap.set(yearStr, {
                   amount: yearFee.amount,
-                  installments: formattedInstallments
+                  paymentoptions: formattedPaymentOptions
                 });
               });
               feeMap.set(feeCourse.courseId, yearMap);
@@ -263,11 +279,26 @@ export default function FeeStructurePage() {
             return {
               courseId: course.courseId || '',
               courseName: course.name || '',
-              years: yearLabels.map((year) => ({
-                year: year,
-                amount: courseFeeMap?.get(year)?.amount || 0,
-                installments: courseFeeMap?.get(year)?.installments || []
-              }))
+              years: yearLabels.map((year) => {
+                const yearData = courseFeeMap?.get(year);
+                const amount = yearData?.amount || 0;
+                const paymentoptions = yearData?.paymentoptions || [];
+                
+                // If no payment options exist but amount is set, add default full payment
+                if (paymentoptions.length === 0 && amount > 0) {
+                  return {
+                    year: year,
+                    amount: amount,
+                    paymentoptions: [getDefaultFullPayment(amount)]
+                  };
+                }
+                
+                return {
+                  year: year,
+                  amount: amount,
+                  paymentoptions: paymentoptions
+                };
+              })
             };
           });
         }
@@ -315,17 +346,19 @@ export default function FeeStructurePage() {
     if (!course) return;
 
     const year = course.years[yearIndex];
-    const existingInstallments = year.installments || [];
+    const existingInstallments = year.paymentoptions?.filter(opt => opt.type === 'installment') || [];
+    const hasInstallments = existingInstallments.length > 0;
     
     // Format dates for display if there are existing installments
-    const formattedInstallments = existingInstallments.length > 0 
+    const formattedInstallments = hasInstallments 
       ? existingInstallments.map(inst => ({
-          ...inst,
+          number: inst.number,
+          amount: inst.amount,
           dueDate: formatDateForInput(inst.dueDate)
         }))
       : Array(installmentCount).fill(null).map((_, index) => ({
           number: index + 1,
-          amount: Math.round(amount / installmentCount),
+          amount: Math.round(amount / (installmentCount || 1)),
           dueDate: new Date().toISOString().split('T')[0]
         }));
 
@@ -336,16 +369,17 @@ export default function FeeStructurePage() {
       courseId,
       yearIndex,
       amount,
-      installments: formattedInstallments
+      installments: formattedInstallments,
+      hasInstallments: hasInstallments
     });
     
-    setInstallmentCount(existingInstallments.length > 0 ? existingInstallments.length : 2);
+    setInstallmentCount(hasInstallments ? existingInstallments.length : 0);
     setInstallmentDueDates(initialDueDates);
   }
 
   const closeInstallmentPopup = () => {
     setInstallmentPopup(null);
-    setInstallmentCount(2);
+    setInstallmentCount(0);
     setInstallmentDueDates([]);
   }
 
@@ -354,23 +388,29 @@ export default function FeeStructurePage() {
     
     setInstallmentCount(count);
     const amount = installmentPopup.amount;
-    const equalAmount = Math.round(amount / count);
     
-    // Preserve existing due dates if possible
-    const existingDueDates = installmentPopup.installments.map(inst => inst.dueDate);
+    let newInstallments: Installment[] = [];
     
-    const newInstallments: Installment[] = [];
-    for (let i = 0; i < count; i++) {
-      newInstallments.push({
-        number: i + 1,
-        amount: equalAmount,
-        dueDate: existingDueDates[i] || new Date().toISOString().split('T')[0]
-      });
+    if (count === 0) {
+      newInstallments = [];
+    } else {
+      const equalAmount = Math.round(amount / count);
+      // Preserve existing due dates if possible
+      const existingDueDates = installmentPopup.installments.map(inst => inst.dueDate);
+      
+      for (let i = 0; i < count; i++) {
+        newInstallments.push({
+          number: i + 1,
+          amount: equalAmount,
+          dueDate: existingDueDates[i] || new Date().toISOString().split('T')[0]
+        });
+      }
     }
     
     setInstallmentPopup(prev => ({
       ...prev!,
-      installments: newInstallments
+      installments: newInstallments,
+      hasInstallments: count > 0
     }));
 
     const newDueDates = newInstallments.map(inst => inst.dueDate);
@@ -414,20 +454,22 @@ export default function FeeStructurePage() {
   const saveInstallments = () => {
     if (!installmentPopup) return;
     
-    const { courseId, yearIndex, installments } = installmentPopup;
+    const { courseId, yearIndex, installments, hasInstallments } = installmentPopup;
     
-    // Validate installments
-    const totalInstallmentAmount = installments.reduce((sum, inst) => sum + inst.amount, 0);
-    if (totalInstallmentAmount !== installmentPopup.amount) {
-      toast.error(`Total installment amount (${totalInstallmentAmount}) must equal the total fee (${installmentPopup.amount})`);
-      return;
-    }
-
-    // Validate due dates
-    for (const inst of installments) {
-      if (!inst.dueDate) {
-        toast.error(`Please set due date for installment ${inst.number}`);
+    // If has installments, validate them
+    if (hasInstallments && installments.length > 0) {
+      const totalInstallmentAmount = installments.reduce((sum, inst) => sum + inst.amount, 0);
+      if (totalInstallmentAmount !== installmentPopup.amount) {
+        toast.error(`Total installment amount (${totalInstallmentAmount}) must equal the total fee (${installmentPopup.amount})`);
         return;
+      }
+
+      // Validate due dates
+      for (const inst of installments) {
+        if (!inst.dueDate) {
+          toast.error(`Please set due date for installment ${inst.number}`);
+          return;
+        }
       }
     }
 
@@ -439,7 +481,22 @@ export default function FeeStructurePage() {
               ...course,
               years: course.years.map((year, idx) =>
                 idx === yearIndex
-                  ? { ...year, installments }
+                  ? { 
+                      ...year, 
+                      paymentoptions: [
+                        // Full payment option (always present, number: 0)
+                        getDefaultFullPayment(year.amount),
+                        // Installment options (only if user added them)
+                        ...(hasInstallments && installments.length > 0 
+                          ? installments.map((inst) => ({
+                              number: inst.number,
+                              type: 'installment' as const,
+                              amount: inst.amount,
+                              dueDate: inst.dueDate
+                            }))
+                          : [])
+                      ]
+                    }
                   : year
               )
             }
@@ -447,7 +504,7 @@ export default function FeeStructurePage() {
       )
     }));
 
-    toast.success('Installments saved successfully!');
+    toast.success('Payment options saved successfully!');
     closeInstallmentPopup();
   }
 
@@ -460,7 +517,12 @@ export default function FeeStructurePage() {
           ? {
             ...course,
             years: course.years.map((y, idx) =>
-              idx === yearIndex ? { ...y, amount, installments: [] } : y
+              idx === yearIndex ? { 
+                ...y, 
+                amount,
+                // When amount changes, keep full payment and reset installments
+                paymentoptions: amount > 0 ? [getDefaultFullPayment(amount)] : []
+              } : y
             )
           }
           : course
@@ -480,7 +542,7 @@ export default function FeeStructurePage() {
               { 
                 year: String(course.years.length + 1), 
                 amount: 0, 
-                installments: [] 
+                paymentoptions: [] 
               }
             ]
           }
@@ -515,7 +577,7 @@ export default function FeeStructurePage() {
           years: course.years.map(year => ({
             ...year,
             amount: amount,
-            installments: []
+            paymentoptions: [getDefaultFullPayment(amount)]
           }))
         }))
       }))
@@ -527,7 +589,7 @@ export default function FeeStructurePage() {
           years: course.years.map(year => ({
             ...year,
             amount: 0,
-            installments: []
+            paymentoptions: []
           }))
         }))
       }))
@@ -646,12 +708,19 @@ export default function FeeStructurePage() {
       return
     }
 
-    // Validate all fees are set
+    // Validate all fees are set and have full payment option
     let hasError = false;
     for (const course of feeStructure.courses) {
       for (const year of course.years) {
         if (year.amount <= 0) {
           toast.error(`Please set fee for ${course.courseName} - ${getYearDisplay(year.year)}`)
+          hasError = true;
+          break;
+        }
+        // Ensure full payment option exists
+        const hasFullPayment = year.paymentoptions?.some(opt => opt.type === 'full_payment');
+        if (!hasFullPayment) {
+          toast.error(`Full payment option missing for ${course.courseName} - ${getYearDisplay(year.year)}`)
           hasError = true;
           break;
         }
@@ -669,7 +738,7 @@ export default function FeeStructurePage() {
         years: c.years.map(year => ({
           year: year.year,
           amount: year.amount,
-          installments: year.installments || []
+          paymentoptions: year.paymentoptions || []
         }))
       })),
       referrals: feeStructure.referrals
@@ -694,13 +763,14 @@ export default function FeeStructurePage() {
 
     const totalAmount = installmentPopup.amount;
     const totalInstallmentAmount = installmentPopup.installments.reduce((sum, inst) => sum + inst.amount, 0);
+    const hasInstallments = installmentPopup.hasInstallments;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <div className="sticky top-0 bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white px-6 py-4 flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-semibold">Installment Setup</h2>
+              <h2 className="text-xl font-semibold">Payment Options Setup</h2>
               <p className="text-sm opacity-90">Total Amount: ₹{totalAmount}</p>
             </div>
             <button
@@ -712,76 +782,131 @@ export default function FeeStructurePage() {
           </div>
 
           <div className="p-6 space-y-6">
-            {/* Installment Count Selection */}
-            <div>
-              <label className="text-sm font-semibold text-gray-700 block mb-2">
-                Number of Installments
-              </label>
-              <div className="flex gap-2 flex-wrap">
-                {[1, 2, 3, 4, 5, 6].map((num) => (
-                  <button
-                    key={num}
-                    onClick={() => handleInstallmentCountChange(num)}
-                    className={`px-4 py-2 rounded-lg transition ${
-                      installmentCount === num
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {num}
-                  </button>
-                ))}
+            {/* Full Payment Option (Always Present) */}
+            <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-full bg-green-500"></span>
+                    Full Payment (Default)
+                  </h4>
+                  <p className="text-sm text-gray-600">Amount: ₹{totalAmount}</p>
+                  <p className="text-xs text-gray-500 mt-1">✓ Always available for all years</p>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 block">Due Date</label>
+                  <input
+                    type="date"
+                    className="border rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={installmentPopup.installments[0]?.dueDate || formatDateForInput(new Date().toISOString())}
+                    onChange={(e) => {
+                      const updatedInstallments = [...installmentPopup.installments];
+                      if (updatedInstallments[0]) {
+                        updatedInstallments[0].dueDate = e.target.value;
+                        setInstallmentPopup(prev => ({
+                          ...prev!,
+                          installments: updatedInstallments
+                        }));
+                      }
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Installment Details */}
-            <div className="space-y-4">
-              {installmentPopup.installments.map((installment, index) => (
-                <div key={index} className="border rounded-lg p-4 space-y-3">
-                  <h4 className="font-semibold text-gray-700">
-                    Installment {installment.number}
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">
-                        Amount (₹)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="100"
-                        className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                        value={installment.amount}
-                        onChange={(e) => handleInstallmentAmountChange(index, Number(e.target.value))}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs text-gray-500 block mb-1">
-                        Due Date
-                      </label>
-                      <input
-                        type="date"
-                        className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                        value={installment.dueDate || formatDateForInput(new Date().toISOString())}
-                        onChange={(e) => handleInstallmentDueDateChange(index, e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {/* Installment Options - Optional */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <span className="inline-block w-3 h-3 rounded-full bg-blue-500"></span>
+                  Installment Options
+                </h3>
+                <span className="text-xs text-gray-500">Optional - Add if needed</span>
+              </div>
 
-            {/* Total Summary */}
-            <div className="bg-blue-50 rounded-lg p-4 flex justify-between items-center">
-              <span className="font-semibold text-gray-700">Total Installment Amount:</span>
-              <span className={`font-bold text-lg ${totalInstallmentAmount === totalAmount ? 'text-green-600' : 'text-red-600'}`}>
-                ₹{totalInstallmentAmount}
-                {totalInstallmentAmount !== totalAmount && (
-                  <span className="text-xs ml-2 font-normal text-red-500">
-                    (Must equal ₹{totalAmount})
-                  </span>
+              {/* Installment Count Selection */}
+              <div className="mb-4">
+                <label className="text-sm font-semibold text-gray-700 block mb-2">
+                  Number of Installments
+                </label>
+                <div className="flex gap-2 flex-wrap">
+                  {[0, 1, 2, 3, 4, 5, 6].map((num) => (
+                    <button
+                      key={num}
+                      onClick={() => handleInstallmentCountChange(num)}
+                      className={`px-4 py-2 rounded-lg transition ${
+                        installmentCount === num
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {num === 0 ? 'None' : num}
+                    </button>
+                  ))}
+                </div>
+                {installmentCount === 0 && (
+                  <p className="text-xs text-blue-600 mt-2">✓ No installments selected. Only full payment will be available.</p>
                 )}
-              </span>
+                {installmentCount > 0 && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    {installmentCount} installment{installmentCount > 1 ? 's' : ''} will be added along with full payment option
+                  </p>
+                )}
+              </div>
+
+              {/* Installment Details */}
+              {installmentCount > 0 && (
+                <div className="space-y-4">
+                  {installmentPopup.installments.map((installment, index) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-3">
+                      <h4 className="font-semibold text-gray-700">
+                        Installment {installment.number}
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">
+                            Amount (₹)
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="100"
+                            className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            value={installment.amount}
+                            onChange={(e) => handleInstallmentAmountChange(index, Number(e.target.value))}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 block mb-1">
+                            Due Date
+                          </label>
+                          <input
+                            type="date"
+                            className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            value={installment.dueDate || formatDateForInput(new Date().toISOString())}
+                            onChange={(e) => handleInstallmentDueDateChange(index, e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Total Summary - Only show if installments exist */}
+              {installmentCount > 0 && (
+                <div className="bg-blue-50 rounded-lg p-4 flex justify-between items-center mt-4">
+                  <span className="font-semibold text-gray-700">Total Installment Amount:</span>
+                  <span className={`font-bold text-lg ${totalInstallmentAmount === totalAmount ? 'text-green-600' : 'text-red-600'}`}>
+                    ₹{totalInstallmentAmount}
+                    {totalInstallmentAmount !== totalAmount && (
+                      <span className="text-xs ml-2 font-normal text-red-500">
+                        (Must equal ₹{totalAmount})
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -795,9 +920,9 @@ export default function FeeStructurePage() {
               <button
                 onClick={saveInstallments}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                disabled={totalInstallmentAmount !== totalAmount}
+                disabled={installmentCount > 0 && totalInstallmentAmount !== totalAmount}
               >
-                Save Installments
+                Save Payment Options
               </button>
             </div>
           </div>
@@ -979,20 +1104,34 @@ export default function FeeStructurePage() {
                                     <button
                                       onClick={() => openInstallmentPopup(course.courseId, yearIdx, year.amount)}
                                       className="text-blue-600 hover:text-blue-800 transition p-1"
-                                      title="Set Installments"
+                                      title="Manage Payment Options"
                                     >
                                       <FaCreditCard size={18} />
-                                      {year.installments && year.installments.length > 0 && (
+                                      {year.paymentoptions && year.paymentoptions.length > 1 && (
                                         <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
-                                          {year.installments.length}
+                                          {year.paymentoptions.length - 1}
                                         </span>
                                       )}
                                     </button>
                                   )}
                                 </div>
-                                {year.installments && year.installments.length > 0 && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {year.installments.length} installment(s)
+                                {year.paymentoptions && year.paymentoptions.length > 0 && (
+                                  <div className="text-xs text-gray-500 mt-1 space-y-1">
+                                    {year.paymentoptions.map((option, optIdx) => (
+                                      <div key={optIdx} className="flex items-center gap-1">
+                                        <span className={`inline-block w-2 h-2 rounded-full ${option.type === 'full_payment' ? 'bg-green-500' : 'bg-blue-500'}`}></span>
+                                        <span>
+                                          {option.type === 'full_payment' ? 'Full Payment' : `Installment ${option.number}`}: 
+                                          ₹{option.amount} 
+                                          {option.dueDate && ` (${formatDateForInput(option.dueDate)})`}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {(!year.paymentoptions || year.paymentoptions.length === 0) && year.amount > 0 && (
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    <span className="text-green-600">✓</span> Full payment available
                                   </div>
                                 )}
                               </td>
@@ -1023,7 +1162,7 @@ export default function FeeStructurePage() {
                     </table>
                   </div>
                   <div className="text-xs text-gray-400 p-2 text-center border-t">
-                    <span>↔ Scroll horizontally to view all years | Click the credit card icon to set installments</span>
+                    <span>↔ Scroll horizontally to view all years | Click the credit card icon to manage payment options</span>
                   </div>
                 </div>
               ) : (

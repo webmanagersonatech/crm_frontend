@@ -23,7 +23,7 @@ interface OptionType {
   value: string;
   label: string;
 }
- const defaultPermissions: Permission[] = [
+const defaultPermissions: Permission[] = [
   { id: 1, moduleName: "Dashboard", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 2, moduleName: "Students", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 6, moduleName: "Application", view: false, create: false, edit: false, delete: false, filter: false, download: false },
@@ -34,6 +34,7 @@ interface OptionType {
   { id: 17, moduleName: "Summer Camp", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 18, moduleName: "CIICP", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 19, moduleName: "MAT Registration", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 21, moduleName: "Fee Concession Approval", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 20, moduleName: "Fee Configuration", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 12, moduleName: "Others", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 15, moduleName: "Email templates", view: false, create: false, edit: false, delete: false, filter: false, download: false },
