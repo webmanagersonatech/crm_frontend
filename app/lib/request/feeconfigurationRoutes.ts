@@ -54,7 +54,45 @@ export interface FeeConfiguration {
   createdAt?: string;
   updatedAt?: string;
 }
+export interface ManualPaymentRequest {
+  studentId: string;
+  year: string;
+  installmentNo: number;
+  amount: number;
+  transactionId: string;
+  paymentDate?: string;
+  remarks?: string;
+}
 
+export interface ManualPaymentResponse {
+  success: boolean;
+  message: string;
+  data: {
+    payment: any;
+    student: {
+      id: string;
+      name: string;
+      studentId: string;
+      email: string;
+      mobileNo: string;
+    };
+    course: {
+      id: string;
+      name: string;
+    };
+    year: string;
+    installmentNumber: number;
+    amount: number;
+    transactionId: string;
+    paymentDate: string;
+    remarks: string;
+    concessionApplied: {
+      percentage: number;
+      amount: number;
+      referrals: string[];
+    };
+  };
+}
 // ---------------- API Calls ----------------
 
 // Create / Update Fee Configuration
@@ -72,7 +110,7 @@ export async function saveFeeConfiguration(
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message ||
-        "Failed to save fee configuration."
+      "Failed to save fee configuration."
     );
   }
 }
@@ -91,11 +129,32 @@ export async function getFeeConfigurationByInstitute(
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message ||
-        "Failed to fetch fee configuration."
+      "Failed to fetch fee configuration."
     );
   }
 }
+export async function getFeeConfigurationByAdmin(
+  studentId: string,
+  paymentMethod?: string
+) {
+  try {
+    const response = await api.get(
+      `/fee-configuration/admin/${studentId}`,
+      {
+        params: paymentMethod
+          ? { paymentmethod: paymentMethod }
+          : {},
+      }
+    );
 
+    return response.data.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message ||
+      "Failed to fetch fee configuration."
+    );
+  }
+}
 // Delete Fee Configuration
 
 export async function deleteFeeConfiguration(
@@ -110,7 +169,25 @@ export async function deleteFeeConfiguration(
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message ||
-        "Failed to delete fee configuration."
+      "Failed to delete fee configuration."
+    );
+  }
+}
+
+export async function createManualPayment(
+  data: ManualPaymentRequest
+): Promise<ManualPaymentResponse> {
+  try {
+    const response = await api.post(
+      "/tuition-fee/manual-payment",
+      data
+    );
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message ||
+      "Failed to create manual payment."
     );
   }
 }

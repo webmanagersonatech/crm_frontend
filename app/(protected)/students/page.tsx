@@ -28,6 +28,7 @@ import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { deleteStudentRequest, toggleStudentStatusRequest, exportStudentsRequest } from "@/app/lib/request/studentRequest";
 import { motion, AnimatePresence } from "framer-motion";
 import { Country, State, City } from "country-state-city";
+import ManualPaymentDialog from "@/components/ManualPaymentDialog";
 
 
 interface Sibling {
@@ -101,6 +102,7 @@ export default function StudentsPage() {
   const [totalEntries, setTotalEntries] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedInstitution, setSelectedInstitution] = useState("all");
+  const [manualPaymentOpen, setManualPaymentOpen] = useState(false);
   const [role, setRole] = useState<string>("")
   const [programs, setPrograms] = useState<any[]>([]);
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
@@ -609,16 +611,29 @@ export default function StudentsPage() {
             {s.status === "active" ? "Deactivate" : "Activate"}
           </button>
           {s.instituteId === "INS-3-ZXYXKM" && (
-            <button
-              onClick={() => {
-                setSelectedStudentId(s._id);
-                setConcessionOpen(true);
-              }}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-0.5"
-              title="Fees Concession"
-            >
-              <span>₹</span> Concession
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  setSelectedStudentId(s._id);
+                  setConcessionOpen(true);
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-0.5"
+                title="Fees Concession"
+              >
+                <span>₹</span> Concession
+              </button>
+
+              <button
+                onClick={() => {
+                  setSelectedStudentId(s._id);
+                  setManualPaymentOpen(true); // Open Manual Payment Modal
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-0.5"
+                title="Manual Payment"
+              >
+                <span>₹</span>Payment
+              </button>
+            </>
           )}
 
           <button
@@ -1107,6 +1122,15 @@ export default function StudentsPage() {
         studentId={selectedStudentId}
         onClose={() => {
           setConcessionOpen(false);
+          setSelectedStudentId(null);
+        }}
+      />
+
+      <ManualPaymentDialog
+        open={manualPaymentOpen}
+        studentId={selectedStudentId}
+        onClose={() => {
+          setManualPaymentOpen(false);
           setSelectedStudentId(null);
         }}
       />
