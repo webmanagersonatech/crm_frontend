@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { getFeeConfigurationByAdmin, createManualPayment } from "@/app/lib/request/feeconfigurationRoutes";
 import { toast } from "react-toastify";
-import axios from "axios";
 
 interface ManualPaymentDialogProps {
     open: boolean;
@@ -15,20 +14,33 @@ interface ManualPaymentDialogProps {
 interface Installment {
     number: number;
     originalAmount: number;
+    tuitionFee: number;
+    otherFee: number;
+    tuitionConcession: number;
+    otherFeeConcession: number;
     discountAmount: number;
     payableAmount: number;
     dueDate: string;
     paid: boolean;
     paidDate: string | null;
     paymentId: string | null;
+    paymentOptionId: string;  // ✅ Make sure this is included
+    name?: string;
+    type?: string;
+    paymentAmount?: number;
 }
 
 interface YearData {
     year: string;
     originalAmount: number;
+    tuitionFee: number;
+    otherFee: number;
     concessionPercentage: number;
+    tuitionConcession: number;
+    otherFeeConcession: number;
     concessionAmount: number;
     payableAmount: number;
+    paymentMethod: string;
     paymentOptions: Installment[];
 }
 
@@ -38,7 +50,7 @@ interface FeeData {
     programId: string;
     courseName: string;
     paymentMethod: string;
-    initallpaymentype: string;
+    initialPaymentType: string;
     feeConcession: {
         referralIds: string[];
         matchedReferrals: Array<{
@@ -47,6 +59,7 @@ interface FeeData {
             percentage: number;
         }>;
         concessionPercentage: number;
+        appliedOn?: string;
     };
     years: YearData[];
 }
@@ -62,13 +75,12 @@ export default function ManualPaymentDialog({
     const [feeData, setFeeData] = useState<FeeData | null>(null);
     const [selectedYear, setSelectedYear] = useState<string>("");
     const [selectedInstallment, setSelectedInstallment] = useState<number>(0);
+    const [selectedPaymentOptionId, setSelectedPaymentOptionId] = useState<string>(""); // ✅ NEW: Track paymentOptionId
     const [amount, setAmount] = useState<string>("");
     const [transactionId, setTransactionId] = useState<string>("");
     const [remarks, setRemarks] = useState<string>("");
     const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'full_payment' | 'installment'>('full_payment');
-
-    // New state to track if selected installment is paid
     const [isSelectedPaid, setIsSelectedPaid] = useState<boolean>(false);
 
     // Fetch fee data with payment method
@@ -81,9 +93,9 @@ export default function ManualPaymentDialog({
             setFeeData(data);
 
             // Set initial payment method from data
-            if (data?.initallpaymentype) {
+            if (data?.initialPaymentType) {
                 setSelectedPaymentMethod(
-                    data.initallpaymentype === "installment"
+                    data.initialPaymentType === "installment"
                         ? "installment"
                         : "full_payment"
                 );
@@ -100,15 +112,16 @@ export default function ManualPaymentDialog({
                 );
                 if (firstUnpaid) {
                     setSelectedInstallment(firstUnpaid.number);
+                    setSelectedPaymentOptionId(firstUnpaid.paymentOptionId); // ✅ Set paymentOptionId
                     setAmount(firstUnpaid.payableAmount.toString());
                     setIsSelectedPaid(false);
                 } else {
-                    // If all paid, select the first option but disable editing
                     const firstOption = firstYear.paymentOptions?.[0];
                     if (firstOption) {
                         setSelectedInstallment(firstOption.number);
+                        setSelectedPaymentOptionId(firstOption.paymentOptionId); // ✅ Set paymentOptionId
                         setAmount(firstOption.payableAmount.toString());
-                        setIsSelectedPaid(true); // All are paid, so disable
+                        setIsSelectedPaid(true);
                     }
                 }
             }
@@ -135,6 +148,7 @@ export default function ManualPaymentDialog({
             (opt: Installment) => opt.number === selectedInstallment
         );
         if (installment) {
+            setSelectedPaymentOptionId(installment.paymentOptionId); // ✅ Update paymentOptionId
             setAmount(installment.payableAmount.toString());
             setIsSelectedPaid(installment.paid || false);
         }
@@ -148,7 +162,6 @@ export default function ManualPaymentDialog({
             return;
         }
 
-        // Check if the selected installment is already paid
         if (isSelectedPaid) {
             toast.error("This installment has already been paid");
             return;
@@ -164,37 +177,66 @@ export default function ManualPaymentDialog({
             return;
         }
 
+        if (!selectedPaymentOptionId) {
+            toast.error("Payment option not selected");
+            return;
+        }
+
         try {
             setSubmitting(true);
 
             const payload = {
                 studentId: studentId,
                 year: selectedYear,
-                installmentNo: selectedInstallment,
+                installmentNumber: selectedInstallment,  // ✅ Changed from installmentNo
+                paymentOptionId: selectedPaymentOptionId, // ✅ ADDED: Send paymentOptionId
                 amount: parseFloat(amount),
                 transactionId: transactionId.trim(),
                 paymentDate: paymentDate,
                 remarks: remarks.trim() || undefined,
             };
-            console.log(payload, "payload");
 
-            // 🔥 INTEGRATED API CALL
+            console.log("Sending payload:", payload); // Debug log
+
             const response = await createManualPayment(payload);
 
             if (response.success) {
                 toast.success(response.message || "Payment recorded successfully!");
 
-               
+                // Refresh data
+                await fetchFeeConfiguration(selectedPaymentMethod);
 
-                if (onClose) {
-                    onClose();
+                if (onSuccess) {
+                    onSuccess();
                 }
 
-                setAmount('');
+                // Reset form
                 setTransactionId('');
                 setRemarks('');
-                setPaymentDate(new Date().toISOString().split('T')[0])
+                setPaymentDate(new Date().toISOString().split('T')[0]);
 
+                // Auto-select next unpaid installment
+                if (feeData.years?.length > 0) {
+                    const firstYear = feeData.years[0];
+                    const nextUnpaid = firstYear.paymentOptions?.find(
+                        (opt: Installment) => !opt.paid && opt.number !== selectedInstallment
+                    );
+                    if (nextUnpaid) {
+                        setSelectedInstallment(nextUnpaid.number);
+                        setSelectedPaymentOptionId(nextUnpaid.paymentOptionId);
+                        setAmount(nextUnpaid.payableAmount.toString());
+                        setIsSelectedPaid(false);
+                    } else {
+                        // All paid
+                        const firstOption = firstYear.paymentOptions?.[0];
+                        if (firstOption) {
+                            setSelectedInstallment(firstOption.number);
+                            setSelectedPaymentOptionId(firstOption.paymentOptionId);
+                            setAmount(firstOption.payableAmount.toString());
+                            setIsSelectedPaid(true);
+                        }
+                    }
+                }
             } else {
                 toast.error(response.message || "Failed to record payment");
             }
@@ -202,7 +244,6 @@ export default function ManualPaymentDialog({
         } catch (error: any) {
             console.error("Manual payment error:", error);
 
-            // Handle different error scenarios
             if (error.response?.status === 400) {
                 toast.error(error.response?.data?.message || "Invalid request. Please check the data.");
             } else if (error.response?.status === 401) {
@@ -221,7 +262,6 @@ export default function ManualPaymentDialog({
 
     const handlePaymentMethodToggle = async (method: 'full_payment' | 'installment') => {
         setSelectedPaymentMethod(method);
-        // Fetch data with the selected payment method
         await fetchFeeConfiguration(method);
     };
 
@@ -242,6 +282,16 @@ export default function ManualPaymentDialog({
             hour: '2-digit',
             minute: '2-digit'
         });
+    };
+
+    const formatCurrency = (amount: number) => {
+        if (!amount) return '₹0';
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(amount);
     };
 
     if (!open) return null;
@@ -268,7 +318,7 @@ export default function ManualPaymentDialog({
                     </div>
                 ) : feeData ? (
                     <form onSubmit={handleSubmit}>
-                        {/* Student Info - Same as student side */}
+                        {/* Student Info */}
                         <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div className="bg-gray-50 rounded-lg p-4">
                                 <p className="text-xs text-gray-500">Student ID</p>
@@ -284,36 +334,48 @@ export default function ManualPaymentDialog({
                             </div>
                         </div>
 
-                        {/* Fee Concession - Same as student side */}
+                        {/* Fee Concession */}
                         {feeData.feeConcession?.concessionPercentage > 0 && (
-                            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <div className="flex items-start gap-3">
-                                    <div className="flex-shrink-0">
-                                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="mb-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                                    <div className="flex-shrink-0 bg-green-100 rounded-full p-2">
+                                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-sm font-medium text-blue-800">
+                                        <p className="text-sm sm:text-base font-semibold text-green-800">
                                             Fee Concession Applied: {feeData.feeConcession.concessionPercentage}% off
                                         </p>
-                                        {feeData.feeConcession.matchedReferrals?.map((referral, idx) => (
-                                            <p key={idx} className="text-xs text-blue-700">
-                                                • {referral.name} ({referral.percentage}% discount)
-                                            </p>
-                                        ))}
+                                        <p className="text-xs sm:text-sm text-green-700">
+                                            {feeData.feeConcession.concessionPercentage}% discount on <strong>Tuition Fee</strong>
+                                            {feeData.feeConcession.appliedOn && (
+                                                <span className="ml-1 text-green-600 font-normal">
+                                                    (applied only on tuition fee, other fee remains unchanged)
+                                                </span>
+                                            )}
+                                        </p>
+                                        {feeData.feeConcession.matchedReferrals && feeData.feeConcession.matchedReferrals.length > 0 && (
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {feeData.feeConcession.matchedReferrals.map((referral, idx) => (
+                                                    <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                                        {referral.name} ({referral.percentage}%)
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Toggle for Full Payment vs Installment - Same as student side */}
+                        {/* Payment Method Toggle */}
                         <div className="mb-6">
                             <div className="bg-white rounded-lg border border-gray-200 p-4">
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                     <div className="flex items-center gap-4">
                                         <label className="text-sm font-medium text-gray-700">
-                                            Payment Method:
+                                            Payment Plan:
                                         </label>
                                         <div className="flex rounded-lg overflow-hidden border border-gray-300">
                                             <button
@@ -349,7 +411,7 @@ export default function ManualPaymentDialog({
                             </div>
                         </div>
 
-                        {/* Fee Structure - Same as student side */}
+                        {/* Fee Structure */}
                         <div className="mb-6">
                             {feeData.years?.map((year: YearData, index: number) => (
                                 <div
@@ -362,13 +424,14 @@ export default function ManualPaymentDialog({
                                         );
                                         if (firstUnpaid) {
                                             setSelectedInstallment(firstUnpaid.number);
+                                            setSelectedPaymentOptionId(firstUnpaid.paymentOptionId);
                                             setAmount(firstUnpaid.payableAmount.toString());
                                             setIsSelectedPaid(false);
                                         } else {
-                                            // If all paid, select the first option but it will be disabled
                                             const firstOption = year.paymentOptions?.[0];
                                             if (firstOption) {
                                                 setSelectedInstallment(firstOption.number);
+                                                setSelectedPaymentOptionId(firstOption.paymentOptionId);
                                                 setAmount(firstOption.payableAmount.toString());
                                                 setIsSelectedPaid(true);
                                             }
@@ -376,24 +439,27 @@ export default function ManualPaymentDialog({
                                     }}
                                 >
                                     <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                                        <div className="flex justify-between items-center">
+                                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                                             <h2 className="text-lg font-semibold text-gray-800">
                                                 Year {year.year}
                                             </h2>
                                             <div className="text-right">
-                                                {year.concessionPercentage > 0 && (
-                                                    <p className="text-xs text-gray-500 line-through">
-                                                        ₹{year.originalAmount}
-                                                    </p>
-                                                )}
-                                                <p className="text-sm font-bold text-gray-800">
-                                                    Total: ₹{year.payableAmount}
-                                                </p>
-                                                {year.concessionAmount > 0 && (
-                                                    <p className="text-xs text-green-600">
-                                                        Saved: ₹{year.concessionAmount}
-                                                    </p>
-                                                )}
+                                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                                                    <span className="text-xs text-gray-500">
+                                                        Tuition: {formatCurrency(year.tuitionFee)}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500">
+                                                        Other: {formatCurrency(year.otherFee)}
+                                                    </span>
+                                                    {year.concessionPercentage > 0 && (
+                                                        <span className="text-xs text-green-600 font-medium">
+                                                            Save: {formatCurrency(year.concessionAmount)}
+                                                        </span>
+                                                    )}
+                                                    <span className="text-sm font-bold text-blue-600">
+                                                        Payable: {formatCurrency(year.payableAmount)}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -406,34 +472,29 @@ export default function ManualPaymentDialog({
                                                     const isPaid = option.paid;
                                                     const isSelected = selectedYear === year.year && selectedInstallment === option.number;
 
-                                                    // Determine the label based on the payment method
-                                                    let label = `Option ${option.number}`;
+                                                    let label = '';
                                                     if (selectedPaymentMethod === 'full_payment') {
                                                         label = 'Full Payment';
                                                     } else if (selectedPaymentMethod === 'installment') {
-                                                        if (option.number === 0) {
-                                                            label = 'Full Payment';
-                                                        } else {
-                                                            label = `Installment ${option.number}`;
-                                                        }
+                                                        label = `Installment ${option.number} of ${year.paymentOptions.length}`;
                                                     }
 
                                                     return (
                                                         <div
                                                             key={idx}
-                                                            className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${isPaid
-                                                                ? "bg-green-50 border border-green-200 cursor-not-allowed opacity-75"
+                                                            className={`p-4 rounded-lg border-2 transition-all ${isPaid
+                                                                ? "bg-green-50 border-green-300 cursor-not-allowed opacity-75"
                                                                 : isPastDue
-                                                                    ? "bg-red-50 border border-red-200"
+                                                                    ? "bg-red-50 border-red-300"
                                                                     : isSelected
-                                                                        ? "bg-blue-50 border-2 border-blue-500"
-                                                                        : "bg-gray-50 border border-gray-200 hover:border-blue-300"
+                                                                        ? "bg-blue-50 border-blue-500 shadow-md"
+                                                                        : "bg-gray-50 border-gray-200 hover:border-blue-300 cursor-pointer"
                                                                 }`}
                                                             onClick={() => {
-                                                                // Only allow selection if not paid
                                                                 if (!isPaid) {
                                                                     setSelectedYear(year.year);
                                                                     setSelectedInstallment(option.number);
+                                                                    setSelectedPaymentOptionId(option.paymentOptionId);
                                                                     setAmount(option.payableAmount.toString());
                                                                     setIsSelectedPaid(false);
                                                                 } else {
@@ -441,25 +502,31 @@ export default function ManualPaymentDialog({
                                                                 }
                                                             }}
                                                         >
-                                                            <div className="flex-1">
-                                                                <div className="flex items-center gap-2">
-                                                                    <p className="font-medium text-gray-800">
-                                                                        {label}
-                                                                    </p>
-                                                                    {isPaid && (
-                                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                                            Paid
-                                                                        </span>
-                                                                    )}
-                                                                    {!isPaid && isPastDue && (
-                                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-                                                                            Overdue
-                                                                        </span>
-                                                                    )}
-                                                                </div>
+                                                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                                                <div className="flex-1">
+                                                                    <div className="flex flex-wrap items-center gap-2">
+                                                                        <h3 className="text-base font-semibold text-gray-800">
+                                                                            {label}
+                                                                        </h3>
+                                                                        {isPaid && (
+                                                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-200 text-green-800">
+                                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                                </svg>
+                                                                                Paid
+                                                                            </span>
+                                                                        )}
+                                                                        {!isPaid && isPastDue && (
+                                                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-200 text-red-800">
+                                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                                                </svg>
+                                                                                Overdue
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
 
-                                                                <div className="mt-1 space-y-0.5">
-                                                                    <p className={`text-sm ${isPastDue && !isPaid ? "text-red-600" : "text-gray-500"}`}>
+                                                                    <p className="text-xs text-gray-500 mt-1">
                                                                         Due: {new Date(option.dueDate).toLocaleDateString('en-IN', {
                                                                             day: '2-digit',
                                                                             month: 'short',
@@ -467,43 +534,48 @@ export default function ManualPaymentDialog({
                                                                         })}
                                                                     </p>
 
-                                                                    {option.discountAmount > 0 && (
-                                                                        <p className="text-xs text-green-600">
-                                                                            Discount: ₹{option.discountAmount}
-                                                                        </p>
+                                                                    {!isPaid && (
+                                                                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs">
+                                                                            <span className="text-gray-500">Tuition: {formatCurrency(option.tuitionFee)}</span>
+                                                                            {option.tuitionConcession > 0 && (
+                                                                                <span className="text-green-600">(-{formatCurrency(option.tuitionConcession)})</span>
+                                                                            )}
+                                                                            <span className="text-gray-500">Other: {formatCurrency(option.otherFee)}</span>
+                                                                            {option.discountAmount > 0 && (
+                                                                                <span className="text-green-600 font-medium">Save {formatCurrency(option.discountAmount)}</span>
+                                                                            )}
+                                                                        </div>
                                                                     )}
 
                                                                     {isPaid && option.paidDate && (
-                                                                        <p className="text-sm text-green-600">
+                                                                        <p className="text-xs text-green-600 mt-1">
                                                                             Paid on: {formatDate(option.paidDate)}
                                                                         </p>
                                                                     )}
-
                                                                     {isPaid && option.paymentId && (
-                                                                        <p className="text-xs text-gray-400">
-                                                                            Transaction ID: {option.paymentId}
+                                                                        <p className="text-xs text-gray-400 truncate">
+                                                                            Payment ID: {option.paymentId}
                                                                         </p>
                                                                     )}
                                                                 </div>
-                                                            </div>
 
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="text-right">
-                                                                    {option.discountAmount > 0 && (
-                                                                        <p className="text-xs text-gray-400 line-through">
-                                                                            ₹{option.originalAmount}
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="text-right">
+                                                                        {option.discountAmount > 0 && !isPaid && (
+                                                                            <p className="text-xs text-gray-400 line-through">
+                                                                                {formatCurrency(option.originalAmount)}
+                                                                            </p>
+                                                                        )}
+                                                                        <p className={`text-lg font-bold ${isPaid ? 'text-green-600' : 'text-gray-800'}`}>
+                                                                            {formatCurrency(option.payableAmount)}
                                                                         </p>
-                                                                    )}
-                                                                    <p className="font-bold text-gray-800">
-                                                                        ₹{option.payableAmount}
-                                                                    </p>
-                                                                </div>
-
-                                                                {isSelected && !isPaid && (
-                                                                    <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
-                                                                        Selected
                                                                     </div>
-                                                                )}
+                                                                    {isSelected && !isPaid && (
+                                                                        <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
+                                                                            Selected
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     );
@@ -519,12 +591,11 @@ export default function ManualPaymentDialog({
                             ))}
                         </div>
 
-                        {/* Payment Details Form - Disabled if paid */}
+                        {/* Payment Details Form */}
                         <div className="border-t border-gray-200 pt-6 mt-4">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4">Payment Details</h3>
 
                             {isSelectedPaid ? (
-                                // Show message when selected installment is already paid
                                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                                     <div className="flex items-center gap-2">
                                         <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -544,17 +615,16 @@ export default function ManualPaymentDialog({
                                         <input
                                             type="number"
                                             value={amount}
-
                                             onChange={(e) => setAmount(e.target.value)}
                                             placeholder="Enter amount"
-                                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-100"
                                             required
                                             min="0"
                                             step="0.01"
                                             disabled={true}
                                         />
                                         <p className="text-xs text-gray-500 mt-1">
-                                            {isSelectedPaid ? 'Amount is locked for paid installments' : 'Enter the exact amount received from the student'}
+                                            Amount is auto-calculated based on selected installment
                                         </p>
                                     </div>
 
@@ -569,7 +639,6 @@ export default function ManualPaymentDialog({
                                             placeholder="Enter transaction ID (e.g., UPI reference, bank ref no.)"
                                             className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                             required
-                                            disabled={isSelectedPaid}
                                         />
                                     </div>
 
@@ -582,7 +651,6 @@ export default function ManualPaymentDialog({
                                             value={paymentDate}
                                             onChange={(e) => setPaymentDate(e.target.value)}
                                             className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            disabled={isSelectedPaid}
                                         />
                                     </div>
 
@@ -596,14 +664,13 @@ export default function ManualPaymentDialog({
                                             onChange={(e) => setRemarks(e.target.value)}
                                             placeholder="Add remarks (optional)"
                                             className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            disabled={isSelectedPaid}
                                         />
                                     </div>
                                 </div>
                             )}
                         </div>
 
-                        {/* Summary - Styled like student side */}
+                        {/* Payment Summary */}
                         <div className="mb-6 mt-6">
                             <h3 className="text-sm font-medium text-gray-700 mb-3">Payment Summary</h3>
                             <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -614,13 +681,13 @@ export default function ManualPaymentDialog({
                                 <div>
                                     <p className="text-sm text-gray-500">Option</p>
                                     <p className="font-semibold text-gray-800">
-                                        {selectedInstallment === 0 ? 'Full Payment' : `Installment ${selectedInstallment}`}
+                                        {selectedPaymentMethod === 'full_payment' ? 'Full Payment' : `Installment ${selectedInstallment}`}
                                     </p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500">Amount</p>
                                     <p className={`font-semibold text-lg ${isSelectedPaid ? 'text-gray-500' : 'text-green-600'}`}>
-                                        ₹{amount || 0}
+                                        {formatCurrency(parseFloat(amount) || 0)}
                                     </p>
                                 </div>
                                 <div>

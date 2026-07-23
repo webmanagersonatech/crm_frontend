@@ -57,7 +57,8 @@ export interface FeeConfiguration {
 export interface ManualPaymentRequest {
   studentId: string;
   year: string;
-  installmentNo: number;
+  installmentNumber: number;
+  paymentOptionId: string;
   amount: number;
   transactionId: string;
   paymentDate?: string;
@@ -82,6 +83,7 @@ export interface ManualPaymentResponse {
     };
     year: string;
     installmentNumber: number;
+    paymentOptionId: string;
     amount: number;
     transactionId: string;
     paymentDate: string;

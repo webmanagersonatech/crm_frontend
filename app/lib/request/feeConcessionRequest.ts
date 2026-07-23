@@ -88,6 +88,12 @@ export interface FeeConcessionDoc {
             courseId: string;
             name: string;
             amount: number;
+            tuitionFee: number;          // NEW: Tuition fee
+            otherFee: number;             // NEW: Other fee
+            discountedTuition: number;    // NEW: Tuition fee after discount
+            discountAmount: number;
+            totalDiscountPercentage: number;
+            finalAmount: number;
             referrals: Array<{
                 referralId: string;
                 name: string;
@@ -97,9 +103,13 @@ export interface FeeConcessionDoc {
             counsellorName: string;
             status: string;
             createdAt: string;
-            totalDiscountPercentage: number;
-            discountAmount: number;
-            finalAmount: number;
+            breakdown: {                 // NEW: Detailed breakdown
+                tuitionFee: number;
+                otherFee: number;
+                discountApplied: string;
+                finalTuition: number;
+                finalTotal: number;
+            };
         };
     };
     createdBy: {

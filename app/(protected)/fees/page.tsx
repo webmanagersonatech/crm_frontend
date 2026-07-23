@@ -4,17 +4,13 @@ import { useState, useEffect } from 'react'
 import { toast } from "react-toastify";
 import Select from 'react-select'
 import { getActiveInstitutions } from '@/app/lib/request/institutionRequest'
-import { 
+import {
   saveFeeConfiguration,
   getFeeConfigurationByInstitute,
   FeeConfiguration,
-  CourseFeeStructure,
-  Referral
 } from '@/app/lib/request/feeconfigurationRoutes'
 import {
   getSettingsByInstitute,
-  saveSettings,
-  Settings as SettingsType
 } from '@/app/lib/request/settingRequest'
 import { FaCreditCard, FaTimes } from 'react-icons/fa'
 
@@ -23,24 +19,32 @@ interface OptionType {
   label: string
 }
 
-interface PaymentOption {
+// ---- New payment option structure ----
+// Every year has a `paymentOptions` array.
+// - One entry with type "full_payment" -> always present, is the default.
+// - One entry PER installment count the admin turns on (2,3,4,5,6...),
+//   each entry carries its OWN `installments` array.
+interface InstallmentDetail {
   number: number
-  type: 'full_payment' | 'installment'
   amount: number
+  tuitionFee: number
+  otherFee: number
   dueDate: string
+}
+
+interface PaymentOption {
+  paymentOptionId: string
+  name: string
+  type: 'full_payment' | 'installment'
+  installments: InstallmentDetail[]
 }
 
 interface YearFee {
   year: string
   amount: number
-  paymentoptions?: PaymentOption[]
-}
-
-interface Installment {
-  number: number
-  amount: number
-  dueDate: string
-  isPaid?: boolean
+  tuitionFee: number
+  otherFee: number
+  paymentOptions: PaymentOption[]
 }
 
 interface CourseFee {
@@ -63,6 +67,15 @@ interface FeeStructure {
   referrals: ReferralType[]
 }
 
+// The list of installment counts an admin can toggle on/off for a year.
+const INSTALLMENT_COUNT_OPTIONS = [2, 3, 4, 5, 6]
+
+interface PopupPlan {
+  count: number
+  amounts: number[]
+  dueDates: string[]
+}
+
 export default function FeeStructurePage() {
   const [institutions, setInstitutions] = useState<OptionType[]>([])
   const [selectedInstitute, setSelectedInstitute] = useState<OptionType | null>(null)
@@ -79,39 +92,52 @@ export default function FeeStructurePage() {
   const [institute, setInstitute] = useState<string>("");
   const [role, setRole] = useState<string | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
-  
+
   // Referral form state
   const [referralName, setReferralName] = useState('')
   const [referralPercentage, setReferralPercentage] = useState<number | ''>('')
   const [editingReferralIndex, setEditingReferralIndex] = useState<number | null>(null)
 
-  // Installment popup state
+  // Payment-options popup state
   const [installmentPopup, setInstallmentPopup] = useState<{
     isOpen: boolean
     courseId: string
     yearIndex: number
     amount: number
-    installments: Installment[]
-    hasInstallments: boolean
+    tuitionFee: number
+    otherFee: number
+    fullPaymentDueDate: string
+    plans: PopupPlan[]
   } | null>(null)
-
-  const [installmentCount, setInstallmentCount] = useState<number>(0)
-  const [installmentDueDates, setInstallmentDueDates] = useState<string[]>([])
 
   const inputClass =
     'border rounded px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none'
 
+  const todayStr = () => new Date().toISOString().split('T')[0]
+
+  // Helper function to calculate tuition and other fees from total amount
+  const calculateFeeComponents = (totalAmount: number): { tuitionFee: number, otherFee: number } => {
+    // 70% tuition, 30% other (adjust these percentages as needed)
+    const tuitionPercentage = 0.70;
+    const otherPercentage = 0.30;
+
+    return {
+      tuitionFee: Math.round(totalAmount * tuitionPercentage),
+      otherFee: Math.round(totalAmount * otherPercentage)
+    };
+  }
+
   // Helper function to format date for input
   const formatDateForInput = (dateString: string): string => {
-    if (!dateString) return new Date().toISOString().split('T')[0];
+    if (!dateString) return todayStr();
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) {
-        return new Date().toISOString().split('T')[0];
+        return todayStr();
       }
       return date.toISOString().split('T')[0];
     } catch {
-      return new Date().toISOString().split('T')[0];
+      return todayStr();
     }
   }
 
@@ -135,13 +161,59 @@ export default function FeeStructurePage() {
     return `${year}th Year`;
   }
 
-  // Helper function to get default full payment option (number: 0)
-  const getDefaultFullPayment = (amount: number): PaymentOption => ({
-    number: 0,
+  // Builds the always-present "Full Payment" option
+  // paymentOptionId is based directly on the instituteId, e.g. "INS-3-ZXYXKM-FULL"
+  const buildFullPaymentOption = (
+    amount: number,
+    tuitionFee: number,
+    otherFee: number,
+    dueDate: string,
+    instituteId: string
+  ): PaymentOption => ({
+    paymentOptionId: `${instituteId}-FULL`,
+    name: 'Full Payment',
     type: 'full_payment',
-    amount: amount,
-    dueDate: new Date().toISOString().split('T')[0]
-  });
+    installments: [
+      {
+        number: 1,
+        amount,
+        tuitionFee,
+        otherFee,
+        dueDate
+      }
+    ]
+  })
+
+  // Builds one installment-plan option (e.g. "2 Installments"), each with its own installments array
+  // paymentOptionId is based directly on the instituteId, e.g. "INS-3-ZXYXKM-INSTALLMENT-2"
+  const buildInstallmentOption = (
+    count: number,
+    totalAmount: number,
+    totalTuition: number,
+    totalOther: number,
+    amounts: number[],
+    dueDates: string[],
+    instituteId: string
+  ): PaymentOption => {
+    const installments: InstallmentDetail[] = amounts.map((amt, idx) => {
+      const tuition = Math.round((amt / totalAmount) * totalTuition)
+      const other = amt - tuition
+      return {
+        number: idx + 1,
+        amount: amt,
+        tuitionFee: tuition,
+        otherFee: other,
+        dueDate: dueDates[idx] || todayStr()
+      }
+    })
+
+    return {
+      paymentOptionId: `${instituteId}-INSTALLMENT-${count}`,
+      name: `${count} Installments`,
+      type: 'installment',
+      installments
+    }
+  }
 
   // Set mounted state
   useEffect(() => {
@@ -173,7 +245,6 @@ export default function FeeStructurePage() {
       try {
         setIsLoading(true);
         const res = await getActiveInstitutions();
-        console.log('Fetched institutions:', res);
 
         if (res && res.length > 0) {
           const opts = res.map((inst: any) => ({
@@ -200,7 +271,7 @@ export default function FeeStructurePage() {
       } catch (error) {
         console.error('Failed to fetch institutions:', error);
         toast.error('Failed to load institutions');
-        
+
         if (role !== 'superadmin' && institute) {
           setSelectedInstitute({
             value: institute,
@@ -234,39 +305,53 @@ export default function FeeStructurePage() {
       try {
         setIsLoading(true)
         setIsDataLoaded(false)
-        
+
         let feeConfigData = null;
         try {
           feeConfigData = await getFeeConfigurationByInstitute(selectedInstitute.value);
-          console.log('Fee configuration data:', feeConfigData);
         } catch (error) {
           console.log('No fee configuration found, using settings data');
         }
 
         const settingsData = await getSettingsByInstitute(selectedInstitute.value);
-        console.log('Settings data:', settingsData);
 
         const totalYears = settingsData.courseYears || 0;
         const yearLabels = Array.from({ length: totalYears }, (_, i) => String(i + 1));
 
         let coursesWithFees: CourseFee[] = [];
-        
+
         if (settingsData.courses && settingsData.courses.length > 0) {
-          const feeMap = new Map();
+          const feeMap = new Map<string, Map<string, { amount: number, tuitionFee: number, otherFee: number, paymentOptions: PaymentOption[] }>>();
+
           if (feeConfigData?.courseFeeStructure) {
             feeConfigData.courseFeeStructure.forEach((feeCourse: any) => {
               const years = feeCourse.years || [];
               const yearMap = new Map();
               years.forEach((yearFee: any) => {
                 const yearStr = String(yearFee.year);
-                // Format payment options dates for display
-                const formattedPaymentOptions = (yearFee.paymentoptions || []).map((opt: any) => ({
-                  ...opt,
-                  dueDate: formatDateForInput(opt.dueDate)
-                }));
+
+                const paymentOptions: PaymentOption[] = (yearFee.paymentOptions || []).map((opt: any) => {
+                  const installments = (opt.installments || []).map((inst: any) => ({
+                    number: inst.number,
+                    amount: inst.amount || 0,
+                    tuitionFee: inst.tuitionFee || 0,
+                    otherFee: inst.otherFee || 0,
+                    dueDate: formatDateForInput(inst.dueDate)
+                  }));
+
+                  return {
+                    paymentOptionId: opt.paymentOptionId || `${selectedInstitute.value}-${opt.type === 'full_payment' ? 'FULL' : `INSTALLMENT-${installments.length}`}`,
+                    name: opt.name || (opt.type === 'full_payment' ? 'Full Payment' : `${installments.length} Installments`),
+                    type: opt.type === 'full_payment' ? 'full_payment' : 'installment',
+                    installments
+                  } as PaymentOption
+                });
+
                 yearMap.set(yearStr, {
-                  amount: yearFee.amount,
-                  paymentoptions: formattedPaymentOptions
+                  amount: yearFee.amount || 0,
+                  tuitionFee: yearFee.tuitionFee || 0,
+                  otherFee: yearFee.otherFee || 0,
+                  paymentOptions
                 });
               });
               feeMap.set(feeCourse.courseId, yearMap);
@@ -275,28 +360,29 @@ export default function FeeStructurePage() {
 
           coursesWithFees = settingsData.courses.map((course: any) => {
             const courseFeeMap = feeMap.get(course.courseId);
-            
+
             return {
               courseId: course.courseId || '',
               courseName: course.name || '',
               years: yearLabels.map((year) => {
                 const yearData = courseFeeMap?.get(year);
                 const amount = yearData?.amount || 0;
-                const paymentoptions = yearData?.paymentoptions || [];
-                
-                // If no payment options exist but amount is set, add default full payment
-                if (paymentoptions.length === 0 && amount > 0) {
-                  return {
-                    year: year,
-                    amount: amount,
-                    paymentoptions: [getDefaultFullPayment(amount)]
-                  };
+                const tuitionFee = yearData?.tuitionFee || 0;
+                const otherFee = yearData?.otherFee || 0;
+                let paymentOptions = yearData?.paymentOptions || [];
+
+                if (paymentOptions.length === 0 && amount > 0) {
+                  paymentOptions = [
+                    buildFullPaymentOption(amount, tuitionFee, otherFee, todayStr(), selectedInstitute.value)
+                  ];
                 }
-                
+
                 return {
-                  year: year,
-                  amount: amount,
-                  paymentoptions: paymentoptions
+                  year,
+                  amount,
+                  tuitionFee,
+                  otherFee,
+                  paymentOptions
                 };
               })
             };
@@ -340,166 +426,139 @@ export default function FeeStructurePage() {
     fetchFeeStructure()
   }, [selectedInstitute])
 
-  // Installment Popup Handlers
-  const openInstallmentPopup = (courseId: string, yearIndex: number, amount: number) => {
+  // ---------- Payment options popup ----------
+
+  const openInstallmentPopup = (courseId: string, yearIndex: number) => {
     const course = feeStructure.courses.find(c => c.courseId === courseId);
     if (!course) return;
 
     const year = course.years[yearIndex];
-    const existingInstallments = year.paymentoptions?.filter(opt => opt.type === 'installment') || [];
-    const hasInstallments = existingInstallments.length > 0;
-    
-    // Format dates for display if there are existing installments
-    const formattedInstallments = hasInstallments 
-      ? existingInstallments.map(inst => ({
-          number: inst.number,
-          amount: inst.amount,
-          dueDate: formatDateForInput(inst.dueDate)
-        }))
-      : Array(installmentCount).fill(null).map((_, index) => ({
-          number: index + 1,
-          amount: Math.round(amount / (installmentCount || 1)),
-          dueDate: new Date().toISOString().split('T')[0]
-        }));
+    if (!year || year.amount <= 0) return;
 
-    const initialDueDates = formattedInstallments.map(inst => inst.dueDate);
+    const fullOption = year.paymentOptions.find(opt => opt.type === 'full_payment');
+    const installmentOptions = year.paymentOptions.filter(opt => opt.type === 'installment');
+
+    const plans: PopupPlan[] = installmentOptions
+      .map(opt => ({
+        count: opt.installments.length,
+        amounts: opt.installments.map(i => i.amount),
+        dueDates: opt.installments.map(i => formatDateForInput(i.dueDate))
+      }))
+      .sort((a, b) => a.count - b.count);
 
     setInstallmentPopup({
       isOpen: true,
       courseId,
       yearIndex,
-      amount,
-      installments: formattedInstallments,
-      hasInstallments: hasInstallments
+      amount: year.amount,
+      tuitionFee: year.tuitionFee,
+      otherFee: year.otherFee,
+      fullPaymentDueDate: fullOption ? formatDateForInput(fullOption.installments[0]?.dueDate) : todayStr(),
+      plans
     });
-    
-    setInstallmentCount(hasInstallments ? existingInstallments.length : 0);
-    setInstallmentDueDates(initialDueDates);
   }
 
   const closeInstallmentPopup = () => {
     setInstallmentPopup(null);
-    setInstallmentCount(0);
-    setInstallmentDueDates([]);
   }
 
-  const handleInstallmentCountChange = (count: number) => {
+  // Turns a given installment count (2,3,4,5,6) on or off as its own plan/object
+  const togglePlan = (count: number) => {
     if (!installmentPopup) return;
-    
-    setInstallmentCount(count);
-    const amount = installmentPopup.amount;
-    
-    let newInstallments: Installment[] = [];
-    
-    if (count === 0) {
-      newInstallments = [];
-    } else {
-      const equalAmount = Math.round(amount / count);
-      // Preserve existing due dates if possible
-      const existingDueDates = installmentPopup.installments.map(inst => inst.dueDate);
-      
-      for (let i = 0; i < count; i++) {
-        newInstallments.push({
-          number: i + 1,
-          amount: equalAmount,
-          dueDate: existingDueDates[i] || new Date().toISOString().split('T')[0]
-        });
-      }
+
+    const exists = installmentPopup.plans.some(p => p.count === count);
+
+    if (exists) {
+      setInstallmentPopup(prev => prev
+        ? { ...prev, plans: prev.plans.filter(p => p.count !== count) }
+        : prev);
+      return;
     }
-    
-    setInstallmentPopup(prev => ({
-      ...prev!,
-      installments: newInstallments,
-      hasInstallments: count > 0
-    }));
 
-    const newDueDates = newInstallments.map(inst => inst.dueDate);
-    setInstallmentDueDates(newDueDates);
+    const amount = installmentPopup.amount;
+    const base = Math.floor(amount / count);
+    const amounts = Array.from({ length: count }, (_, i) =>
+      i === count - 1 ? amount - base * (count - 1) : base
+    );
+    const dueDates = Array.from({ length: count }, () => todayStr());
+
+    setInstallmentPopup(prev => prev
+      ? {
+        ...prev,
+        plans: [...prev.plans, { count, amounts, dueDates }].sort((a, b) => a.count - b.count)
+      }
+      : prev);
   }
 
-  const handleInstallmentDueDateChange = (index: number, date: string) => {
-    if (!installmentPopup) return;
-    
-    const updatedInstallments = [...installmentPopup.installments];
-    updatedInstallments[index] = {
-      ...updatedInstallments[index],
-      dueDate: date
-    };
-    
-    setInstallmentPopup(prev => ({
-      ...prev!,
-      installments: updatedInstallments
-    }));
-
-    const updatedDueDates = [...installmentDueDates];
-    updatedDueDates[index] = date;
-    setInstallmentDueDates(updatedDueDates);
+  const updatePlanAmount = (count: number, index: number, value: number) => {
+    setInstallmentPopup(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        plans: prev.plans.map(plan => {
+          if (plan.count !== count) return plan;
+          const amounts = [...plan.amounts];
+          amounts[index] = value;
+          return { ...plan, amounts };
+        })
+      };
+    });
   }
 
-  const handleInstallmentAmountChange = (index: number, amount: number) => {
-    if (!installmentPopup) return;
-    
-    const updatedInstallments = [...installmentPopup.installments];
-    updatedInstallments[index] = {
-      ...updatedInstallments[index],
-      amount: amount
-    };
-    
-    setInstallmentPopup(prev => ({
-      ...prev!,
-      installments: updatedInstallments
-    }));
+  const updatePlanDueDate = (count: number, index: number, value: string) => {
+    setInstallmentPopup(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        plans: prev.plans.map(plan => {
+          if (plan.count !== count) return plan;
+          const dueDates = [...plan.dueDates];
+          dueDates[index] = value;
+          return { ...plan, dueDates };
+        })
+      };
+    });
   }
 
-  const saveInstallments = () => {
+  const updateFullPaymentDueDate = (value: string) => {
+    setInstallmentPopup(prev => prev ? { ...prev, fullPaymentDueDate: value } : prev);
+  }
+
+  const savePaymentOptions = () => {
     if (!installmentPopup) return;
-    
-    const { courseId, yearIndex, installments, hasInstallments } = installmentPopup;
-    
-    // If has installments, validate them
-    if (hasInstallments && installments.length > 0) {
-      const totalInstallmentAmount = installments.reduce((sum, inst) => sum + inst.amount, 0);
-      if (totalInstallmentAmount !== installmentPopup.amount) {
-        toast.error(`Total installment amount (${totalInstallmentAmount}) must equal the total fee (${installmentPopup.amount})`);
+
+    const { courseId, yearIndex, amount, tuitionFee, otherFee, fullPaymentDueDate, plans } = installmentPopup;
+    const instituteId = feeStructure.instituteId;
+
+    for (const plan of plans) {
+      const total = plan.amounts.reduce((sum, a) => sum + a, 0);
+      if (total !== amount) {
+        toast.error(`${plan.count}-installment plan total (₹${total}) must equal the total fee (₹${amount})`);
         return;
       }
-
-      // Validate due dates
-      for (const inst of installments) {
-        if (!inst.dueDate) {
-          toast.error(`Please set due date for installment ${inst.number}`);
-          return;
-        }
+      if (plan.dueDates.some(d => !d)) {
+        toast.error(`Please set every due date for the ${plan.count}-installment plan`);
+        return;
       }
     }
+
+    const fullOption = buildFullPaymentOption(amount, tuitionFee, otherFee, fullPaymentDueDate, instituteId);
+    const installmentOptionsBuilt = plans.map(plan =>
+      buildInstallmentOption(plan.count, amount, tuitionFee, otherFee, plan.amounts, plan.dueDates, instituteId)
+    );
 
     setFeeStructure(prev => ({
       ...prev,
-      courses: prev.courses.map(course => 
+      courses: prev.courses.map(course =>
         course.courseId === courseId
           ? {
-              ...course,
-              years: course.years.map((year, idx) =>
-                idx === yearIndex
-                  ? { 
-                      ...year, 
-                      paymentoptions: [
-                        // Full payment option (always present, number: 0)
-                        getDefaultFullPayment(year.amount),
-                        // Installment options (only if user added them)
-                        ...(hasInstallments && installments.length > 0 
-                          ? installments.map((inst) => ({
-                              number: inst.number,
-                              type: 'installment' as const,
-                              amount: inst.amount,
-                              dueDate: inst.dueDate
-                            }))
-                          : [])
-                      ]
-                    }
-                  : year
-              )
-            }
+            ...course,
+            years: course.years.map((year, idx) =>
+              idx === yearIndex
+                ? { ...year, paymentOptions: [fullOption, ...installmentOptionsBuilt] }
+                : year
+            )
+          }
           : course
       )
     }));
@@ -509,7 +568,14 @@ export default function FeeStructurePage() {
   }
 
   // Course Fee Handlers
-  const handleYearFeeChange = (courseId: string, yearIndex: number, amount: number) => {
+  const handleTuitionFeeChange = (courseId: string, yearIndex: number, tuitionFee: number) => {
+    const course = feeStructure.courses.find(c => c.courseId === courseId);
+    if (!course) return;
+
+    const year = course.years[yearIndex];
+    const otherFee = year.otherFee;
+    const totalAmount = tuitionFee + otherFee;
+
     setFeeStructure(prev => ({
       ...prev,
       courses: prev.courses.map(course =>
@@ -517,11 +583,43 @@ export default function FeeStructurePage() {
           ? {
             ...course,
             years: course.years.map((y, idx) =>
-              idx === yearIndex ? { 
-                ...y, 
-                amount,
-                // When amount changes, keep full payment and reset installments
-                paymentoptions: amount > 0 ? [getDefaultFullPayment(amount)] : []
+              idx === yearIndex ? {
+                ...y,
+                tuitionFee: tuitionFee,
+                amount: totalAmount,
+                paymentOptions: totalAmount > 0
+                  ? [buildFullPaymentOption(totalAmount, tuitionFee, otherFee, todayStr(), prev.instituteId)]
+                  : []
+              } : y
+            )
+          }
+          : course
+      )
+    }))
+  }
+
+  const handleOtherFeeChange = (courseId: string, yearIndex: number, otherFee: number) => {
+    const course = feeStructure.courses.find(c => c.courseId === courseId);
+    if (!course) return;
+
+    const year = course.years[yearIndex];
+    const tuitionFee = year.tuitionFee;
+    const totalAmount = tuitionFee + otherFee;
+
+    setFeeStructure(prev => ({
+      ...prev,
+      courses: prev.courses.map(course =>
+        course.courseId === courseId
+          ? {
+            ...course,
+            years: course.years.map((y, idx) =>
+              idx === yearIndex ? {
+                ...y,
+                otherFee: otherFee,
+                amount: totalAmount,
+                paymentOptions: totalAmount > 0
+                  ? [buildFullPaymentOption(totalAmount, tuitionFee, otherFee, todayStr(), prev.instituteId)]
+                  : []
               } : y
             )
           }
@@ -538,11 +636,13 @@ export default function FeeStructurePage() {
           ? {
             ...course,
             years: [
-              ...course.years, 
-              { 
-                year: String(course.years.length + 1), 
-                amount: 0, 
-                paymentoptions: [] 
+              ...course.years,
+              {
+                year: String(course.years.length + 1),
+                amount: 0,
+                tuitionFee: 0,
+                otherFee: 0,
+                paymentOptions: []
               }
             ]
           }
@@ -570,6 +670,7 @@ export default function FeeStructurePage() {
     setCommonAmount(amount)
 
     if (amount > 0) {
+      const { tuitionFee, otherFee } = calculateFeeComponents(amount);
       setFeeStructure(prev => ({
         ...prev,
         courses: prev.courses.map(course => ({
@@ -577,7 +678,9 @@ export default function FeeStructurePage() {
           years: course.years.map(year => ({
             ...year,
             amount: amount,
-            paymentoptions: [getDefaultFullPayment(amount)]
+            tuitionFee: tuitionFee,
+            otherFee: otherFee,
+            paymentOptions: [buildFullPaymentOption(amount, tuitionFee, otherFee, todayStr(), prev.instituteId)]
           }))
         }))
       }))
@@ -589,7 +692,9 @@ export default function FeeStructurePage() {
           years: course.years.map(year => ({
             ...year,
             amount: 0,
-            paymentoptions: []
+            tuitionFee: 0,
+            otherFee: 0,
+            paymentOptions: []
           }))
         }))
       }))
@@ -708,7 +813,6 @@ export default function FeeStructurePage() {
       return
     }
 
-    // Validate all fees are set and have full payment option
     let hasError = false;
     for (const course of feeStructure.courses) {
       for (const year of course.years) {
@@ -717,8 +821,15 @@ export default function FeeStructurePage() {
           hasError = true;
           break;
         }
-        // Ensure full payment option exists
-        const hasFullPayment = year.paymentoptions?.some(opt => opt.type === 'full_payment');
+
+        // Validate that tuition + other = total amount
+        if (year.tuitionFee + year.otherFee !== year.amount) {
+          toast.error(`Tuition + Other fee must equal total amount for ${course.courseName} - ${getYearDisplay(year.year)}`)
+          hasError = true;
+          break;
+        }
+
+        const hasFullPayment = year.paymentOptions?.some(opt => opt.type === 'full_payment');
         if (!hasFullPayment) {
           toast.error(`Full payment option missing for ${course.courseName} - ${getYearDisplay(year.year)}`)
           hasError = true;
@@ -730,7 +841,7 @@ export default function FeeStructurePage() {
 
     if (hasError) return;
 
-    const feeConfigPayload: FeeConfiguration = {
+    const feeConfigPayload = {
       instituteId: selectedInstitute.value,
       courseFeeStructure: feeStructure.courses.map(c => ({
         courseId: c.courseId,
@@ -738,11 +849,13 @@ export default function FeeStructurePage() {
         years: c.years.map(year => ({
           year: year.year,
           amount: year.amount,
-          paymentoptions: year.paymentoptions || []
+          tuitionFee: year.tuitionFee,
+          otherFee: year.otherFee,
+          paymentOptions: year.paymentOptions || []
         }))
       })),
       referrals: feeStructure.referrals
-    }
+    } as unknown as FeeConfiguration
 
     try {
       setIsLoading(true)
@@ -757,13 +870,12 @@ export default function FeeStructurePage() {
     }
   }
 
-  // Installment Popup Component
+  // Payment Options Popup Component
   const InstallmentPopup = () => {
     if (!installmentPopup) return null;
 
     const totalAmount = installmentPopup.amount;
-    const totalInstallmentAmount = installmentPopup.installments.reduce((sum, inst) => sum + inst.amount, 0);
-    const hasInstallments = installmentPopup.hasInstallments;
+    const { tuitionFee, otherFee, plans } = installmentPopup;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -772,6 +884,7 @@ export default function FeeStructurePage() {
             <div>
               <h2 className="text-xl font-semibold">Payment Options Setup</h2>
               <p className="text-sm opacity-90">Total Amount: ₹{totalAmount}</p>
+              <p className="text-xs opacity-75">Tuition: ₹{tuitionFee} | Other: ₹{otherFee}</p>
             </div>
             <button
               onClick={closeInstallmentPopup}
@@ -782,129 +895,131 @@ export default function FeeStructurePage() {
           </div>
 
           <div className="p-6 space-y-6">
-            {/* Full Payment Option (Always Present) */}
+            {/* Full Payment Option (Always Present / Default) */}
             <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
                   <h4 className="font-semibold text-gray-700 flex items-center gap-2">
                     <span className="inline-block w-3 h-3 rounded-full bg-green-500"></span>
                     Full Payment (Default)
                   </h4>
                   <p className="text-sm text-gray-600">Amount: ₹{totalAmount}</p>
-                  <p className="text-xs text-gray-500 mt-1">✓ Always available for all years</p>
+                  <p className="text-xs text-gray-500">Tuition: ₹{tuitionFee} | Other: ₹{otherFee}</p>
+                  <p className="text-xs text-gray-500 mt-1">✓ Always available, on its own object</p>
                 </div>
                 <div>
                   <label className="text-xs text-gray-500 block">Due Date</label>
                   <input
                     type="date"
                     className="border rounded px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                    value={installmentPopup.installments[0]?.dueDate || formatDateForInput(new Date().toISOString())}
-                    onChange={(e) => {
-                      const updatedInstallments = [...installmentPopup.installments];
-                      if (updatedInstallments[0]) {
-                        updatedInstallments[0].dueDate = e.target.value;
-                        setInstallmentPopup(prev => ({
-                          ...prev!,
-                          installments: updatedInstallments
-                        }));
-                      }
-                    }}
+                    value={installmentPopup.fullPaymentDueDate}
+                    onChange={(e) => updateFullPaymentDueDate(e.target.value)}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Installment Options - Optional */}
+            {/* Installment Plans - each toggled count becomes its own object */}
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                   <span className="inline-block w-3 h-3 rounded-full bg-blue-500"></span>
-                  Installment Options
+                  Installment Plans
                 </h3>
-                <span className="text-xs text-gray-500">Optional - Add if needed</span>
+                <span className="text-xs text-gray-500">Optional - turn on as many as you need</span>
               </div>
 
-              {/* Installment Count Selection */}
               <div className="mb-4">
                 <label className="text-sm font-semibold text-gray-700 block mb-2">
-                  Number of Installments
+                  Choose installment plans (each becomes its own option)
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {[0, 1, 2, 3, 4, 5, 6].map((num) => (
-                    <button
-                      key={num}
-                      onClick={() => handleInstallmentCountChange(num)}
-                      className={`px-4 py-2 rounded-lg transition ${
-                        installmentCount === num
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {num === 0 ? 'None' : num}
-                    </button>
-                  ))}
+                  {INSTALLMENT_COUNT_OPTIONS.map((count) => {
+                    const active = plans.some(p => p.count === count);
+                    return (
+                      <button
+                        key={count}
+                        onClick={() => togglePlan(count)}
+                        className={`px-4 py-2 rounded-lg transition ${active
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                      >
+                        {count} Installments
+                      </button>
+                    );
+                  })}
                 </div>
-                {installmentCount === 0 && (
-                  <p className="text-xs text-blue-600 mt-2">✓ No installments selected. Only full payment will be available.</p>
-                )}
-                {installmentCount > 0 && (
-                  <p className="text-xs text-gray-500 mt-2">
-                    {installmentCount} installment{installmentCount > 1 ? 's' : ''} will be added along with full payment option
-                  </p>
+                {plans.length === 0 && (
+                  <p className="text-xs text-blue-600 mt-2">✓ No installment plans selected. Only Full Payment will be available.</p>
                 )}
               </div>
 
-              {/* Installment Details */}
-              {installmentCount > 0 && (
-                <div className="space-y-4">
-                  {installmentPopup.installments.map((installment, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-3">
-                      <h4 className="font-semibold text-gray-700">
-                        Installment {installment.number}
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-xs text-gray-500 block mb-1">
-                            Amount (₹)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="100"
-                            className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                            value={installment.amount}
-                            onChange={(e) => handleInstallmentAmountChange(index, Number(e.target.value))}
-                          />
+              {/* Each active plan gets its own card / object with its own installments array */}
+              {plans.length > 0 && (
+                <div className="space-y-5">
+                  {plans.map((plan) => {
+                    const planTotal = plan.amounts.reduce((sum, a) => sum + a, 0);
+                    const matches = planTotal === totalAmount;
+                    return (
+                      <div key={plan.count} className="border-2 border-blue-100 rounded-lg p-4 bg-blue-50/30">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-semibold text-gray-700">
+                            {plan.count} Installments
+                          </h4>
+                          <button
+                            onClick={() => togglePlan(plan.count)}
+                            className="text-xs text-red-600 hover:text-red-800"
+                          >
+                            Remove plan
+                          </button>
                         </div>
-                        <div>
-                          <label className="text-xs text-gray-500 block mb-1">
-                            Due Date
-                          </label>
-                          <input
-                            type="date"
-                            className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                            value={installment.dueDate || formatDateForInput(new Date().toISOString())}
-                            onChange={(e) => handleInstallmentDueDateChange(index, e.target.value)}
-                          />
+
+                        <div className="space-y-3">
+                          {plan.amounts.map((amt, index) => (
+                            <div key={index} className="border rounded-lg p-3 grid grid-cols-1 md:grid-cols-2 gap-3 bg-white">
+                              <div>
+                                <label className="text-xs text-gray-500 block mb-1">
+                                  Installment {index + 1} Amount (₹)
+                                </label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  step="100"
+                                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                  value={amt}
+                                  onChange={(e) => updatePlanAmount(plan.count, index, Number(e.target.value))}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-gray-500 block mb-1">
+                                  Due Date
+                                </label>
+                                <input
+                                  type="date"
+                                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                  value={plan.dueDates[index] || todayStr()}
+                                  onChange={(e) => updatePlanDueDate(plan.count, index, e.target.value)}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="bg-white rounded-lg p-3 flex justify-between items-center mt-3">
+                          <span className="font-semibold text-gray-700 text-sm">Plan Total:</span>
+                          <span className={`font-bold ${matches ? 'text-green-600' : 'text-red-600'}`}>
+                            ₹{planTotal}
+                            {!matches && (
+                              <span className="text-xs ml-2 font-normal text-red-500">
+                                (Must equal ₹{totalAmount})
+                              </span>
+                            )}
+                          </span>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Total Summary - Only show if installments exist */}
-              {installmentCount > 0 && (
-                <div className="bg-blue-50 rounded-lg p-4 flex justify-between items-center mt-4">
-                  <span className="font-semibold text-gray-700">Total Installment Amount:</span>
-                  <span className={`font-bold text-lg ${totalInstallmentAmount === totalAmount ? 'text-green-600' : 'text-red-600'}`}>
-                    ₹{totalInstallmentAmount}
-                    {totalInstallmentAmount !== totalAmount && (
-                      <span className="text-xs ml-2 font-normal text-red-500">
-                        (Must equal ₹{totalAmount})
-                      </span>
-                    )}
-                  </span>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -918,9 +1033,9 @@ export default function FeeStructurePage() {
                 Cancel
               </button>
               <button
-                onClick={saveInstallments}
+                onClick={savePaymentOptions}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                disabled={installmentCount > 0 && totalInstallmentAmount !== totalAmount}
+                disabled={plans.some(p => p.amounts.reduce((sum, a) => sum + a, 0) !== totalAmount)}
               >
                 Save Payment Options
               </button>
@@ -936,7 +1051,7 @@ export default function FeeStructurePage() {
 
   return (
     <div className="p-6 space-y-8 mx-auto">
-      {/* Installment Popup */}
+      {/* Payment Options Popup */}
       <InstallmentPopup />
 
       {/* Institute Selection */}
@@ -955,7 +1070,6 @@ export default function FeeStructurePage() {
                   options={institutions}
                   value={selectedInstitute}
                   onChange={(selected) => {
-                    console.log("Selected institute:", selected);
                     setSelectedInstitute(selected);
                   }}
                   placeholder={isLoading ? "Loading institutes..." : "Choose an institute..."}
@@ -1031,12 +1145,12 @@ export default function FeeStructurePage() {
                     min="0"
                     step="100"
                     className="w-48 border rounded px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
-                    placeholder="Enter amount"
+                    placeholder="Enter total amount"
                     value={commonAmount}
                     onChange={(e) => handleCommonAmountChange(Number(e.target.value))}
                   />
                   <span className="text-xs text-gray-500">
-                    This will auto-fill all course fees
+                    Auto-calculates tuition (70%) & other (30%)
                   </span>
                   {commonAmount !== '' && commonAmount > 0 && (
                     <button
@@ -1065,8 +1179,8 @@ export default function FeeStructurePage() {
                             Course ID
                           </th>
                           {feeStructure.courses[0]?.years.map((year, idx) => (
-                            <th key={idx} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">
-                              {getYearDisplay(year.year)} Fee (₹)
+                            <th key={idx} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[350px]">
+                              {getYearDisplay(year.year)} Fee
                             </th>
                           ))}
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky right-0 bg-gray-50 z-10 min-w-[140px]">
@@ -1085,55 +1199,96 @@ export default function FeeStructurePage() {
                             </td>
                             {course.years.map((year, yearIdx) => (
                               <td key={yearIdx} className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="100"
-                                    className="w-32 border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                    placeholder="Enter amount"
-                                    value={year.amount || ''}
-                                    onChange={(e) => {
-                                      handleYearFeeChange(course.courseId, yearIdx, Number(e.target.value))
-                                      if (commonAmount !== '') {
-                                        setCommonAmount('')
-                                      }
-                                    }}
-                                  />
-                                  {year.amount > 0 && (
-                                    <button
-                                      onClick={() => openInstallmentPopup(course.courseId, yearIdx, year.amount)}
-                                      className="text-blue-600 hover:text-blue-800 transition p-1"
-                                      title="Manage Payment Options"
-                                    >
-                                      <FaCreditCard size={18} />
-                                      {year.paymentoptions && year.paymentoptions.length > 1 && (
-                                        <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
-                                          {year.paymentoptions.length - 1}
-                                        </span>
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <div className="flex-1 min-w-[120px]">
+                                      <label className="text-xs text-gray-500 block">Tuition Fee</label>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="100"
+                                        className="w-full border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        placeholder="Tuition"
+                                        value={year.tuitionFee || ''}
+                                        onChange={(e) => {
+                                          const val = Number(e.target.value);
+                                          handleTuitionFeeChange(course.courseId, yearIdx, val);
+                                          if (commonAmount !== '') {
+                                            setCommonAmount('');
+                                          }
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="flex-1 min-w-[120px]">
+                                      <label className="text-xs text-gray-500 block">Other Fee</label>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="100"
+                                        className="w-full border rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                        placeholder="Other"
+                                        value={year.otherFee || ''}
+                                        onChange={(e) => {
+                                          const val = Number(e.target.value);
+                                          handleOtherFeeChange(course.courseId, yearIdx, val);
+                                          if (commonAmount !== '') {
+                                            setCommonAmount('');
+                                          }
+                                        }}
+                                      />
+                                    </div>
+                                    <div className="flex-1 min-w-[100px]">
+                                      <label className="text-xs text-gray-500 block">Total Amount</label>
+                                      <div className="font-semibold text-gray-900 px-2 py-1 bg-gray-50 rounded border">
+                                        ₹{year.amount}
+                                      </div>
+                                      {year.tuitionFee + year.otherFee !== year.amount && year.amount > 0 && (
+                                        <p className="text-xs text-red-500 mt-1">
+                                          ⚠️ Sum must equal total
+                                        </p>
                                       )}
-                                    </button>
+                                    </div>
+                                    {year.amount > 0 && (
+                                      <button
+                                        onClick={() => openInstallmentPopup(course.courseId, yearIdx)}
+                                        className="text-blue-600 hover:text-blue-800 transition p-1"
+                                        title="Manage Payment Options"
+                                      >
+                                        <FaCreditCard size={18} />
+                                        {year.paymentOptions && year.paymentOptions.length > 1 && (
+                                          <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+                                            {year.paymentOptions.length - 1}
+                                          </span>
+                                        )}
+                                      </button>
+                                    )}
+                                  </div>
+                                  {year.paymentOptions && year.paymentOptions.length > 0 && (
+                                    <div className="text-xs text-gray-500 space-y-1">
+                                      {year.paymentOptions.map((option) => (
+                                        <div key={option.paymentOptionId} className="border-t pt-1 mt-1 first:border-t-0 first:pt-0 first:mt-0">
+                                          <div className="flex items-center gap-1 flex-wrap">
+                                            <span className={`inline-block w-2 h-2 rounded-full ${option.type === 'full_payment' ? 'bg-green-500' : 'bg-blue-500'}`}></span>
+                                            <span className="font-medium">{option.name}</span>
+                                          </div>
+                                          {option.installments.map((inst) => (
+                                            <div key={inst.number} className="pl-3 text-gray-400">
+                                              #{inst.number}: ₹{inst.amount} (T:₹{inst.tuitionFee} O:₹{inst.otherFee})
+                                              {inst.dueDate && (
+                                                <span className="ml-1">{formatDateForInput(inst.dueDate)}</span>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                  {(!year.paymentOptions || year.paymentOptions.length === 0) && year.amount > 0 && (
+                                    <div className="text-xs text-gray-400 mt-1">
+                                      <span className="text-green-600">✓</span> Full payment available
+                                    </div>
                                   )}
                                 </div>
-                                {year.paymentoptions && year.paymentoptions.length > 0 && (
-                                  <div className="text-xs text-gray-500 mt-1 space-y-1">
-                                    {year.paymentoptions.map((option, optIdx) => (
-                                      <div key={optIdx} className="flex items-center gap-1">
-                                        <span className={`inline-block w-2 h-2 rounded-full ${option.type === 'full_payment' ? 'bg-green-500' : 'bg-blue-500'}`}></span>
-                                        <span>
-                                          {option.type === 'full_payment' ? 'Full Payment' : `Installment ${option.number}`}: 
-                                          ₹{option.amount} 
-                                          {option.dueDate && ` (${formatDateForInput(option.dueDate)})`}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                                {(!year.paymentoptions || year.paymentoptions.length === 0) && year.amount > 0 && (
-                                  <div className="text-xs text-gray-400 mt-1">
-                                    <span className="text-green-600">✓</span> Full payment available
-                                  </div>
-                                )}
                               </td>
                             ))}
                             <td className="px-4 py-3 sticky right-0 bg-white z-10">
@@ -1162,7 +1317,7 @@ export default function FeeStructurePage() {
                     </table>
                   </div>
                   <div className="text-xs text-gray-400 p-2 text-center border-t">
-                    <span>↔ Scroll horizontally to view all years | Click the credit card icon to manage payment options</span>
+                    <span>↔ Scroll horizontally | T=Tuition Fee, O=Other Fee | Click credit card icon to manage payment options</span>
                   </div>
                 </div>
               ) : (

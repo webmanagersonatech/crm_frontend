@@ -4,8 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   listFeeConcessionsRequest,
   deleteFeeConcessionRequest,
-  updateFeeConcessionStatusRequest, // NEW: Import the unified status update
-
+  updateFeeConcessionStatusRequest,
 } from "@/app/lib/request/feeConcessionRequest";
 import {
   Eye,
@@ -13,15 +12,11 @@ import {
   Settings,
   Search,
   X,
- 
   Loader2,
   Trash2,
   Filter,
-
   UserCheck,
-
   AlertCircle,
- 
 } from "lucide-react";
 import { toast } from "react-toastify";
 import ViewDialog from "@/components/ViewDialog";
@@ -50,6 +45,12 @@ interface FeeConcessionDoc {
       courseId: string;
       name: string;
       amount: number;
+      tuitionFee: number;
+      otherFee: number;
+      discountedTuition: number;
+      discountAmount: number;
+      totalDiscountPercentage: number;
+      finalAmount: number;
       referrals: Array<{
         referralId: string;
         name: string;
@@ -58,10 +59,21 @@ interface FeeConcessionDoc {
       reason: string;
       counsellorName: string;
       status: string;
+      paymentOptionId?: string | null; // ADDED: Payment option ID
+      paymentOption?: { // ADDED: Full payment option details
+        paymentOptionId: string;
+        name: string;
+        type: string;
+        installmentCount: number;
+      } | null;
       createdAt: string;
-      totalDiscountPercentage: number;
-      discountAmount: number;
-      finalAmount: number;
+      breakdown: {
+        tuitionFee: number;
+        otherFee: number;
+        discountApplied: string;
+        finalTuition: number;
+        finalTotal: number;
+      };
     };
   };
   createdBy: {
@@ -166,14 +178,23 @@ export default function FeeConcessionApprovalPage() {
     { value: "pending", label: "Pending" },
     { value: "approved", label: "Approved" },
     { value: "rejected", label: "Rejected" },
-    
   ];
 
-  // Format data for view dialog
+  // Format data for view dialog - UPDATED to show breakdown
+  // Format data for view dialog - UPDATED to show breakdown and payment option
   const formattedConcession = useMemo(() => {
     if (!selectedConcession) return {};
 
     const feeDetails = selectedConcession.student?.feeConcessiondeatils;
+
+    // Format payment option display
+    let paymentOptionDisplay = "-";
+    if (feeDetails?.paymentOption) {
+      const option = feeDetails.paymentOption;
+      paymentOptionDisplay = `${option.name} (${option.installmentCount} installments)`;
+    } else if (feeDetails?.paymentOptionId) {
+      paymentOptionDisplay = feeDetails.paymentOptionId;
+    }
 
     return {
       "Student Name": getStudentFullName(selectedConcession),
@@ -185,10 +206,19 @@ export default function FeeConcessionApprovalPage() {
       "Program ID": selectedConcession.student?.programId || "-",
 
       "Course": feeDetails?.name || "-",
-      "Original Amount": feeDetails?.amount ? formatCurrency(feeDetails.amount) : "-",
+
+      // Fee Breakdown
+      "Tuition Fee": feeDetails?.tuitionFee ? formatCurrency(feeDetails.tuitionFee) : "-",
+      "Other Fee": feeDetails?.otherFee ? formatCurrency(feeDetails.otherFee) : "-",
+      "Original Total": feeDetails?.amount ? formatCurrency(feeDetails.amount) : "-",
+
       "Discount Percentage": `${feeDetails?.totalDiscountPercentage || 0}%`,
-      "Discount Amount": feeDetails?.discountAmount ? formatCurrency(feeDetails.discountAmount) : "-",
+      "Discount Applied (on Tuition)": feeDetails?.discountAmount ? formatCurrency(feeDetails.discountAmount) : "-",
+      "Discounted Tuition": feeDetails?.discountedTuition ? formatCurrency(feeDetails.discountedTuition) : "-",
       "Final Amount": feeDetails?.finalAmount ? formatCurrency(feeDetails.finalAmount) : "-",
+
+      // Payment Option
+      "Payment Option": paymentOptionDisplay,
 
       "Reason": feeDetails?.reason || "-",
       "Counsellor Name": feeDetails?.counsellorName || "-",
@@ -314,7 +344,7 @@ export default function FeeConcessionApprovalPage() {
           { _id: 'pending', count: statsData.pending || 0 },
           { _id: 'approved', count: statsData.approved || 0 },
           { _id: 'rejected', count: statsData.rejected || 0 },
-          { _id: 'cancelled', count: 0 }, // Add cancelled if needed
+          { _id: 'cancelled', count: 0 },
         ]
       });
     } catch (err: any) {
@@ -330,14 +360,14 @@ export default function FeeConcessionApprovalPage() {
     fetchConcessions();
   }, [fetchConcessions]);
 
-  // Handle status change from dropdown - UPDATED to use new API
+  // Handle status change from dropdown
   const handleStatusChange = (id: string, newStatus: string) => {
     setPendingStatusChange({ id, newStatus });
     setConfirmType("statusChange");
     setConfirmOpen(true);
   };
 
-  // Handle actions - UPDATED to use new API
+  // Handle actions
   const handleAction = async () => {
     // Handle status change using the new unified API
     if (confirmType === "statusChange" && pendingStatusChange) {
@@ -347,7 +377,7 @@ export default function FeeConcessionApprovalPage() {
           pendingStatusChange.id,
           pendingStatusChange.newStatus as 'approved' | 'rejected'
         );
-        
+
         if (result.success) {
           toast.success(result.message || `Status changed to ${getFeeConcessionStatusLabel(pendingStatusChange.newStatus)} successfully!`);
           await fetchConcessions();
@@ -376,7 +406,6 @@ export default function FeeConcessionApprovalPage() {
         toast.success("Fee concession deleted successfully!");
         await fetchConcessions();
       }
-      // Note: Approve/Reject/Cancel are now handled by the status change flow above
     } catch (err: any) {
       toast.error(err?.message || "Action failed");
     } finally {
@@ -427,7 +456,10 @@ export default function FeeConcessionApprovalPage() {
           obj["Course"] = feeDetails?.name || "-";
         }
         if (columnVisibility.concessionAmount) {
-          obj["Original Amount"] = feeDetails?.amount ? formatCurrency(feeDetails.amount) : "-";
+          obj["Tuition Fee"] = feeDetails?.tuitionFee ? formatCurrency(feeDetails.tuitionFee) : "-";
+          obj["Other Fee"] = feeDetails?.otherFee ? formatCurrency(feeDetails.otherFee) : "-";
+          obj["Original Total"] = feeDetails?.amount ? formatCurrency(feeDetails.amount) : "-";
+          obj["Discount %"] = `${feeDetails?.totalDiscountPercentage || 0}%`;
           obj["Discount Amount"] = feeDetails?.discountAmount ? formatCurrency(feeDetails.discountAmount) : "-";
           obj["Final Amount"] = feeDetails?.finalAmount ? formatCurrency(feeDetails.finalAmount) : "-";
         }
@@ -473,6 +505,7 @@ export default function FeeConcessionApprovalPage() {
     mobile: true,
     course: true,
     concessionAmount: true,
+    paymentPlan: true,
     referrals: true,
     counsellor: true,
     status: true,
@@ -488,13 +521,14 @@ export default function FeeConcessionApprovalPage() {
     { key: "course", label: "Course" },
     { key: "concessionAmount", label: "Concession Amount" },
     { key: "referrals", label: "Referrals" },
+    { key: "paymentPlan", label: "Payment Plan" },
     { key: "counsellor", label: "Counsellor" },
     { key: "status", label: "Status" },
     { key: "createdBy", label: "Created By" },
     { key: "createdAt", label: "Created At" },
   ];
 
-  // Table columns - Updated with single Concession Amount column
+  // Table columns - UPDATED to show tuition/other fee breakdown
   const columns: Column<FeeConcessionDoc>[] = [
     columnVisibility.studentName && {
       header: "Student Name",
@@ -537,10 +571,11 @@ export default function FeeConcessionApprovalPage() {
       ),
     },
     columnVisibility.concessionAmount && {
-      header: "Concession Amount",
+      header: "Fee Breakdown",
       render: (concession: FeeConcessionDoc) => {
         const feeDetails = concession.student?.feeConcessiondeatils;
-        const originalAmount = feeDetails?.amount || 0;
+        const tuitionFee = feeDetails?.tuitionFee || 0;
+        const otherFee = feeDetails?.otherFee || 0;
         const discountAmount = feeDetails?.discountAmount || 0;
         const finalAmount = feeDetails?.finalAmount || 0;
         const discountPercentage = feeDetails?.totalDiscountPercentage || 0;
@@ -549,20 +584,29 @@ export default function FeeConcessionApprovalPage() {
           <div className="text-sm">
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-1">
-                <span className="text-gray-500 text-xs">Original:</span>
+                <span className="text-gray-500 text-xs">Tuition:</span>
                 <span className="font-medium text-gray-700">
-                  {formatCurrency(originalAmount)}
+                  {formatCurrency(tuitionFee)}
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-gray-500 text-xs">Discount:</span>
-                <span className="font-medium text-green-600">
-                  -{formatCurrency(discountAmount)}
-                </span>
-                <span className="text-xs text-green-500 bg-green-50 px-1.5 py-0.5 rounded">
-                  {discountPercentage}%
+                <span className="text-gray-500 text-xs">Other:</span>
+                <span className="font-medium text-gray-700">
+                  {formatCurrency(otherFee)}
                 </span>
               </div>
+              {discountPercentage > 0 && (
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-500 text-xs">Discount:</span>
+                  <span className="font-medium text-green-600">
+                    -{formatCurrency(discountAmount)}
+                  </span>
+                  <span className="text-xs text-green-500 bg-green-50 px-1.5 py-0.5 rounded">
+                    {discountPercentage}%
+                  </span>
+                  <span className="text-xs text-gray-400">(on tuition)</span>
+                </div>
+              )}
               <div className="flex items-center gap-1 border-t border-gray-100 pt-0.5 mt-0.5">
                 <span className="text-gray-500 text-xs">Final:</span>
                 <span className="font-semibold text-blue-600">
@@ -595,6 +639,35 @@ export default function FeeConcessionApprovalPage() {
         return <span className="text-sm text-gray-400">No referrals</span>;
       },
     },
+    // Add this column after the "Counsellor" column or wherever you want
+    columnVisibility.paymentPlan &&{
+      header: "Payment Plan",
+      render: (concession: FeeConcessionDoc) => {
+        const feeDetails = concession.student?.feeConcessiondeatils;
+        const paymentOption = feeDetails?.paymentOption;
+        const paymentOptionId = feeDetails?.paymentOptionId;
+
+        if (paymentOption) {
+          return (
+            <div className="text-sm">
+              <span className="font-medium text-purple-600">
+                {paymentOption.name}
+              </span>
+              <div className="text-xs text-gray-500">
+                {paymentOption.installmentCount} installments
+              </div>
+            </div>
+          );
+        } else if (paymentOptionId) {
+          return (
+            <span className="text-sm text-gray-500">
+              {paymentOptionId}
+            </span>
+          );
+        }
+        return <span className="text-sm text-gray-400">-</span>;
+      },
+    },
     columnVisibility.counsellor && {
       header: "Counsellor",
       render: (concession: FeeConcessionDoc) => (
@@ -618,7 +691,6 @@ export default function FeeConcessionApprovalPage() {
           secondary: "bg-gray-100 text-gray-800 border-gray-400",
         };
 
-        // If status is pending, show dropdown with loading state
         if (status === "pending") {
           return (
             <div className="relative">
@@ -644,7 +716,6 @@ export default function FeeConcessionApprovalPage() {
           );
         }
 
-        // For other statuses, show as badge
         return (
           <span className={`inline-block px-2 py-1 rounded-lg text-xs font-medium border ${colorClasses[color as keyof typeof colorClasses] || colorClasses.secondary}`}>
             {label}
@@ -680,7 +751,6 @@ export default function FeeConcessionApprovalPage() {
 
         return (
           <div className="flex gap-1">
-            {/* View Button */}
             <button
               onClick={() => {
                 setSelectedConcession(concession);
@@ -692,26 +762,25 @@ export default function FeeConcessionApprovalPage() {
               <Eye className="w-4 h-4" />
             </button>
 
-            {/* Delete Button - Only for pending or cancelled */}
-            {(status === "pending") && 
+            {(status === "pending") &&
               (role === "superadmin" || userpermission?.delete) && (
-              <button
-                onClick={() => {
-                  setSelectedConcession(concession);
-                  setConfirmType("delete");
-                  setConfirmOpen(true);
-                }}
-                disabled={isActionLoading}
-                className="bg-red-700 hover:bg-red-800 text-white p-1.5 rounded-md disabled:opacity-50"
-                title="Delete"
-              >
-                {isActionLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Trash2 className="w-4 h-4" />
-                )}
-              </button>
-            )}
+                <button
+                  onClick={() => {
+                    setSelectedConcession(concession);
+                    setConfirmType("delete");
+                    setConfirmOpen(true);
+                  }}
+                  disabled={isActionLoading}
+                  className="bg-red-700 hover:bg-red-800 text-white p-1.5 rounded-md disabled:opacity-50"
+                  title="Delete"
+                >
+                  {isActionLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                </button>
+              )}
           </div>
         );
       },
@@ -719,13 +788,6 @@ export default function FeeConcessionApprovalPage() {
   ].filter(Boolean) as Column<FeeConcessionDoc>[];
 
   // Check if user can perform actions
-  const getActionMessage = (status: string) => {
-    if (status === "pending") {
-      return "Are you sure you want to perform this action on this fee concession?";
-    }
-    return "This action can only be performed on pending concessions.";
-  };
-
   const getConfirmTitle = () => {
     if (confirmType === "statusChange") {
       const status = pendingStatusChange?.newStatus || "";
@@ -922,7 +984,7 @@ export default function FeeConcessionApprovalPage() {
               <Search className="absolute left-2 top-2.5 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by student name,email,phone no student ID, counsellor name,..."
+                placeholder="Search by student name, email, phone no, student ID, counsellor name, ..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -1125,7 +1187,6 @@ export default function FeeConcessionApprovalPage() {
           setConfirmType(null);
           setPendingStatusChange(null);
         }}
-       
       />
 
       {/* Export Modal */}

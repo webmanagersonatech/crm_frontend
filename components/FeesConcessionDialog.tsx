@@ -24,18 +24,20 @@ interface StudentData {
   id: string;
 }
 
+interface PaymentOption {
+  name: string;
+  value: string;
+}
+
 interface CourseFeeData {
   courseId: string;
   courseName: string;
   years: Array<{
     year: string;
     totalAmount: number;
-    installmentCount: number;
-    installments: Array<{
-      number: number;
-      amount: number;
-      dueDate: string;
-    }>;
+    tuitionFee: number;
+    otherFee: number;
+    paymentOptions: PaymentOption[];
   }>;
 }
 
@@ -50,6 +52,7 @@ interface FeeConcessionData {
   reason: string;
   referralIds: string[];
   counsellorName: string;
+  paymentOptionId?: string;
 }
 
 export default function FeesConcessionDialog({
@@ -62,6 +65,7 @@ export default function FeesConcessionDialog({
   const [referrals, setReferrals] = useState<ReferralData[]>([]);
   const [selectedReferrals, setSelectedReferrals] = useState<string[]>([]);
   const [counsellorName, setCounsellorName] = useState("");
+  const [selectedPaymentOption, setSelectedPaymentOption] = useState<string>("");
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [courseFeeData, setCourseFeeData] = useState<CourseFeeData | null>(null);
   const [feeConcession, setFeeConcession] = useState<FeeConcessionData | null>(null);
@@ -72,7 +76,6 @@ export default function FeesConcessionDialog({
     if (open && studentId) {
       loadReferrals();
     } else {
-      // Reset form when dialog closes
       resetForm();
     }
   }, [open, studentId]);
@@ -81,6 +84,7 @@ export default function FeesConcessionDialog({
     setReason("");
     setSelectedReferrals([]);
     setCounsellorName("");
+    setSelectedPaymentOption("");
     setFeeConcession(null);
   };
 
@@ -97,14 +101,11 @@ export default function FeesConcessionDialog({
         setCourseFeeData(res.courseFee);
       }
 
-      // Set referrals
       setReferrals(res?.referrals || []);
 
-      // Check if there's existing fee concession data
       if (res?.feeConcession) {
         setFeeConcession(res.feeConcession);
 
-        // Pre-populate form fields from existing fee concession
         if (res.feeConcession.reason) {
           setReason(res.feeConcession.reason);
         }
@@ -113,16 +114,17 @@ export default function FeesConcessionDialog({
           setCounsellorName(res.feeConcession.counsellorName);
         }
 
-        // Pre-select existing referrals
+        if (res.feeConcession.paymentOptionId) {
+          setSelectedPaymentOption(res.feeConcession.paymentOptionId);
+        }
+
         if (res.feeConcession.referralIds && res.feeConcession.referralIds.length > 0) {
-          // Only select referrals that exist in the current referrals list
           const validReferralIds = res.feeConcession.referralIds.filter((id: any) =>
             res.referrals?.some((r: ReferralData) => r.referralId === id)
           );
           setSelectedReferrals(validReferralIds);
         }
       } else {
-        // Reset if no existing concession
         resetForm();
       }
     } catch (error: any) {
@@ -141,7 +143,6 @@ export default function FeesConcessionDialog({
     );
   };
 
-  // Calculate total discount percentage from selected referrals
   const calculateTotalDiscount = () => {
     let totalPercentage = 0;
     selectedReferrals.forEach((id) => {
@@ -153,19 +154,38 @@ export default function FeesConcessionDialog({
     return totalPercentage;
   };
 
-  // Calculate discounted amount
   const calculateDiscountedAmount = () => {
-    const totalFee = courseFeeData?.years?.reduce(
-      (total, year) => total + year.totalAmount,
-      0
-    ) || 0;
+    const firstYear = courseFeeData?.years?.[0];
+    
+    if (!firstYear) {
+      return {
+        originalAmount: 0,
+        tuitionFee: 0,
+        otherFee: 0,
+        discountAmount: 0,
+        finalAmount: 0,
+        percentage: 0,
+        discountedTuition: 0
+      };
+    }
+
+    const tuitionFee = firstYear.tuitionFee || 0;
+    const otherFee = firstYear.otherFee || 0;
+    const totalOriginal = tuitionFee + otherFee;
+    
     const discountPercentage = calculateTotalDiscount();
-    const discountAmount = (totalFee * discountPercentage) / 100;
+    const discountAmount = (tuitionFee * discountPercentage) / 100;
+    const discountedTuition = tuitionFee - discountAmount;
+    const finalAmount = discountedTuition + otherFee;
+
     return {
-      originalAmount: totalFee,
+      originalAmount: totalOriginal,
+      tuitionFee: tuitionFee,
+      otherFee: otherFee,
       discountAmount: discountAmount,
-      finalAmount: totalFee - discountAmount,
+      finalAmount: finalAmount,
       percentage: discountPercentage,
+      discountedTuition: discountedTuition
     };
   };
 
@@ -189,13 +209,18 @@ export default function FeesConcessionDialog({
     try {
       setLoading(true);
 
-      const payload = {
+      // Build payload - only include paymentOptionId if selected
+      const payload: any = {
         studentId: studentId as string,
         reason: reason.trim(),
         referralIds: selectedReferrals,
         counsellorName: counsellorName.trim(),
-
       };
+
+      // Only add paymentOptionId if it's selected (has value)
+      if (selectedPaymentOption && selectedPaymentOption.trim() !== "") {
+        payload.paymentOptionId = selectedPaymentOption;
+      }
 
       await createFeeConcessionRequest(payload);
 
@@ -205,10 +230,8 @@ export default function FeesConcessionDialog({
           : "Fees concession saved successfully"
       );
 
-      // Reset form
       resetForm();
 
-      // Call success callback
       if (onSuccess) {
         onSuccess();
       }
@@ -226,6 +249,7 @@ export default function FeesConcessionDialog({
 
   const discountInfo = calculateDiscountedAmount();
   const totalDiscountPercentage = calculateTotalDiscount();
+  const paymentOptions = courseFeeData?.years?.[0]?.paymentOptions || [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -268,7 +292,7 @@ export default function FeesConcessionDialog({
           </div>
 
           {/* Fee Details Section */}
-          {courseFeeData && (
+          {courseFeeData && courseFeeData.years && courseFeeData.years.length > 0 && (
             <div className="bg-blue-50 p-4 rounded-lg">
               <h3 className="font-medium text-gray-700 mb-3">Fee Details</h3>
               <div className="space-y-2">
@@ -276,43 +300,53 @@ export default function FeesConcessionDialog({
                   <span className="text-gray-600">Course:</span>
                   <span className="font-medium">{courseFeeData.courseName}</span>
                 </div>
+                
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Fee:</span>
+                  <span className="text-gray-600">Tuition Fee:</span>
                   <span className="font-medium">
-                    ₹{discountInfo.originalAmount.toLocaleString()}
+                    ₹{discountInfo.tuitionFee.toLocaleString()}
                   </span>
                 </div>
-                {courseFeeData.years?.map((year) => (
-                  <div key={year.year} className="ml-4 border-t border-blue-200 pt-2 mt-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Year {year.year}:</span>
-                      <span className="font-medium">
-                        ₹{year.totalAmount.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="ml-4 mt-1 space-y-1">
-                      {year.installments.map((inst) => (
-                        <div key={inst.number} className="flex justify-between text-xs text-gray-500">
-                          <span>Installment {inst.number}:</span>
-                          <span>₹{inst.amount.toLocaleString()}</span>
-                        </div>
-                      ))}
-                    </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Other Fee:</span>
+                  <span className="font-medium text-gray-700">
+                    ₹{discountInfo.otherFee.toLocaleString()}
+                  </span>
+                </div>
+                
+                <div className="border-t border-blue-200 pt-2 mt-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Fee:</span>
+                    <span className="font-medium">
+                      ₹{discountInfo.originalAmount.toLocaleString()}
+                    </span>
                   </div>
-                ))}
+                </div>
 
-                {/* Live Discount Calculation */}
                 {selectedReferrals.length > 0 && (
                   <div className="mt-3 pt-3 border-t-2 border-blue-300">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">
-                        Total Discount ({totalDiscountPercentage}%):
+                        Tuition Fee Discount ({totalDiscountPercentage}%):
                       </span>
                       <span className="text-green-600 font-medium">
                         -₹{discountInfo.discountAmount.toLocaleString()}
                       </span>
                     </div>
-                    <div className="flex justify-between text-lg font-bold mt-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Discounted Tuition Fee:</span>
+                      <span className="text-green-700 font-medium">
+                        ₹{discountInfo.discountedTuition.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Other Fee (No Discount):</span>
+                      <span className="text-gray-700 font-medium">
+                        ₹{discountInfo.otherFee.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold mt-2 pt-2 border-t border-blue-300">
                       <span className="text-gray-700">Final Amount:</span>
                       <span className="text-purple-600">
                         ₹{discountInfo.finalAmount.toLocaleString()}
@@ -323,6 +357,49 @@ export default function FeesConcessionDialog({
               </div>
             </div>
           )}
+
+          {/* Payment Option Selection - OPTIONAL */}
+          <div>
+            <label className="text-sm font-medium block mb-2">
+              Select Payment Option <span className="text-gray-400 text-xs">(Optional)</span>
+            </label>
+            
+            {paymentOptions.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {paymentOptions.map((option) => (
+                  <label
+                    key={option.value}
+                    className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${
+                      selectedPaymentOption === option.value
+                        ? 'border-purple-600 bg-purple-50 ring-2 ring-purple-200'
+                        : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedPaymentOption === option.value}
+                      onChange={() => {
+                        // Toggle: if already selected, deselect; otherwise select this one
+                        setSelectedPaymentOption(
+                          selectedPaymentOption === option.value ? "" : option.value
+                        );
+                      }}
+                      className="w-4 h-4 text-purple-600 rounded"
+                    />
+                    <span className="font-medium">{option.name}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-2 border rounded-md">
+                No payment options available
+              </p>
+            )}
+            
+            <p className="text-xs text-gray-400 mt-1">
+              * Optional: Select payment option only if you want to specify the installment plan
+            </p>
+          </div>
 
           {/* Referrals Section - Multi Select */}
           <div>
@@ -389,6 +466,9 @@ export default function FeesConcessionDialog({
                   Total Discount:{" "}
                   <span className="font-bold text-purple-600">
                     {totalDiscountPercentage}%
+                  </span>
+                  <span className="text-xs text-gray-500 ml-2">
+                    (applied only to tuition fee)
                   </span>
                 </div>
               </div>
