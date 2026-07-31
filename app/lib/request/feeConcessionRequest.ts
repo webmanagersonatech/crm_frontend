@@ -48,11 +48,15 @@ export interface FeeConcession {
     createdAt: Date;
     updatedAt: Date;
 }
-
+export interface Course {
+    name: string;
+    courseId: string;
+}
 export interface FeeConcessionListResponsenew {
     success: boolean;
     data: {
         docs: FeeConcessionDoc[];
+        courses: Course[];
         stats: {
             total: number;
             pending: number;
@@ -214,11 +218,13 @@ export async function listFeeConcessionsRequest({
     page = 1,
     limit = 10,
     search = "",
+    program,
     status = "all",
     instituteId = "all", // Added instituteId parameter for superadmin
 }: {
     page?: number;
     limit?: number;
+    program?: string | string[];
     search?: string;
     status?: string;
     instituteId?: string; // Optional for superadmin
@@ -236,6 +242,11 @@ export async function listFeeConcessionsRequest({
             params.instituteId = instituteId;
         }
 
+
+
+        if (program) {
+            params.program = program;
+        }
         const response = await api.get<FeeConcessionListResponsenew>(
             "/fee-concession",
             { params }

@@ -26,7 +26,7 @@ import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
-
+import AsyncSelect from "react-select/async";
 // Updated interface to match backend response
 interface FeeConcessionDoc {
   _id: string;
@@ -167,7 +167,8 @@ export default function FeeConcessionApprovalPage() {
   const [limit, setLimit] = useState(10);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [pendingStatusChange, setPendingStatusChange] = useState<{ id: string; newStatus: string } | null>(null);
-
+  const [programs, setPrograms] = useState<any[]>([]);
+  const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   // Institute filter states
   const [selectedInstitution, setSelectedInstitution] = useState("all");
   const [institutions, setInstitutions] = useState<{ value: string; label: string }[]>([]);
@@ -330,12 +331,20 @@ export default function FeeConcessionApprovalPage() {
         search: searchTerm,
         status: statusFilter,
         instituteId: selectedInstitution,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
       });
 
       setConcessions(res.data.docs || []);
       setTotalPages(res.data.totalPages || 1);
       setTotalEntries(res.data.totalDocs || 0);
+      if (res.data.courses) {
+        const formatted = res.data.courses.map((c: any) => ({
+          value: c.courseId,
+          label: c.name
+        }));
 
+        setPrograms(formatted);
+      }
       const statsData = res.data.stats || { total: 0, pending: 0, approved: 0, rejected: 0 };
 
       setStatistics({
@@ -347,6 +356,8 @@ export default function FeeConcessionApprovalPage() {
           { _id: 'cancelled', count: 0 },
         ]
       });
+
+
     } catch (err: any) {
       const errorMessage = err.message || "Something went wrong";
       toast.error(errorMessage);
@@ -354,7 +365,7 @@ export default function FeeConcessionApprovalPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, limit, statusFilter, selectedInstitution]);
+  }, [currentPage, searchTerm, selectedPrograms, limit, statusFilter, selectedInstitution]);
 
   useEffect(() => {
     fetchConcessions();
@@ -421,6 +432,7 @@ export default function FeeConcessionApprovalPage() {
     setSearchTerm("");
     setStatusFilter("all");
     setSelectedInstitution("all");
+    setSelectedPrograms([]); // Don't forget to reset programs!
     setCurrentPage(1);
   };
 
@@ -433,6 +445,7 @@ export default function FeeConcessionApprovalPage() {
         page: 1,
         search: searchTerm,
         status: statusFilter,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
         instituteId: selectedInstitution,
       });
 
@@ -640,7 +653,7 @@ export default function FeeConcessionApprovalPage() {
       },
     },
     // Add this column after the "Counsellor" column or wherever you want
-    columnVisibility.paymentPlan &&{
+    columnVisibility.paymentPlan && {
       header: "Payment Plan",
       render: (concession: FeeConcessionDoc) => {
         const feeDetails = concession.student?.feeConcessiondeatils;
@@ -832,21 +845,7 @@ export default function FeeConcessionApprovalPage() {
     }
   };
 
-  const getConfirmVariant = () => {
-    if (confirmType === "statusChange") {
-      const status = pendingStatusChange?.newStatus || "";
-      if (status === "approved") return "success";
-      if (status === "rejected") return "danger";
-      return "warning";
-    }
-    switch (confirmType) {
-      case "approve": return "success";
-      case "reject": return "danger";
-      case "cancel": return "warning";
-      case "delete": return "danger";
-      default: return "warning";
-    }
-  };
+
 
   if (!hasPermission) {
     return (
@@ -997,11 +996,11 @@ export default function FeeConcessionApprovalPage() {
 
           {/* Advanced Filters */}
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-2 p-4 bg-gray-50 rounded-lg border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-2 p-4 bg-gray-50 rounded-lg border">
               {/* Institution Filter - Superadmin only */}
               {role === "superadmin" && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                <div className="space-y-1">
+                  <label className="block text-xs font-medium text-gray-700">
                     Institution
                   </label>
                   <select
@@ -1010,7 +1009,7 @@ export default function FeeConcessionApprovalPage() {
                       setSelectedInstitution(e.target.value);
                       setCurrentPage(1);
                     }}
-                    className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] focus:border-transparent transition-shadow"
                   >
                     <option value="all">All Institutions</option>
                     {institutions.map((inst) => (
@@ -1022,9 +1021,38 @@ export default function FeeConcessionApprovalPage() {
                 </div>
               )}
 
+              {/* Programs Filter */}
+              <div className="space-y-1">
+                <label className="block text-xs font-medium text-gray-700">
+                  Programs
+                </label>
+                <AsyncSelect
+                  placeholder="Select Programs..."
+                  cacheOptions
+                  defaultOptions={programs}
+                  isMulti
+                  loadOptions={(inputValue) => {
+                    return Promise.resolve(
+                      programs.filter((p) =>
+                        p.label.toLowerCase().includes(inputValue.toLowerCase())
+                      )
+                    );
+                  }}
+                  value={programs.filter((p) =>
+                    selectedPrograms.includes(p.value)
+                  )}
+                  onChange={(opts) => {
+                    setSelectedPrograms(opts ? opts.map((o) => o.value) : []);
+                    setCurrentPage(1);
+                  }}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                />
+              </div>
+
               {/* Status Filter */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+              <div className="space-y-1">
+                <label className="block text-xs font-medium text-gray-700">
                   Status
                 </label>
                 <select
@@ -1033,9 +1061,9 @@ export default function FeeConcessionApprovalPage() {
                     setStatusFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#3a4480] focus:border-transparent transition-shadow"
                 >
-                  {statusOptions.map(option => (
+                  {statusOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -1047,7 +1075,7 @@ export default function FeeConcessionApprovalPage() {
               <div className="flex items-end">
                 <button
                   onClick={resetFilters}
-                  className="w-full px-3 py-2 text-sm bg-gray-500 hover:bg-gray-600 text-white rounded-md"
+                  className="w-full px-3 py-2 text-sm font-medium bg-gray-500 hover:bg-gray-600 text-white rounded-md transition-colors duration-200"
                 >
                   Reset Filters
                 </button>
