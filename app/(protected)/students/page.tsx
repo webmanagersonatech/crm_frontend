@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Loader2,
   Trash2,
+  KeyRound 
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -25,7 +26,7 @@ import StudentCleanupForm from "@/components/Forms/Studentdatacleanform";
 import { listStudentsRequest } from "@/app/lib/request/studentRequest";
 import AsyncSelect from "react-select/async";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
-import { deleteStudentRequest, toggleStudentStatusRequest, exportStudentsRequest } from "@/app/lib/request/studentRequest";
+import { deleteStudentRequest, toggleStudentStatusRequest, exportStudentsRequest, reshareCredentialsRequest } from "@/app/lib/request/studentRequest";
 import { motion, AnimatePresence } from "framer-motion";
 import { Country, State, City } from "country-state-city";
 import ManualPaymentDialog from "@/components/ManualPaymentDialog";
@@ -104,6 +105,7 @@ export default function StudentsPage() {
   const [selectedInstitution, setSelectedInstitution] = useState("all");
   const [manualPaymentOpen, setManualPaymentOpen] = useState(false);
   const [role, setRole] = useState<string>("")
+  const [reshareLoading, setReshareLoading] = useState(false);
   const [programs, setPrograms] = useState<any[]>([]);
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [institutions, setInstitutions] = useState<
@@ -521,7 +523,24 @@ export default function StudentsPage() {
     }
   };
 
+  const handleReshareCredentials = async (student: Student) => {
 
+    try {
+      setReshareLoading(true);
+
+      const res = await reshareCredentialsRequest(student._id);
+
+      toast.success(
+        res.message || "Credentials reshared successfully!"
+      );
+    } catch (err: any) {
+      toast.error(
+        err.message || "Failed to reshare credentials."
+      );
+    } finally {
+      setReshareLoading(false);
+    }
+  };
   /* ======================
      Table Columns
   ====================== */
@@ -635,7 +654,15 @@ export default function StudentsPage() {
               </button>
             </>
           )}
-
+          <button
+            onClick={() => handleReshareCredentials(s)}
+            disabled={reshareLoading}
+            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1"
+            title="Reshare Credentials"
+          >
+            <KeyRound  className="w-4 h-4" />
+            {reshareLoading ? "Sending..." : "Reshare"}
+          </button>
           <button
             onClick={() => {
               setSelected(s);

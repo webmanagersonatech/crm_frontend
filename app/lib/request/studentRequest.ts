@@ -35,6 +35,18 @@ export interface CreateStudentData {
   city?: string;
   status?: "active" | "inactive";
 }
+
+
+export interface ReshareCredentialsResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    studentId: string;
+    username: string;
+    email: string;
+    name: string;
+  };
+}
 export interface ExportResponse<T> {
   status: boolean;
   message?: string;
@@ -268,6 +280,22 @@ export async function uploadStudentImageByAdmin(
   }
 }
 /** 🎓 Get Overall Referrals By Institute (Student ID based) */
+
+export async function reshareCredentialsRequest(
+  studentId: string
+): Promise<ReshareCredentialsResponse> {
+  try {
+    const response = await api.post<ReshareCredentialsResponse>(
+      `/student/reshare-credentials/${studentId}`
+    );
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to reshare credentials. Please try again."
+    );
+  }
+}
+
 export async function getOverallReferralsByInstitute(studentId: string) {
   try {
     const response = await api.get(
