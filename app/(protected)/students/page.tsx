@@ -86,7 +86,7 @@ interface Student {
   siblingsDetails: Sibling[]
 
   institute: Institute
-
+  community: string
   createdAt: string
   updatedAt: string
 }
@@ -107,6 +107,7 @@ export default function StudentsPage() {
   const [role, setRole] = useState<string>("")
   const [reshareLoading, setReshareLoading] = useState(false);
   const [programs, setPrograms] = useState<any[]>([]);
+  const [communityFilter, setCommunityFilter] = useState<string[]>([]);
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [institutions, setInstitutions] = useState<
     { value: string; label: string }[]
@@ -172,6 +173,7 @@ export default function StudentsPage() {
         state: selectedState,
         program: selectedPrograms.length ? selectedPrograms : undefined,
         city: selectedCities.length ? selectedCities : undefined,
+        community: communityFilter.length ? communityFilter : undefined,
         feedbackRating: feedbackFilter,
         familyOccupation: familyOccupationFilter,
         startCutoff: startCutoff ? Number(startCutoff) : undefined,
@@ -377,7 +379,18 @@ export default function StudentsPage() {
     "Unknown"
   ];
 
-
+const communityOptions = [
+  { value: "OC", label: "OC" },
+  { value: "BC", label: "BC" },
+  { value: "BCM", label: "BCM" },
+  { value: "MBC", label: "MBC" },
+  { value: "DNC", label: "DNC" },
+  { value: "SC", label: "SC" },
+  { value: "SCA", label: "SCA" },
+  { value: "ST", label: "ST" },
+  { value: "EWS", label: "EWS" },
+  { value: "Other", label: "Others" },
+];
   const occupationOptions = [
     { value: "farmer", label: "Farmer / Agriculture" },
     { value: "business", label: "Business" },
@@ -421,6 +434,7 @@ export default function StudentsPage() {
         city: selectedCities.length ? selectedCities : undefined,
         startCutoff: startCutoff ? Number(startCutoff) : undefined,
         endCutoff: endCutoff ? Number(endCutoff) : undefined,
+        community: communityFilter.length ? communityFilter : undefined,
         feedbackRating: feedbackFilter,
         familyOccupation: familyOccupationFilter,
       });
@@ -464,6 +478,7 @@ export default function StudentsPage() {
     selectedCities,
     feedbackFilter,
     selectedYear,
+    communityFilter,
     familyOccupationFilter,
     selectedPrograms,
     startCutoff,
@@ -1054,7 +1069,34 @@ export default function StudentsPage() {
             </div>
 
 
-
+            {/* Community Filter - Multi-select */}
+            <div className="w-full">
+              <AsyncSelect
+                placeholder="Select Community..."
+                cacheOptions
+                defaultOptions={communityOptions}
+                isMulti
+                loadOptions={(inputValue) => {
+                  return Promise.resolve(
+                    communityOptions.filter((c: any) =>
+                      c.label.toLowerCase().includes(inputValue.toLowerCase())
+                    )
+                  );
+                }}
+                value={communityOptions.filter((c: any) =>
+                  communityFilter.includes(c.value)
+                )}
+                onChange={(opts) => {
+                  setCommunityFilter(opts ? opts.map((o: any) => o.value) : []);
+                  setCurrentPage(1);
+                }}
+                isClearable
+                className="w-full text-sm"
+                styles={{
+                  control: (base) => ({ ...base, minHeight: '38px' })
+                }}
+              />
+            </div>
             <div className="w-full">
               <AsyncSelect
                 placeholder="Select Programs..."

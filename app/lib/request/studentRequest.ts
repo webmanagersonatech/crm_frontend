@@ -20,6 +20,7 @@ export interface Student {
   city?: string;
   status: "active" | "inactive";
   createdAt: string;
+  community?: string;
   updatedAt: string;
 }
 
@@ -33,6 +34,7 @@ export interface CreateStudentData {
   country?: string;
   state?: string;
   city?: string;
+  community?: string;
   status?: "active" | "inactive";
 }
 
@@ -101,6 +103,7 @@ export async function listStudentsRequest({
   feedbackRating = "all",
   familyOccupation = "all",
   startCutoff,
+  community,
   endCutoff,
 }: {
   page?: number;
@@ -121,6 +124,7 @@ export async function listStudentsRequest({
   familyOccupation?: string;
   startCutoff?: number;
   endCutoff?: number;
+  community?: string | string[];
 }) {
   try {
     const params: any = {
@@ -154,6 +158,11 @@ export async function listStudentsRequest({
     if (endCutoff !== undefined) {
       params.endCutoff = endCutoff;
     }
+
+    if (community && community !== "all") {
+      params.community = community;
+    }
+
     const response = await api.get("/student", { params });
     return response.data;
   } catch (error: any) {
@@ -181,6 +190,7 @@ export async function exportStudentsRequest({
   familyOccupation = "all",
   startCutoff,
   endCutoff,
+  community,
 }: {
   search?: string;
   status?: string;
@@ -198,6 +208,7 @@ export async function exportStudentsRequest({
   familyOccupation?: string;
   startCutoff?: number;
   endCutoff?: number;
+  community?: string | string[];
 }) {
   try {
     const params: any = {
@@ -229,6 +240,9 @@ export async function exportStudentsRequest({
 
     if (endCutoff !== undefined) {
       params.endCutoff = endCutoff;
+    }
+    if (community && community !== "all") {
+      params.community = community;
     }
 
     const response = await api.get<ExportResponse<Student>>("/student/export", { params });
