@@ -11,7 +11,7 @@ import {
   GraduationCap,
   Loader2,
   Trash2,
-  KeyRound 
+  KeyRound
 } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -644,38 +644,41 @@ const communityOptions = [
           >
             {s.status === "active" ? "Deactivate" : "Activate"}
           </button>
-          {s.instituteId === "INS-3-ZXYXKM" && (
-            <>
-              <button
-                onClick={() => {
-                  setSelectedStudentId(s._id);
-                  setConcessionOpen(true);
-                }}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-0.5"
-                title="Fees Concession"
-              >
-                <span>₹</span> Concession
-              </button>
+          {(
+            s.instituteId === "INS-3-ZXYXKM" ||
+            s.instituteId === "INS-ESTKLHCB"
+          ) && (
+              <>
+                <button
+                  onClick={() => {
+                    setSelectedStudentId(s._id);
+                    setConcessionOpen(true);
+                  }}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-0.5"
+                  title="Fees Concession"
+                >
+                  <span>₹</span> Concession
+                </button>
 
-              <button
-                onClick={() => {
-                  setSelectedStudentId(s._id);
-                  setManualPaymentOpen(true); // Open Manual Payment Modal
-                }}
-                className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-0.5"
-                title="Manual Payment"
-              >
-                <span>₹</span>Payment
-              </button>
-            </>
-          )}
+                <button
+                  onClick={() => {
+                    setSelectedStudentId(s._id);
+                    setManualPaymentOpen(true); // Open Manual Payment Modal
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-0.5"
+                  title="Manual Payment"
+                >
+                  <span>₹</span>Payment
+                </button>
+              </>
+            )}
           <button
             onClick={() => handleReshareCredentials(s)}
             disabled={reshareLoading}
             className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1"
             title="Reshare Credentials"
           >
-            <KeyRound  className="w-4 h-4" />
+            <KeyRound className="w-4 h-4" />
             {reshareLoading ? "Sending..." : "Reshare"}
           </button>
           <button

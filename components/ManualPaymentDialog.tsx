@@ -345,16 +345,9 @@ export default function ManualPaymentDialog({
                                     </div>
                                     <div className="flex-1">
                                         <p className="text-sm sm:text-base font-semibold text-green-800">
-                                            Fee Concession Applied: {feeData.feeConcession.concessionPercentage}% off
+                                            Fee Concession Applied:
                                         </p>
-                                        <p className="text-xs sm:text-sm text-green-700">
-                                            {feeData.feeConcession.concessionPercentage}% discount on <strong>Tuition Fee</strong>
-                                            {feeData.feeConcession.appliedOn && (
-                                                <span className="ml-1 text-green-600 font-normal">
-                                                    (applied only on tuition fee, other fee remains unchanged)
-                                                </span>
-                                            )}
-                                        </p>
+
                                         {feeData.feeConcession.matchedReferrals && feeData.feeConcession.matchedReferrals.length > 0 && (
                                             <div className="mt-2 flex flex-wrap gap-2">
                                                 {feeData.feeConcession.matchedReferrals.map((referral, idx) => (
@@ -445,15 +438,10 @@ export default function ManualPaymentDialog({
                                             </h2>
                                             <div className="text-right">
                                                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
-                                                    <span className="text-xs text-gray-500">
-                                                        Tuition: {formatCurrency(year.tuitionFee)}
-                                                    </span>
-                                                    <span className="text-xs text-gray-500">
-                                                        Other: {formatCurrency(year.otherFee)}
-                                                    </span>
+
                                                     {year.concessionPercentage > 0 && (
                                                         <span className="text-xs text-green-600 font-medium">
-                                                            Save: {formatCurrency(year.concessionAmount)}
+                                                            -{formatCurrency(year.concessionAmount)}
                                                         </span>
                                                     )}
                                                     <span className="text-sm font-bold text-blue-600">
@@ -536,14 +524,16 @@ export default function ManualPaymentDialog({
 
                                                                     {!isPaid && (
                                                                         <div className="mt-1 flex flex-wrap items-center gap-3 text-xs">
-                                                                            <span className="text-gray-500">Tuition: {formatCurrency(option.tuitionFee)}</span>
-                                                                            {option.tuitionConcession > 0 && (
-                                                                                <span className="text-green-600">(-{formatCurrency(option.tuitionConcession)})</span>
-                                                                            )}
+                                                                            <span className="text-gray-500">
+                                                                                Tuition: {formatCurrency(
+                                                                                    option.tuitionConcession > 0
+                                                                                        ? option.tuitionFee - option.tuitionConcession
+                                                                                        : option.tuitionFee
+                                                                                )}
+                                                                            </span>
+
                                                                             <span className="text-gray-500">Other: {formatCurrency(option.otherFee)}</span>
-                                                                            {option.discountAmount > 0 && (
-                                                                                <span className="text-green-600 font-medium">Save {formatCurrency(option.discountAmount)}</span>
-                                                                            )}
+
                                                                         </div>
                                                                     )}
 
@@ -561,11 +551,7 @@ export default function ManualPaymentDialog({
 
                                                                 <div className="flex items-center gap-4">
                                                                     <div className="text-right">
-                                                                        {option.discountAmount > 0 && !isPaid && (
-                                                                            <p className="text-xs text-gray-400 line-through">
-                                                                                {formatCurrency(option.originalAmount)}
-                                                                            </p>
-                                                                        )}
+
                                                                         <p className={`text-lg font-bold ${isPaid ? 'text-green-600' : 'text-gray-800'}`}>
                                                                             {formatCurrency(option.payableAmount)}
                                                                         </p>

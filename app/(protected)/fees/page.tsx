@@ -44,6 +44,7 @@ interface YearFee {
   amount: number
   tuitionFee: number
   otherFee: number
+  otherFeeDescription?: string    // NEW: Description for other fee
   paymentOptions: PaymentOption[]
 }
 
@@ -106,6 +107,7 @@ export default function FeeStructurePage() {
     amount: number
     tuitionFee: number
     otherFee: number
+    otherFeeDescription?: string    // NEW
     fullPaymentDueDate: string
     plans: PopupPlan[]
   } | null>(null)
@@ -321,7 +323,7 @@ export default function FeeStructurePage() {
         let coursesWithFees: CourseFee[] = [];
 
         if (settingsData.courses && settingsData.courses.length > 0) {
-          const feeMap = new Map<string, Map<string, { amount: number, tuitionFee: number, otherFee: number, paymentOptions: PaymentOption[] }>>();
+          const feeMap = new Map<string, Map<string, { amount: number, tuitionFee: number, otherFee: number, otherFeeDescription?: string, paymentOptions: PaymentOption[] }>>();
 
           if (feeConfigData?.courseFeeStructure) {
             feeConfigData.courseFeeStructure.forEach((feeCourse: any) => {
@@ -351,6 +353,7 @@ export default function FeeStructurePage() {
                   amount: yearFee.amount || 0,
                   tuitionFee: yearFee.tuitionFee || 0,
                   otherFee: yearFee.otherFee || 0,
+                  otherFeeDescription: yearFee.otherFeeDescription || '',
                   paymentOptions
                 });
               });
@@ -369,6 +372,7 @@ export default function FeeStructurePage() {
                 const amount = yearData?.amount || 0;
                 const tuitionFee = yearData?.tuitionFee || 0;
                 const otherFee = yearData?.otherFee || 0;
+                const otherFeeDescription = yearData?.otherFeeDescription || '';
                 let paymentOptions = yearData?.paymentOptions || [];
 
                 if (paymentOptions.length === 0 && amount > 0) {
@@ -382,6 +386,7 @@ export default function FeeStructurePage() {
                   amount,
                   tuitionFee,
                   otherFee,
+                  otherFeeDescription,
                   paymentOptions
                 };
               })
@@ -453,6 +458,7 @@ export default function FeeStructurePage() {
       amount: year.amount,
       tuitionFee: year.tuitionFee,
       otherFee: year.otherFee,
+      otherFeeDescription: year.otherFeeDescription || '',
       fullPaymentDueDate: fullOption ? formatDateForInput(fullOption.installments[0]?.dueDate) : todayStr(),
       plans
     });
@@ -524,10 +530,15 @@ export default function FeeStructurePage() {
     setInstallmentPopup(prev => prev ? { ...prev, fullPaymentDueDate: value } : prev);
   }
 
+  // NEW: Update other fee description in popup
+  const updateOtherFeeDescription = (value: string) => {
+    setInstallmentPopup(prev => prev ? { ...prev, otherFeeDescription: value } : prev);
+  }
+
   const savePaymentOptions = () => {
     if (!installmentPopup) return;
 
-    const { courseId, yearIndex, amount, tuitionFee, otherFee, fullPaymentDueDate, plans } = installmentPopup;
+    const { courseId, yearIndex, amount, tuitionFee, otherFee, otherFeeDescription, fullPaymentDueDate, plans } = installmentPopup;
     const instituteId = feeStructure.instituteId;
 
     for (const plan of plans) {
@@ -555,7 +566,11 @@ export default function FeeStructurePage() {
             ...course,
             years: course.years.map((year, idx) =>
               idx === yearIndex
-                ? { ...year, paymentOptions: [fullOption, ...installmentOptionsBuilt] }
+                ? { 
+                    ...year, 
+                    paymentOptions: [fullOption, ...installmentOptionsBuilt],
+                    otherFeeDescription: otherFeeDescription || year.otherFeeDescription
+                  }
                 : year
             )
           }
@@ -628,6 +643,26 @@ export default function FeeStructurePage() {
     }))
   }
 
+  // NEW: Handle other fee description change
+  const handleOtherFeeDescriptionChange = (courseId: string, yearIndex: number, description: string) => {
+    setFeeStructure(prev => ({
+      ...prev,
+      courses: prev.courses.map(course =>
+        course.courseId === courseId
+          ? {
+            ...course,
+            years: course.years.map((y, idx) =>
+              idx === yearIndex ? {
+                ...y,
+                otherFeeDescription: description
+              } : y
+            )
+          }
+          : course
+      )
+    }))
+  }
+
   const handleAddYear = (courseId: string) => {
     setFeeStructure(prev => ({
       ...prev,
@@ -642,6 +677,7 @@ export default function FeeStructurePage() {
                 amount: 0,
                 tuitionFee: 0,
                 otherFee: 0,
+                otherFeeDescription: '',
                 paymentOptions: []
               }
             ]
@@ -851,6 +887,7 @@ export default function FeeStructurePage() {
           amount: year.amount,
           tuitionFee: year.tuitionFee,
           otherFee: year.otherFee,
+          otherFeeDescription: year.otherFeeDescription || '',
           paymentOptions: year.paymentOptions || []
         }))
       })),
@@ -875,7 +912,7 @@ export default function FeeStructurePage() {
     if (!installmentPopup) return null;
 
     const totalAmount = installmentPopup.amount;
-    const { tuitionFee, otherFee, plans } = installmentPopup;
+    const { tuitionFee, otherFee, otherFeeDescription, plans } = installmentPopup;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -916,6 +953,26 @@ export default function FeeStructurePage() {
                     onChange={(e) => updateFullPaymentDueDate(e.target.value)}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* NEW: Other Fee Description Section */}
+            <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
+              <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <span className="inline-block w-3 h-3 rounded-full bg-purple-500"></span>
+                 Fees Description
+              </h4>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">
+                  Description for Other Fees
+                </label>
+                <textarea
+                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none resize-y min-h-[80px]"
+                  placeholder="e.g., Lab fees, library fees, examination fees, etc."
+                  value={otherFeeDescription || ''}
+                  onChange={(e) => updateOtherFeeDescription(e.target.value)}
+                  rows={3}
+                />
               </div>
             </div>
 
@@ -1179,7 +1236,7 @@ export default function FeeStructurePage() {
                             Course ID
                           </th>
                           {feeStructure.courses[0]?.years.map((year, idx) => (
-                            <th key={idx} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[350px]">
+                            <th key={idx} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[450px]">
                               {getYearDisplay(year.year)} Fee
                             </th>
                           ))}
@@ -1263,6 +1320,19 @@ export default function FeeStructurePage() {
                                       </button>
                                     )}
                                   </div>
+
+                                  {/* NEW: Other Fee Description Textarea */}
+                                  <div className="mt-1">
+                                    <label className="text-xs text-gray-500 block"> Fees Description</label>
+                                    <textarea
+                                      className="w-full border rounded px-2 py-1 text-xs focus:ring-2 focus:ring-purple-500 outline-none resize-y min-h-[60px]"
+                                      placeholder="Describe what the other fees include (lab, library, exam, etc.)"
+                                      value={year.otherFeeDescription || ''}
+                                      onChange={(e) => handleOtherFeeDescriptionChange(course.courseId, yearIdx, e.target.value)}
+                                      rows={2}
+                                    />
+                                  </div>
+
                                   {year.paymentOptions && year.paymentOptions.length > 0 && (
                                     <div className="text-xs text-gray-500 space-y-1">
                                       {year.paymentOptions.map((option) => (

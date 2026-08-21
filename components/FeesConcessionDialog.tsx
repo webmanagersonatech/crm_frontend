@@ -37,6 +37,7 @@ interface CourseFeeData {
     totalAmount: number;
     tuitionFee: number;
     otherFee: number;
+    feesdescription?: string;
     paymentOptions: PaymentOption[];
   }>;
 }
@@ -156,7 +157,7 @@ export default function FeesConcessionDialog({
 
   const calculateDiscountedAmount = () => {
     const firstYear = courseFeeData?.years?.[0];
-    
+
     if (!firstYear) {
       return {
         originalAmount: 0,
@@ -172,7 +173,7 @@ export default function FeesConcessionDialog({
     const tuitionFee = firstYear.tuitionFee || 0;
     const otherFee = firstYear.otherFee || 0;
     const totalOriginal = tuitionFee + otherFee;
-    
+
     const discountPercentage = calculateTotalDiscount();
     const discountAmount = (tuitionFee * discountPercentage) / 100;
     const discountedTuition = tuitionFee - discountAmount;
@@ -300,21 +301,21 @@ export default function FeesConcessionDialog({
                   <span className="text-gray-600">Course:</span>
                   <span className="font-medium">{courseFeeData.courseName}</span>
                 </div>
-                
+
                 <div className="flex justify-between">
                   <span className="text-gray-600">Tuition Fee:</span>
                   <span className="font-medium">
                     ₹{discountInfo.tuitionFee.toLocaleString()}
                   </span>
                 </div>
-                
+
                 <div className="flex justify-between">
                   <span className="text-gray-600">Other Fee:</span>
                   <span className="font-medium text-gray-700">
                     ₹{discountInfo.otherFee.toLocaleString()}
                   </span>
                 </div>
-                
+
                 <div className="border-t border-blue-200 pt-2 mt-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total Fee:</span>
@@ -328,14 +329,14 @@ export default function FeesConcessionDialog({
                   <div className="mt-3 pt-3 border-t-2 border-blue-300">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">
-                        Tuition Fee Discount ({totalDiscountPercentage}%):
+                        Discount Fee  ({totalDiscountPercentage}%):
                       </span>
                       <span className="text-green-600 font-medium">
                         -₹{discountInfo.discountAmount.toLocaleString()}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Discounted Tuition Fee:</span>
+                      <span className="text-gray-600">Remain Fee:</span>
                       <span className="text-green-700 font-medium">
                         ₹{discountInfo.discountedTuition.toLocaleString()}
                       </span>
@@ -356,24 +357,36 @@ export default function FeesConcessionDialog({
                 )}
               </div>
             </div>
-          )}
 
+          )}
+          {courseFeeData?.years[0]?.feesdescription && (
+            <div className="mt-3 pt-3 border-t border-blue-200">
+              <p className="text-sm font-medium text-gray-700 mb-2">
+                Fee Description:
+              </p>
+
+              <div className="bg-white border border-blue-100 rounded-md p-3">
+                <p className="text-sm text-gray-600 whitespace-pre-line">
+                  {courseFeeData.years[0].feesdescription}
+                </p>
+              </div>
+            </div>
+          )}
           {/* Payment Option Selection - OPTIONAL */}
           <div>
             <label className="text-sm font-medium block mb-2">
               Select Payment Option <span className="text-gray-400 text-xs">(Optional)</span>
             </label>
-            
+
             {paymentOptions.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {paymentOptions.map((option) => (
                   <label
                     key={option.value}
-                    className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${
-                      selectedPaymentOption === option.value
-                        ? 'border-purple-600 bg-purple-50 ring-2 ring-purple-200'
-                        : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
-                    }`}
+                    className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${selectedPaymentOption === option.value
+                      ? 'border-purple-600 bg-purple-50 ring-2 ring-purple-200'
+                      : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
+                      }`}
                   >
                     <input
                       type="checkbox"
@@ -395,7 +408,7 @@ export default function FeesConcessionDialog({
                 No payment options available
               </p>
             )}
-            
+
             <p className="text-xs text-gray-400 mt-1">
               * Optional: Select payment option only if you want to specify the installment plan
             </p>
@@ -404,13 +417,13 @@ export default function FeesConcessionDialog({
           {/* Referrals Section - Multi Select */}
           <div>
             <label className="text-sm font-medium block mb-2">
-              Select Referrals (Multiple) <span className="text-red-500">*</span>
+              Fee Adjustments (Multiple) <span className="text-red-500">*</span>
             </label>
 
             {referralLoading ? (
               <div className="flex items-center gap-2 border rounded-md px-3 py-2">
                 <Loader2 className="animate-spin w-4 h-4" />
-                Loading referrals...
+                Loading Fee Adjustments...
               </div>
             ) : (
               <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">

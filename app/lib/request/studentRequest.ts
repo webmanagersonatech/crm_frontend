@@ -259,7 +259,11 @@ export async function exportStudentsRequest({
 export async function getStudentRequest(studentId: string) {
   try {
     const response = await api.get(`/student/${studentId}`);
-    return response?.data?.data;
+    // Merge courseYears into data object
+    return {
+      ...response?.data?.data,
+      courseYears: response?.data?.courseYears || 0
+    };
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message || "Failed to fetch student details."

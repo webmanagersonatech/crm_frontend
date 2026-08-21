@@ -24,7 +24,7 @@ interface FormState {
     universityRegNo: string;
     admissionNumber: string; // New field
     classSection: string; // New field
-
+    year: string;
     internshipType: string;
     internshipCompany: string;
     internshipDuration: string;
@@ -94,6 +94,8 @@ export default function StudentCleanupForm({
 }: StudentCleanupFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [courseYears, setCourseYears] = useState<number>(0);
+    const [yearOptions, setYearOptions] = useState<{ value: string; label: string }[]>([]);
     const [imageUploading, setImageUploading] = useState(false);
     const [studentImage, setStudentImage] = useState<string>("");
     const [imagePreview, setImagePreview] = useState<string>("");
@@ -109,7 +111,7 @@ export default function StudentCleanupForm({
         internshipCompany: "",
         internshipDuration: "",
         internshipRemarks: "",
-
+        year: "",
         feedbackRating: "",
         feedbackReason: "",
 
@@ -137,6 +139,10 @@ export default function StudentCleanupForm({
             try {
                 const data = await getStudentRequest(studentid);
                 setStudent(data);
+                const years = data.courseYears || 1;
+                console.log(data,"kkl")
+                setCourseYears(years);
+                setYearOptions(generateYearOptions(years));
                 if (data.studentImage) {
                     setStudentImage(data.studentImage);
 
@@ -205,7 +211,7 @@ export default function StudentCleanupForm({
                     universityRegNo: data.admissionUniversityRegNo ?? "",
                     admissionNumber: data.admissionNumber ?? "", // New field
                     classSection: data.classSection ?? "", // New field
-
+                    year: data.year || "",
                     internshipType: data.internshipType ?? "",
                     internshipCompany: data.internshipCompany ?? "",
                     internshipDuration: data.internshipDuration ?? "",
@@ -250,7 +256,21 @@ export default function StudentCleanupForm({
 
         fetchStudent();
     }, [studentid]);
+    const generateYearOptions = (years: number) => {
+        if (!years || years === 0) return [];
 
+        const options = [];
+        const suffixMap: Record<number, string> = { 1: 'st', 2: 'nd', 3: 'rd' };
+
+        for (let i = 1; i <= years; i++) {
+            const suffix = suffixMap[i] || 'th';
+            options.push({
+                value: i.toString(),
+                label: `${i}${suffix} Year`
+            });
+        }
+        return options;
+    };
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -304,9 +324,14 @@ export default function StudentCleanupForm({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!form.year) {
+            toast.error("Please select the Year");
+            return;
+        }
         setLoading(true);
 
         const payload = {
+            year: form.year,
             admissionQuota: form.quota,
             admissionUniversityRegNo: form.universityRegNo,
             admissionNumber: form.admissionNumber, // New field
@@ -452,7 +477,7 @@ export default function StudentCleanupForm({
                     {/* ================= ADMISSION ================= */}
                     <section className="space-y-2 border p-4 rounded-lg shadow-sm">
                         <h3 className="font-semibold text-gray-700 mb-2">Admission Details</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="flex flex-col">
                                 <label className={labelClass}>Quota</label>
                                 <select
@@ -484,6 +509,26 @@ export default function StudentCleanupForm({
                                     onChange={e => handleChange("admissionNumber", e.target.value)}
                                     placeholder="Enter admission number"
                                 />
+                            </div>
+                            <div className="flex flex-col">
+                                <label className="block mb-1 font-medium text-gray-700">
+                                    Year <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    className="border border-[#3a4480] p-2 rounded w-full focus:outline-none"
+                                    value={form.year}
+                                    onChange={e => handleChange("year", e.target.value)}
+                                >
+                                    <option value="">Select Year</option>
+                                    {yearOptions.map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                {!form.year && (
+                                    <p className="text-red-500 text-xs mt-1">Year is required</p>
+                                )}
                             </div>
 
                             <div className="flex flex-col">
