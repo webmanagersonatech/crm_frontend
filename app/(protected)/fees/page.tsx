@@ -74,6 +74,8 @@ const INSTALLMENT_COUNT_OPTIONS = [2, 3, 4, 5, 6]
 interface PopupPlan {
   count: number
   amounts: number[]
+  tuitionFees: number[]  // Manual tuition fees per installment
+  otherFees: number[]    // Manual other fees per installment
   dueDates: string[]
 }
 
@@ -107,7 +109,7 @@ export default function FeeStructurePage() {
     amount: number
     tuitionFee: number
     otherFee: number
-    otherFeeDescription?: string    // NEW
+    otherFeeDescription?: string
     fullPaymentDueDate: string
     plans: PopupPlan[]
   } | null>(null)
@@ -164,7 +166,6 @@ export default function FeeStructurePage() {
   }
 
   // Builds the always-present "Full Payment" option
-  // paymentOptionId is based directly on the instituteId, e.g. "INS-3-ZXYXKM-FULL"
   const buildFullPaymentOption = (
     amount: number,
     tuitionFee: number,
@@ -186,8 +187,7 @@ export default function FeeStructurePage() {
     ]
   })
 
-  // Builds one installment-plan option (e.g. "2 Installments"), each with its own installments array
-  // paymentOptionId is based directly on the instituteId, e.g. "INS-3-ZXYXKM-INSTALLMENT-2"
+  // Builds one installment-plan option with manual tuition and other fees
   const buildInstallmentOption = (
     count: number,
     totalAmount: number,
@@ -195,26 +195,42 @@ export default function FeeStructurePage() {
     totalOther: number,
     amounts: number[],
     dueDates: string[],
-    instituteId: string
+    instituteId: string,
+    tuitionFees?: number[],
+    otherFees?: number[]
   ): PaymentOption => {
     const installments: InstallmentDetail[] = amounts.map((amt, idx) => {
-      const tuition = Math.round((amt / totalAmount) * totalTuition)
-      const other = amt - tuition
+      let tuition: number;
+      let other: number;
+      
+      // If manual fees are provided, use them
+      if (tuitionFees && tuitionFees[idx] !== undefined && tuitionFees[idx] >= 0) {
+        tuition = tuitionFees[idx];
+        other = amt - tuition;
+      } else if (otherFees && otherFees[idx] !== undefined && otherFees[idx] >= 0) {
+        other = otherFees[idx];
+        tuition = amt - other;
+      } else {
+        // Auto-calculate based on ratio
+        tuition = Math.round((amt / totalAmount) * totalTuition);
+        other = amt - tuition;
+      }
+      
       return {
         number: idx + 1,
         amount: amt,
         tuitionFee: tuition,
         otherFee: other,
         dueDate: dueDates[idx] || todayStr()
-      }
-    })
+      };
+    });
 
     return {
       paymentOptionId: `${instituteId}-INSTALLMENT-${count}`,
       name: `${count} Installments`,
       type: 'installment',
       installments
-    }
+    };
   }
 
   // Set mounted state
@@ -447,6 +463,8 @@ export default function FeeStructurePage() {
       .map(opt => ({
         count: opt.installments.length,
         amounts: opt.installments.map(i => i.amount),
+        tuitionFees: opt.installments.map(i => i.tuitionFee),
+        otherFees: opt.installments.map(i => i.otherFee),
         dueDates: opt.installments.map(i => formatDateForInput(i.dueDate))
       }))
       .sort((a, b) => a.count - b.count);
@@ -468,7 +486,7 @@ export default function FeeStructurePage() {
     setInstallmentPopup(null);
   }
 
-  // Turns a given installment count (2,3,4,5,6) on or off as its own plan/object
+  // Turns a given installment count on or off
   const togglePlan = (count: number) => {
     if (!installmentPopup) return;
 
@@ -487,11 +505,21 @@ export default function FeeStructurePage() {
       i === count - 1 ? amount - base * (count - 1) : base
     );
     const dueDates = Array.from({ length: count }, () => todayStr());
+    
+    // Auto-calculate initial fees based on ratio
+    const tuitionFees = amounts.map(amt => Math.round((amt / amount) * installmentPopup.tuitionFee));
+    const otherFees = amounts.map((amt, idx) => amt - tuitionFees[idx]);
 
     setInstallmentPopup(prev => prev
       ? {
         ...prev,
-        plans: [...prev.plans, { count, amounts, dueDates }].sort((a, b) => a.count - b.count)
+        plans: [...prev.plans, { 
+          count, 
+          amounts, 
+          tuitionFees, 
+          otherFees, 
+          dueDates 
+        }].sort((a, b) => a.count - b.count)
       }
       : prev);
   }
@@ -505,7 +533,50 @@ export default function FeeStructurePage() {
           if (plan.count !== count) return plan;
           const amounts = [...plan.amounts];
           amounts[index] = value;
-          return { ...plan, amounts };
+          // Auto-adjust fees if they become invalid
+          const tuitionFees = [...plan.tuitionFees];
+          const otherFees = [...plan.otherFees];
+          if (tuitionFees[index] + otherFees[index] > value) {
+            // If sum exceeds new amount, adjust other fee
+            otherFees[index] = value - tuitionFees[index];
+          }
+          return { ...plan, amounts, tuitionFees, otherFees };
+        })
+      };
+    });
+  }
+
+  const updatePlanTuition = (count: number, index: number, value: number) => {
+    setInstallmentPopup(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        plans: prev.plans.map(plan => {
+          if (plan.count !== count) return plan;
+          const tuitionFees = [...plan.tuitionFees];
+          tuitionFees[index] = value;
+          // Auto-calculate other fee = amount - tuition
+          const otherFees = [...plan.otherFees];
+          otherFees[index] = Math.max(0, plan.amounts[index] - value);
+          return { ...plan, tuitionFees, otherFees };
+        })
+      };
+    });
+  }
+
+  const updatePlanOtherFee = (count: number, index: number, value: number) => {
+    setInstallmentPopup(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        plans: prev.plans.map(plan => {
+          if (plan.count !== count) return plan;
+          const otherFees = [...plan.otherFees];
+          otherFees[index] = value;
+          // Auto-calculate tuition = amount - other fee
+          const tuitionFees = [...plan.tuitionFees];
+          tuitionFees[index] = Math.max(0, plan.amounts[index] - value);
+          return { ...plan, tuitionFees, otherFees };
         })
       };
     });
@@ -530,7 +601,6 @@ export default function FeeStructurePage() {
     setInstallmentPopup(prev => prev ? { ...prev, fullPaymentDueDate: value } : prev);
   }
 
-  // NEW: Update other fee description in popup
   const updateOtherFeeDescription = (value: string) => {
     setInstallmentPopup(prev => prev ? { ...prev, otherFeeDescription: value } : prev);
   }
@@ -541,12 +611,27 @@ export default function FeeStructurePage() {
     const { courseId, yearIndex, amount, tuitionFee, otherFee, otherFeeDescription, fullPaymentDueDate, plans } = installmentPopup;
     const instituteId = feeStructure.instituteId;
 
+    // Validate each plan
     for (const plan of plans) {
       const total = plan.amounts.reduce((sum, a) => sum + a, 0);
       if (total !== amount) {
         toast.error(`${plan.count}-installment plan total (₹${total}) must equal the total fee (₹${amount})`);
         return;
       }
+      
+      // Validate each installment's tuition + other = amount
+      for (let i = 0; i < plan.amounts.length; i++) {
+        const sum = plan.tuitionFees[i] + plan.otherFees[i];
+        if (sum !== plan.amounts[i]) {
+          toast.error(`Installment ${i+1} tuition + other fee (₹${sum}) must equal the installment amount (₹${plan.amounts[i]})`);
+          return;
+        }
+        if (plan.tuitionFees[i] < 0 || plan.otherFees[i] < 0) {
+          toast.error(`Fees cannot be negative for installment ${i+1}`);
+          return;
+        }
+      }
+      
       if (plan.dueDates.some(d => !d)) {
         toast.error(`Please set every due date for the ${plan.count}-installment plan`);
         return;
@@ -555,7 +640,17 @@ export default function FeeStructurePage() {
 
     const fullOption = buildFullPaymentOption(amount, tuitionFee, otherFee, fullPaymentDueDate, instituteId);
     const installmentOptionsBuilt = plans.map(plan =>
-      buildInstallmentOption(plan.count, amount, tuitionFee, otherFee, plan.amounts, plan.dueDates, instituteId)
+      buildInstallmentOption(
+        plan.count, 
+        amount, 
+        tuitionFee, 
+        otherFee, 
+        plan.amounts, 
+        plan.dueDates, 
+        instituteId,
+        plan.tuitionFees,
+        plan.otherFees
+      )
     );
 
     setFeeStructure(prev => ({
@@ -643,7 +738,6 @@ export default function FeeStructurePage() {
     }))
   }
 
-  // NEW: Handle other fee description change
   const handleOtherFeeDescriptionChange = (courseId: string, yearIndex: number, description: string) => {
     setFeeStructure(prev => ({
       ...prev,
@@ -916,7 +1010,7 @@ export default function FeeStructurePage() {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
           <div className="sticky top-0 bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white px-6 py-4 flex justify-between items-center">
             <div>
               <h2 className="text-xl font-semibold">Payment Options Setup</h2>
@@ -932,7 +1026,7 @@ export default function FeeStructurePage() {
           </div>
 
           <div className="p-6 space-y-6">
-            {/* Full Payment Option (Always Present / Default) */}
+            {/* Full Payment Option */}
             <div className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
               <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
@@ -956,11 +1050,11 @@ export default function FeeStructurePage() {
               </div>
             </div>
 
-            {/* NEW: Other Fee Description Section */}
+            {/* Other Fee Description Section */}
             <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
               <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                 <span className="inline-block w-3 h-3 rounded-full bg-purple-500"></span>
-                 Fees Description
+                Other Fees Description
               </h4>
               <div>
                 <label className="text-xs text-gray-500 block mb-1">
@@ -976,7 +1070,7 @@ export default function FeeStructurePage() {
               </div>
             </div>
 
-            {/* Installment Plans - each toggled count becomes its own object */}
+            {/* Installment Plans */}
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
@@ -1012,7 +1106,7 @@ export default function FeeStructurePage() {
                 )}
               </div>
 
-              {/* Each active plan gets its own card / object with its own installments array */}
+              {/* Each active plan */}
               {plans.length > 0 && (
                 <div className="space-y-5">
                   {plans.map((plan) => {
@@ -1034,19 +1128,47 @@ export default function FeeStructurePage() {
 
                         <div className="space-y-3">
                           {plan.amounts.map((amt, index) => (
-                            <div key={index} className="border rounded-lg p-3 grid grid-cols-1 md:grid-cols-2 gap-3 bg-white">
-                              <div>
-                                <label className="text-xs text-gray-500 block mb-1">
-                                  Installment {index + 1} Amount (₹)
-                                </label>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="100"
-                                  className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                                  value={amt}
-                                  onChange={(e) => updatePlanAmount(plan.count, index, Number(e.target.value))}
-                                />
+                            <div key={index} className="border rounded-lg p-4 bg-white">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                                <div>
+                                  <label className="text-xs text-gray-500 block mb-1">
+                                    Installment {index + 1} Amount (₹)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="100"
+                                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                    value={amt}
+                                    onChange={(e) => updatePlanAmount(plan.count, index, Number(e.target.value))}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs text-gray-500 block mb-1">
+                                    Tuition Fee (₹)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="100"
+                                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                                    value={plan.tuitionFees[index] || 0}
+                                    onChange={(e) => updatePlanTuition(plan.count, index, Number(e.target.value))}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="text-xs text-gray-500 block mb-1">
+                                    Other Fee (₹)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="100"
+                                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                                    value={plan.otherFees[index] || 0}
+                                    onChange={(e) => updatePlanOtherFee(plan.count, index, Number(e.target.value))}
+                                  />
+                                </div>
                               </div>
                               <div>
                                 <label className="text-xs text-gray-500 block mb-1">
@@ -1058,6 +1180,14 @@ export default function FeeStructurePage() {
                                   value={plan.dueDates[index] || todayStr()}
                                   onChange={(e) => updatePlanDueDate(plan.count, index, e.target.value)}
                                 />
+                              </div>
+                              <div className="mt-2 text-xs">
+                                {plan.tuitionFees[index] + plan.otherFees[index] !== plan.amounts[index] && (
+                                  <span className="text-red-500">⚠️ Tuition + Other must equal the installment amount</span>
+                                )}
+                                {plan.tuitionFees[index] + plan.otherFees[index] === plan.amounts[index] && plan.amounts[index] > 0 && (
+                                  <span className="text-green-500">✓ Total matches: ₹{plan.amounts[index]}</span>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -1092,7 +1222,8 @@ export default function FeeStructurePage() {
               <button
                 onClick={savePaymentOptions}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                disabled={plans.some(p => p.amounts.reduce((sum, a) => sum + a, 0) !== totalAmount)}
+                disabled={plans.some(p => p.amounts.reduce((sum, a) => sum + a, 0) !== totalAmount) || 
+                         plans.some(p => p.amounts.some((amt, idx) => p.tuitionFees[idx] + p.otherFees[idx] !== amt))}
               >
                 Save Payment Options
               </button>
@@ -1321,9 +1452,9 @@ export default function FeeStructurePage() {
                                     )}
                                   </div>
 
-                                  {/* NEW: Other Fee Description Textarea */}
+                                  {/* Other Fee Description Textarea */}
                                   <div className="mt-1">
-                                    <label className="text-xs text-gray-500 block"> Fees Description</label>
+                                    <label className="text-xs text-gray-500 block">Other Fees Description</label>
                                     <textarea
                                       className="w-full border rounded px-2 py-1 text-xs focus:ring-2 focus:ring-purple-500 outline-none resize-y min-h-[60px]"
                                       placeholder="Describe what the other fees include (lab, library, exam, etc.)"
