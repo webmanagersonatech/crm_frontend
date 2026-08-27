@@ -116,7 +116,7 @@ export default function StudentCleanupForm({
         feedbackReason: "",
 
 
-        hostelWilling: "yes",
+        hostelWilling: "",
         hostelReason: "",
 
         bloodGroup: "",
@@ -219,7 +219,9 @@ export default function StudentCleanupForm({
 
                     //  hostel: student true → application → no
                     hostelWilling:
-                        data.hostelWilling === true ? "yes" : hostelFromApplication,
+                        typeof data.hostelWilling === "boolean"
+                            ? (data.hostelWilling ? "yes" : "no")
+                            : hostelFromApplication,
 
                     hostelReason: data.hostelReason ?? "",
 
