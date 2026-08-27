@@ -30,7 +30,7 @@ interface FormState {
     internshipDuration: string;
     internshipRemarks: string;
 
-    hostelWilling: "yes" | "no";
+    hostelWilling: "yes" | "no" | "";
     hostelReason: string;
 
     bloodGroup: string;
@@ -114,11 +114,8 @@ export default function StudentCleanupForm({
         year: "",
         feedbackRating: "",
         feedbackReason: "",
-
-
         hostelWilling: "",
         hostelReason: "",
-
         bloodGroup: "",
         bloodDonate: false,
 
@@ -140,7 +137,7 @@ export default function StudentCleanupForm({
                 const data = await getStudentRequest(studentid);
                 setStudent(data);
                 const years = data.courseYears || 1;
-                console.log(data,"kkl")
+                console.log(data, "kkl")
                 setCourseYears(years);
                 setYearOptions(generateYearOptions(years));
                 if (data.studentImage) {
