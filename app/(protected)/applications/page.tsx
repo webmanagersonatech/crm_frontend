@@ -18,7 +18,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import CreateLeadform from "@/components/Forms/CreateLeadForm";
 import Select from "react-select";
 import { Country, State, City } from "country-state-city";
-import LocationStatsCard from "@/components/LocationStatsCard";
+
+import LocationStatsSection from "@/components/Locationstatssection";
 import AsyncSelect from "react-select/async";
 
 interface Application {
@@ -1628,85 +1629,9 @@ export default function ApplicationsPage() {
 
 
       {activeFilters.includes("locationStats") && locationStats && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div className="grid grid-cols-1  gap-6 mt-6">
 
-          {/* Countries */}
-          <LocationStatsCard
-            title="Countries"
-            subtitle="Geographic distribution"
-            items={locationStats.countries || []}
-            color="blue"
-            emptyText="No country data available"
-            icon={
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M21 10.5a2.5 2.5 0 01-2.5 2.5H17m2-6h2.5M3 13.5h2.5M21 18.5h-2.5M5 3.5h2.5"
-                />
-              </svg>
-            }
-          />
-
-          {/* States */}
-          <LocationStatsCard
-            title="States / Regions"
-            subtitle="Regional breakdown"
-            items={locationStats.states || []}
-            color="indigo"
-            emptyText="No state data available"
-            icon={
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                />
-              </svg>
-            }
-          />
-
-          {/* Cities */}
-          <LocationStatsCard
-            title="Cities"
-            subtitle="Urban analytics"
-            items={locationStats.cities || []}
-            color="emerald"
-            emptyText="No city data available"
-            icon={
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-            }
-          />
+          <LocationStatsSection activeFilters={activeFilters} locationStats={locationStats} />
         </div>
       )}
 

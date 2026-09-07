@@ -323,18 +323,21 @@ export default function StudentCleanupForm({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!form.year) {
+
+        if (
+            student.instituteId !== "INS-3-ZXYXKM" &&
+            !form.year
+        ) {
             toast.error("Please select the Year");
             return;
         }
-        setLoading(true);
 
-        const payload = {
-            year: form.year,
+        setLoading(true);
+        const payload: any = {
             admissionQuota: form.quota,
             admissionUniversityRegNo: form.universityRegNo,
-            admissionNumber: form.admissionNumber, // New field
-            classSection: form.classSection, // New field
+            admissionNumber: form.admissionNumber,
+            classSection: form.classSection,
             internshipType: form.internshipType,
             internshipCompany: form.internshipCompany,
             internshipDuration: form.internshipDuration,
@@ -355,6 +358,11 @@ export default function StudentCleanupForm({
             studentImage: studentImage,
             feedbackReason: form.feedbackReason,
         };
+
+        // Year only for other institutes
+        if (student.instituteId !== "INS-3-ZXYXKM") {
+            payload.year = form.year;
+        }
 
 
         try {
@@ -509,26 +517,33 @@ export default function StudentCleanupForm({
                                     placeholder="Enter admission number"
                                 />
                             </div>
-                            <div className="flex flex-col">
-                                <label className="block mb-1 font-medium text-gray-700">
-                                    Year <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    className="border border-[#3a4480] p-2 rounded w-full focus:outline-none"
-                                    value={form.year}
-                                    onChange={e => handleChange("year", e.target.value)}
-                                >
-                                    <option value="">Select Year</option>
-                                    {yearOptions.map(option => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                {!form.year && (
-                                    <p className="text-red-500 text-xs mt-1">Year is required</p>
-                                )}
-                            </div>
+                            {student.instituteId !== "INS-3-ZXYXKM" && (
+                                <div className="flex flex-col">
+                                    <label className="block mb-1 font-medium text-gray-700">
+                                        Year <span className="text-red-500">*</span>
+                                    </label>
+
+                                    <select
+                                        className="border border-[#3a4480] p-2 rounded w-full focus:outline-none"
+                                        value={form.year}
+                                        onChange={e => handleChange("year", e.target.value)}
+                                    >
+                                        <option value="">Select Year</option>
+
+                                        {yearOptions.map(option => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    {!form.year && (
+                                        <p className="text-red-500 text-xs mt-1">
+                                            Year is required
+                                        </p>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="flex flex-col">
                                 <label className={labelClass}>Class Section</label>
@@ -859,3 +874,4 @@ export default function StudentCleanupForm({
         </div>
     );
 }
+
