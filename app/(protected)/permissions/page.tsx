@@ -36,6 +36,8 @@ const defaultPermissions: Permission[] = [
   { id: 19, moduleName: "MAT Registration", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 21, moduleName: "Fee Concession Approval", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 20, moduleName: "Fee Configuration", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  // NEW
+  { id: 22, moduleName: "Tuition Fee Configuration", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 12, moduleName: "Others", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 15, moduleName: "Email templates", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 16, moduleName: "Dynamic Forms", view: false, create: false, edit: false, delete: false, filter: false, download: false },

@@ -202,7 +202,7 @@ export default function FeeStructurePage() {
     const installments: InstallmentDetail[] = amounts.map((amt, idx) => {
       let tuition: number;
       let other: number;
-      
+
       // If manual fees are provided, use them
       if (tuitionFees && tuitionFees[idx] !== undefined && tuitionFees[idx] >= 0) {
         tuition = tuitionFees[idx];
@@ -215,7 +215,7 @@ export default function FeeStructurePage() {
         tuition = Math.round((amt / totalAmount) * totalTuition);
         other = amt - tuition;
       }
-      
+
       return {
         number: idx + 1,
         amount: amt,
@@ -505,7 +505,7 @@ export default function FeeStructurePage() {
       i === count - 1 ? amount - base * (count - 1) : base
     );
     const dueDates = Array.from({ length: count }, () => todayStr());
-    
+
     // Auto-calculate initial fees based on ratio
     const tuitionFees = amounts.map(amt => Math.round((amt / amount) * installmentPopup.tuitionFee));
     const otherFees = amounts.map((amt, idx) => amt - tuitionFees[idx]);
@@ -513,12 +513,12 @@ export default function FeeStructurePage() {
     setInstallmentPopup(prev => prev
       ? {
         ...prev,
-        plans: [...prev.plans, { 
-          count, 
-          amounts, 
-          tuitionFees, 
-          otherFees, 
-          dueDates 
+        plans: [...prev.plans, {
+          count,
+          amounts,
+          tuitionFees,
+          otherFees,
+          dueDates
         }].sort((a, b) => a.count - b.count)
       }
       : prev);
@@ -618,20 +618,20 @@ export default function FeeStructurePage() {
         toast.error(`${plan.count}-installment plan total (₹${total}) must equal the total fee (₹${amount})`);
         return;
       }
-      
+
       // Validate each installment's tuition + other = amount
       for (let i = 0; i < plan.amounts.length; i++) {
         const sum = plan.tuitionFees[i] + plan.otherFees[i];
         if (sum !== plan.amounts[i]) {
-          toast.error(`Installment ${i+1} tuition + other fee (₹${sum}) must equal the installment amount (₹${plan.amounts[i]})`);
+          toast.error(`Installment ${i + 1} tuition + other fee (₹${sum}) must equal the installment amount (₹${plan.amounts[i]})`);
           return;
         }
         if (plan.tuitionFees[i] < 0 || plan.otherFees[i] < 0) {
-          toast.error(`Fees cannot be negative for installment ${i+1}`);
+          toast.error(`Fees cannot be negative for installment ${i + 1}`);
           return;
         }
       }
-      
+
       if (plan.dueDates.some(d => !d)) {
         toast.error(`Please set every due date for the ${plan.count}-installment plan`);
         return;
@@ -641,12 +641,12 @@ export default function FeeStructurePage() {
     const fullOption = buildFullPaymentOption(amount, tuitionFee, otherFee, fullPaymentDueDate, instituteId);
     const installmentOptionsBuilt = plans.map(plan =>
       buildInstallmentOption(
-        plan.count, 
-        amount, 
-        tuitionFee, 
-        otherFee, 
-        plan.amounts, 
-        plan.dueDates, 
+        plan.count,
+        amount,
+        tuitionFee,
+        otherFee,
+        plan.amounts,
+        plan.dueDates,
         instituteId,
         plan.tuitionFees,
         plan.otherFees
@@ -661,11 +661,11 @@ export default function FeeStructurePage() {
             ...course,
             years: course.years.map((year, idx) =>
               idx === yearIndex
-                ? { 
-                    ...year, 
-                    paymentOptions: [fullOption, ...installmentOptionsBuilt],
-                    otherFeeDescription: otherFeeDescription || year.otherFeeDescription
-                  }
+                ? {
+                  ...year,
+                  paymentOptions: [fullOption, ...installmentOptionsBuilt],
+                  otherFeeDescription: otherFeeDescription || year.otherFeeDescription
+                }
                 : year
             )
           }
@@ -1092,8 +1092,8 @@ export default function FeeStructurePage() {
                         key={count}
                         onClick={() => togglePlan(count)}
                         className={`px-4 py-2 rounded-lg transition ${active
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                           }`}
                       >
                         {count} Installments
@@ -1222,8 +1222,8 @@ export default function FeeStructurePage() {
               <button
                 onClick={savePaymentOptions}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                disabled={plans.some(p => p.amounts.reduce((sum, a) => sum + a, 0) !== totalAmount) || 
-                         plans.some(p => p.amounts.some((amt, idx) => p.tuitionFees[idx] + p.otherFees[idx] !== amt))}
+                disabled={plans.some(p => p.amounts.reduce((sum, a) => sum + a, 0) !== totalAmount) ||
+                  plans.some(p => p.amounts.some((amt, idx) => p.tuitionFees[idx] + p.otherFees[idx] !== amt))}
               >
                 Save Payment Options
               </button>
@@ -1371,9 +1371,12 @@ export default function FeeStructurePage() {
                               {getYearDisplay(year.year)} Fee
                             </th>
                           ))}
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky right-0 bg-gray-50 z-10 min-w-[140px]">
-                            Actions
-                          </th>
+
+                          {isSuperAdmin && (
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky right-0 bg-gray-50 z-10 min-w-[140px]">
+                              Actions
+                            </th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -1492,7 +1495,7 @@ export default function FeeStructurePage() {
                                 </div>
                               </td>
                             ))}
-                            <td className="px-4 py-3 sticky right-0 bg-white z-10">
+                            {isSuperAdmin && ( <td className="px-4 py-3 sticky right-0 bg-white z-10">
                               <div className="flex space-x-2">
                                 <button
                                   onClick={() => handleAddYear(course.courseId)}
@@ -1511,7 +1514,7 @@ export default function FeeStructurePage() {
                                   </button>
                                 )}
                               </div>
-                            </td>
+                            </td> )}
                           </tr>
                         ))}
                       </tbody>
@@ -1532,19 +1535,19 @@ export default function FeeStructurePage() {
           {/* Referral Management */}
           <div className="border rounded-lg shadow-sm overflow-hidden">
             <div className="bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white px-4 py-3 font-semibold">
-              Referral Management
+              Concession Management
             </div>
 
             <div className="p-6 bg-white">
               <div className="flex flex-wrap items-end gap-4 mb-6">
                 <div className="flex-1 min-w-[200px]">
                   <label className="text-sm font-semibold text-gray-700 mb-2 block">
-                    Referral Name
+                    Concession Name
                   </label>
                   <input
                     type="text"
                     className={inputClass}
-                    placeholder="Enter referral name"
+                    placeholder="Enter Concession name"
                     value={referralName}
                     onChange={(e) => setReferralName(e.target.value)}
                   />
@@ -1596,10 +1599,10 @@ export default function FeeStructurePage() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Referral ID
+                          Concession ID
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Referral Name
+                          Concession Name
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Commission (%)
@@ -1628,12 +1631,12 @@ export default function FeeStructurePage() {
                             >
                               Edit
                             </button>
-                            <button
+                            {/* <button
                               onClick={() => handleRemoveReferral(index)}
                               className="text-red-600 hover:text-red-900"
                             >
                               Remove
-                            </button>
+                            </button> */}
                           </td>
                         </tr>
                       ))}
