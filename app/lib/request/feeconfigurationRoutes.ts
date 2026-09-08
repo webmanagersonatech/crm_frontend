@@ -137,15 +137,24 @@ export async function getFeeConfigurationByInstitute(
 }
 export async function getFeeConfigurationByAdmin(
   studentId: string,
-  paymentMethod?: string
+  paymentMethod?: string,
+  chooseUnpaidYear?: number | null
 ) {
   try {
+    const params: Record<string, any> = {};
+
+    if (paymentMethod) {
+      params.paymentmethod = paymentMethod;
+    }
+
+    if (chooseUnpaidYear) {
+      params.chooseunpaidyear = chooseUnpaidYear;
+    }
+
     const response = await api.get(
       `/fee-configuration/admin/${studentId}`,
       {
-        params: paymentMethod
-          ? { paymentmethod: paymentMethod }
-          : {},
+        params,
       }
     );
 

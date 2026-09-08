@@ -40,6 +40,7 @@ interface YearData {
     otherFeeConcession: number;
     concessionAmount: number;
     payableAmount: number;
+
     paymentMethod: string;
     paymentOptions: Installment[];
 }
@@ -51,6 +52,7 @@ interface FeeData {
     courseName: string;
     paymentMethod: string;
     initialPaymentType: string;
+    unpaidYears: number[];
     feeConcession: {
         referralIds: string[];
         matchedReferrals: Array<{
@@ -75,9 +77,10 @@ export default function ManualPaymentDialog({
     const [feeData, setFeeData] = useState<FeeData | null>(null);
     const [selectedYear, setSelectedYear] = useState<string>("");
     const [selectedInstallment, setSelectedInstallment] = useState<number>(0);
-    const [selectedPaymentOptionId, setSelectedPaymentOptionId] = useState<string>(""); // ✅ NEW: Track paymentOptionId
+    const [selectedPaymentOptionId, setSelectedPaymentOptionId] = useState<string>("");
     const [amount, setAmount] = useState<string>("");
     const [transactionId, setTransactionId] = useState<string>("");
+    const [selectedUnpaidYear, setSelectedUnpaidYear] = useState<number | null>(null);
     const [remarks, setRemarks] = useState<string>("");
     const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'full_payment' | 'installment'>('full_payment');
@@ -89,7 +92,7 @@ export default function ManualPaymentDialog({
 
         try {
             setLoading(true);
-            const data = await getFeeConfigurationByAdmin(studentId, paymentMethod);
+            const data = await getFeeConfigurationByAdmin(studentId, paymentMethod, selectedUnpaidYear);
             setFeeData(data);
 
             // Set initial payment method from data
@@ -135,7 +138,7 @@ export default function ManualPaymentDialog({
     useEffect(() => {
         if (!open || !studentId) return;
         fetchFeeConfiguration();
-    }, [open, studentId]);
+    }, [open, studentId, selectedUnpaidYear]);
 
     // Update amount and paid status when selection changes
     useEffect(() => {
@@ -196,7 +199,7 @@ export default function ManualPaymentDialog({
                 remarks: remarks.trim() || undefined,
             };
 
-            console.log("Sending payload:", payload); // Debug log
+
 
             const response = await createManualPayment(payload);
 
@@ -403,6 +406,66 @@ export default function ManualPaymentDialog({
                                 </div>
                             </div>
                         </div>
+
+                        {/* Previous Year Pending Fees */}
+                        {(feeData.unpaidYears?.length ?? 0) > 0 && (
+                            <div className="mb-5">
+                                <div className="mb-2">
+                                    <h3 className="text-sm font-semibold text-gray-900">
+                                        Previous Year Dues
+                                    </h3>
+                                    <p className="text-[11px] text-gray-500 mt-0.5">
+                                        Select a year to view pending fees
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2">
+                                    {feeData.unpaidYears.map((year) => {
+                                        const isSelected = selectedUnpaidYear === year;
+
+                                        return (
+                                            <button
+                                                key={year}
+                                                type="button"
+                                                onClick={() => setSelectedUnpaidYear(year)}
+                                                className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-200 ${isSelected
+                                                        ? "border-blue-600 bg-blue-50 text-blue-700"
+                                                        : "border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-gray-50"
+                                                    }`}
+                                            >
+                                                <span
+                                                    className={`w-1.5 h-1.5 rounded-full ${isSelected
+                                                            ? "bg-blue-600"
+                                                            : "bg-orange-500"
+                                                        }`}
+                                                />
+
+                                                <span className="text-xs font-semibold">
+                                                    Year {year}
+                                                </span>
+
+                                                <svg
+                                                    className={`w-3.5 h-3.5 ${isSelected
+                                                            ? "text-blue-600"
+                                                            : "text-gray-400"
+                                                        }`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M9 5l7 7-7 7"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
                         {/* Fee Structure */}
                         <div className="mb-6">
