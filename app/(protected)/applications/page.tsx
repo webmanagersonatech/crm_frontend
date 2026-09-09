@@ -131,7 +131,9 @@ export default function ApplicationsPage() {
     formStatus: true,
     createdAt: true,
   });
-
+  const [exportFieldModalOpen, setExportFieldModalOpen] = useState(false);
+  const [selectedExportFields, setSelectedExportFields] = useState<string[]>([]);
+  const [exportFieldSearch, setExportFieldSearch] = useState("");
 
   const filterOptions = [
     { value: "academicYear", label: "Academic Year" },
@@ -150,10 +152,36 @@ export default function ApplicationsPage() {
     { value: "cutoff", label: "Cutoff Range" },
     { value: "program", label: "Program" },
   ];
+  // Helper: search all sections of personalDetails / educationDetails for a field by label
+  const getFieldValueFromSections = (app: any, fieldLabel: string): string => {
+    const searchIn = (sections: any[]) => {
+      if (!Array.isArray(sections)) return undefined;
+      for (const section of sections) {
+        if (section?.fields && Object.prototype.hasOwnProperty.call(section.fields, fieldLabel)) {
+          const val = section.fields[fieldLabel];
+          return val === "" || val === undefined || val === null ? "-" : String(val);
+        }
+      }
+      return undefined;
+    };
 
-  const filteredAvailableFields = searchFieldNo
-    ? availableFilterFields.filter(f => f.searchfieldno === searchFieldNo)
-    : availableFilterFields;
+    return (
+      searchIn(app.personalDetails) ??
+      searchIn(app.educationDetails) ??
+      "-"
+    );
+  };
+  const systemExportFields = [
+    { key: "applicationId", label: "Application ID" },
+    ...(userpermission === "superadmin" ? [{ key: "institute", label: "Institute" }] : []),
+    { key: "applicantName", label: "Applicant Name" },
+    { key: "program", label: "Program" },
+    { key: "academicYear", label: "Academic Year" },
+    { key: "city", label: "City" },
+    { key: "paymentStatus", label: "Payment Status" },
+    { key: "formStatus", label: "Form Status" },
+    { key: "createdAt", label: "Created At" },
+  ];
 
   const loadStates = useCallback(async (inputValue: string) => {
     let countryName = selectedCountry || "India";
@@ -424,7 +452,73 @@ export default function ApplicationsPage() {
     }
   }, [currentPage, searchAny,
     selectedYear, selectedInstitution, startDate, endDate, locationCondition, activeFilters.includes("locationStats"), startCutoff, endCutoff, selectedPrograms, limit, selectedPayment, selectedCountry, selectedStates, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
+  const runExport = async (fields: string[]) => {
+    try {
+      setExportLoading(true);
 
+      const exportResult = await exportApplications({
+        academicYear: selectedYear !== "all" ? selectedYear : undefined,
+        instituteId: selectedInstitution !== "all" ? selectedInstitution : undefined,
+        paymentStatus: selectedPayment !== "all" ? selectedPayment : undefined,
+        formStatus: selectedFormStatus !== "all" ? selectedFormStatus : undefined,
+        applicationId: searchApplicationId.trim() || undefined,
+        applicantName: searchApplicantName.trim() || undefined,
+        program: selectedPrograms.length ? selectedPrograms : undefined,
+        country: selectedCountry || undefined,
+        state: selectedStates.length ? selectedStates : undefined,
+        city: selectedCities.length ? selectedCities : undefined,
+        locationCondition,
+        applicationSource: selectedApplicationSource || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        interactions: selectedInteraction || undefined,
+        startCutoff: startCutoff ? Number(startCutoff) : undefined,
+        endCutoff: endCutoff ? Number(endCutoff) : undefined,
+        q: searchAny.trim() || undefined,
+      });
+
+      const exportedData = (exportResult.data || []).map((app: any) => {
+        const obj: any = {};
+
+        fields.forEach((key) => {
+          const sys = systemExportFields.find((f) => f.key === key);
+
+          if (sys) {
+            switch (key) {
+              case "applicationId": obj["Application Id"] = app.applicationId || "-"; break;
+              case "institute": obj["Institute"] = app.institute?.name || app.instituteId || "-"; break;
+              case "applicantName": obj["Applicant Name"] = app.applicantName || "-"; break;
+              case "program": obj["Program"] = app.program || "-"; break;
+              case "academicYear": obj["Academic Year"] = app.academicYear || "-"; break;
+              case "city": obj["City"] = app.city || "-"; break;
+              case "paymentStatus": obj["Payment Status"] = app.paymentStatus || "-"; break;
+              case "formStatus": obj["Form Status"] = app.formStatus || "-"; break;
+              case "createdAt":
+                obj["Created At"] = app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "-";
+                break;
+            }
+            return;
+          }
+
+          // dynamic Personal/Education Details field — search sections by label
+          const meta = availableFilterFields.find((f) => f.metaKey === key);
+          const label = meta?.label || key;
+          obj[label] = getFieldValueFromSections(app, label);
+        });
+
+        return obj;
+      });
+
+      setExportData(exportedData);
+      setOpen(true);
+      setExportFieldModalOpen(false);
+    } catch (error: any) {
+      toast.error("Failed to export applications");
+      console.error("Error exporting applications:", error);
+    } finally {
+      setExportLoading(false);
+    }
+  };
   const handleExport = async () => {
     try {
       setExportLoading(true); // You'll need to add this state
@@ -503,6 +597,171 @@ export default function ApplicationsPage() {
       setExportLoading(false);
     }
   };
+
+  //   const handleExport = async () => {
+  //   try {
+  //     setExportLoading(true);
+
+  //     const exportResult = await exportApplications({
+  //       academicYear:
+  //         selectedYear !== "all" ? selectedYear : undefined,
+
+  //       instituteId:
+  //         selectedInstitution !== "all"
+  //           ? selectedInstitution
+  //           : undefined,
+
+  //       paymentStatus:
+  //         selectedPayment !== "all"
+  //           ? selectedPayment
+  //           : undefined,
+
+  //       formStatus:
+  //         selectedFormStatus !== "all"
+  //           ? selectedFormStatus
+  //           : undefined,
+
+  //       applicationId:
+  //         searchApplicationId.trim() || undefined,
+
+  //       applicantName:
+  //         searchApplicantName.trim() || undefined,
+
+  //       program:
+  //         selectedPrograms.length
+  //           ? selectedPrograms
+  //           : undefined,
+
+  //       country:
+  //         selectedCountry || undefined,
+
+  //       state:
+  //         selectedStates.length
+  //           ? selectedStates
+  //           : undefined,
+
+  //       city:
+  //         selectedCities.length
+  //           ? selectedCities
+  //           : undefined,
+
+  //       locationCondition,
+
+  //       applicationSource:
+  //         selectedApplicationSource || undefined,
+
+  //       startDate:
+  //         startDate || undefined,
+
+  //       endDate:
+  //         endDate || undefined,
+
+  //       interactions:
+  //         selectedInteraction || undefined,
+
+  //       startCutoff:
+  //         startCutoff
+  //           ? Number(startCutoff)
+  //           : undefined,
+
+  //       endCutoff:
+  //         endCutoff
+  //           ? Number(endCutoff)
+  //           : undefined,
+
+  //       q:
+  //         searchAny.trim() || undefined,
+  //     });
+
+  //     const getFieldValue = (
+  //       app: any,
+  //       sectionName: string,
+  //       fieldName: string
+  //     ) => {
+  //       const section = app.personalDetails?.find(
+  //         (section: any) =>
+  //           section.sectionName === sectionName
+  //       );
+
+  //       return section?.fields?.[fieldName] || "-";
+  //     };
+
+  //     const exportedData = (exportResult.data || []).map(
+  //       (app: any) => {
+  //         return {
+  //           StudentName:
+  //             app.applicantName ||
+  //             getFieldValue(
+  //               app,
+  //               "Personal Details",
+  //               "Full Name"
+  //             ),
+
+  //           FatherName:
+  //             getFieldValue(
+  //               app,
+  //               "Father's Details",
+  //               "Father's Name"
+  //             ),
+
+  //           MotherName:
+  //             getFieldValue(
+  //               app,
+  //               "Mother's Details",
+  //               "Mother's Name"
+  //             ),
+
+  //           Program:
+  //             app.program || "-",
+
+  //           FatherMobile:
+  //             getFieldValue(
+  //               app,
+  //               "Father's Details",
+  //               "Father Mobile"
+  //             ),
+
+  //           MotherMobile:
+  //             getFieldValue(
+  //               app,
+  //               "Mother's Details",
+  //               "Mother Mobile "
+  //             ),
+
+  //           StudentAadhar:
+  //             getFieldValue(
+  //               app,
+  //               "Personal Details",
+  //               "Aadhaar Number"
+  //             ),
+
+  //           DateOfBirth:
+  //             getFieldValue(
+  //               app,
+  //               "Personal Details",
+  //               "Date of Birth"
+  //             ),
+  //         };
+  //       }
+  //     );
+
+  //     setExportData(exportedData);
+  //     setOpen(true);
+
+  //   } catch (error: any) {
+  //     console.error(
+  //       "Error exporting applications:",
+  //       error
+  //     );
+
+  //     toast.error(
+  //       error?.message ||
+  //       "Failed to export applications"
+  //     );
+  //   } finally {
+  //     setExportLoading(false);
+  //   }
+  // };
 
   // UTILS
   const normalizeKey = (label: string) =>
@@ -1195,26 +1454,47 @@ export default function ApplicationsPage() {
 
 
               {(userpermission === "superadmin" || userpermission?.download) && (
-                <button
-                  onClick={handleExport}
-                  disabled={exportLoading}
-                  className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md transition-all shadow-sm ${exportLoading
-                    ? 'bg-green-400 text-white cursor-not-allowed opacity-75'
-                    : 'bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:shadow-md'
-                    }`}
-                >
-                  {exportLoading ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Exporting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FileDown className="w-3.5 h-3.5" />
-                      <span>Export</span>
-                    </>
-                  )}
-                </button>
+                <>
+                  <button
+                    onClick={() => {
+                      // pre-check whatever columns are currently visible
+                      const preChecked = systemExportFields
+                        .filter(f => (columnVisibility as any)[f.key] !== false)
+                        .map(f => f.key);
+                      setSelectedExportFields(preChecked);
+                      setExportFieldModalOpen(true);
+                    }}
+                    disabled={exportLoading}
+                    className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md transition-all shadow-sm ${exportLoading
+                        ? 'bg-green-400 text-white cursor-not-allowed opacity-75'
+                        : 'bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:shadow-md'
+                      }`}
+                  >
+                    <FileDown className="w-3.5 h-3.5" />
+                    <span>Export</span>
+                  </button>
+
+                  {/* <button
+                    onClick={handleExport}
+                    disabled={exportLoading}
+                    className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md transition-all shadow-sm ${exportLoading
+                        ? 'bg-green-400 text-white cursor-not-allowed opacity-75'
+                        : 'bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:shadow-md'
+                      }`}
+                  >
+                    {exportLoading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Exporting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileDown className="w-3.5 h-3.5" />
+                        <span>Export</span>
+                      </>
+                    )}
+                  </button> */}
+                </>
               )}
 
               {/* Add Application Button */}
@@ -1727,7 +2007,126 @@ export default function ApplicationsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {exportFieldModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          >
+            <motion.div
+              initial={{ y: -30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -30, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between p-4 border-b">
+                <h2 className="text-base font-semibold text-gray-800">Choose fields to export</h2>
+                <button onClick={() => setExportFieldModalOpen(false)}>
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
 
+              <div className="p-4 border-b flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Search fields..."
+                  value={exportFieldSearch}
+                  onChange={(e) => setExportFieldSearch(e.target.value)}
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+                <button
+                  onClick={() => {
+                    const all = [
+                      ...systemExportFields.map((f) => f.key),
+                      ...availableFilterFields.map((f) => f.metaKey),
+                    ];
+                    setSelectedExportFields(all);
+                  }}
+                  className="text-xs text-blue-600 hover:underline whitespace-nowrap"
+                >
+                  Select all
+                </button>
+                <button
+                  onClick={() => setSelectedExportFields([])}
+                  className="text-xs text-red-500 hover:underline whitespace-nowrap"
+                >
+                  Clear
+                </button>
+              </div>
+
+              <div className="overflow-y-auto p-4 space-y-4 flex-1">
+                {/* System fields */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-2">General</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {systemExportFields
+                      .filter((f) => f.label.toLowerCase().includes(exportFieldSearch.toLowerCase()))
+                      .map((f) => (
+                        <label key={f.key} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={selectedExportFields.includes(f.key)}
+                            onChange={() =>
+                              setSelectedExportFields((prev) =>
+                                prev.includes(f.key)
+                                  ? prev.filter((k) => k !== f.key)
+                                  : [...prev, f.key]
+                              )
+                            }
+                          />
+                          {f.label}
+                        </label>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Dynamic Personal/Education fields */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-2">Personal & Education Details</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableFilterFields
+                      .filter((f) => f.label.toLowerCase().includes(exportFieldSearch.toLowerCase()))
+                      .map((f) => (
+                        <label key={f.metaKey} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={selectedExportFields.includes(f.metaKey)}
+                            onChange={() =>
+                              setSelectedExportFields((prev) =>
+                                prev.includes(f.metaKey)
+                                  ? prev.filter((k) => k !== f.metaKey)
+                                  : [...prev, f.metaKey]
+                              )
+                            }
+                          />
+                          {f.label}
+                        </label>
+                      ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 p-4 border-t">
+                <button
+                  onClick={() => setExportFieldModalOpen(false)}
+                  className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={!selectedExportFields.length || exportLoading}
+                  onClick={() => runExport(selectedExportFields)}
+                  className="px-4 py-2 text-sm rounded-md bg-gradient-to-b from-green-600 to-green-700 text-white disabled:opacity-50"
+                >
+                  {exportLoading ? "Exporting..." : `Export (${selectedExportFields.length})`}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
 
     </div>
