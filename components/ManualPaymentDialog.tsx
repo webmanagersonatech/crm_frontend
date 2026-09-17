@@ -11,6 +11,16 @@ interface ManualPaymentDialogProps {
     onSuccess?: () => void;
 }
 
+interface GivenAmountEntry {
+    amount: number;
+    description: string;
+}
+
+interface GivenAmountRecord {
+    amount: number;
+    entries: GivenAmountEntry[];
+}
+
 interface Installment {
     number: number;
     originalAmount: number;
@@ -53,6 +63,8 @@ interface FeeData {
     paymentMethod: string;
     initialPaymentType: string;
     unpaidYears: number[];
+    givenAmount?: number;
+    givenAmountEntries?: GivenAmountRecord[];
     feeConcession: {
         referralIds: string[];
         matchedReferrals: Array<{
@@ -376,23 +388,43 @@ export default function ManualPaymentDialog({
                                         <div className="flex rounded-lg overflow-hidden border border-gray-300">
                                             <button
                                                 type="button"
-                                                onClick={() => handlePaymentMethodToggle('full_payment')}
-                                                className={`px-4 py-2 text-sm font-medium transition-colors ${selectedPaymentMethod === 'full_payment'
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                                                    }`}
-                                                disabled={loading}
+                                                onClick={() => handlePaymentMethodToggle("full_payment")}
+                                                className={`px-4 py-2 text-sm font-medium transition-colors
+    ${selectedPaymentMethod === "full_payment"
+                                                        ? "bg-blue-600 text-white"
+                                                        : "bg-white text-gray-700 hover:bg-gray-50"
+                                                    }
+    disabled:bg-gray-100
+    disabled:text-gray-400
+    disabled:border-gray-200
+    disabled:cursor-not-allowed
+    disabled:hover:bg-gray-100
+  `}
+                                                disabled={
+                                                    loading ||
+                                                    feeData?.initialPaymentType === "installment"
+                                                }
                                             >
                                                 Full Payment
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => handlePaymentMethodToggle('installment')}
-                                                className={`px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300 ${selectedPaymentMethod === 'installment'
-                                                    ? 'bg-blue-600 text-white'
-                                                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                                                    }`}
-                                                disabled={loading}
+                                                onClick={() => handlePaymentMethodToggle("installment")}
+                                                className={`px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300
+    ${selectedPaymentMethod === "installment"
+                                                        ? "bg-blue-600 text-white"
+                                                        : "bg-white text-gray-700 hover:bg-gray-50"
+                                                    }
+    disabled:bg-gray-100
+    disabled:text-gray-400
+    disabled:border-gray-200
+    disabled:cursor-not-allowed
+    disabled:hover:bg-gray-100
+  `}
+                                                disabled={
+                                                    loading ||
+                                                    feeData?.initialPaymentType === "full_payment"
+                                                }
                                             >
                                                 Installments
                                             </button>
@@ -429,14 +461,14 @@ export default function ManualPaymentDialog({
                                                 type="button"
                                                 onClick={() => setSelectedUnpaidYear(year)}
                                                 className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all duration-200 ${isSelected
-                                                        ? "border-blue-600 bg-blue-50 text-blue-700"
-                                                        : "border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-gray-50"
+                                                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                                                    : "border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-gray-50"
                                                     }`}
                                             >
                                                 <span
                                                     className={`w-1.5 h-1.5 rounded-full ${isSelected
-                                                            ? "bg-blue-600"
-                                                            : "bg-orange-500"
+                                                        ? "bg-blue-600"
+                                                        : "bg-orange-500"
                                                         }`}
                                                 />
 
@@ -446,8 +478,8 @@ export default function ManualPaymentDialog({
 
                                                 <svg
                                                     className={`w-3.5 h-3.5 ${isSelected
-                                                            ? "text-blue-600"
-                                                            : "text-gray-400"
+                                                        ? "text-blue-600"
+                                                        : "text-gray-400"
                                                         }`}
                                                     fill="none"
                                                     stroke="currentColor"
@@ -639,6 +671,44 @@ export default function ManualPaymentDialog({
                                 </div>
                             ))}
                         </div>
+
+                        {/* Given Amount */}
+{(feeData.givenAmountEntries?.length ?? 0) > 0 && (
+    <div className="mb-6">
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">
+            Given Amount
+        </h3>
+
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
+            {feeData.givenAmountEntries
+                ?.flatMap((record) => record.entries)
+                .map((entry, index) => (
+                    <div
+                        key={index}
+                        className="flex items-center justify-between text-sm"
+                    >
+                        <span className="text-gray-600">
+                            {entry.description}
+                        </span>
+
+                        <span className="font-medium text-gray-800">
+                            {formatCurrency(entry.amount)}
+                        </span>
+                    </div>
+                ))}
+
+            <div className="flex items-center justify-between border-t border-gray-200 pt-2 mt-2">
+                <span className="font-semibold text-gray-700">
+                    Total Given Amount
+                </span>
+
+                <span className="font-bold text-green-600">
+                    {formatCurrency(feeData.givenAmount || 0)}
+                </span>
+            </div>
+        </div>
+    </div>
+)}
 
                         {/* Payment Details Form */}
                         <div className="border-t border-gray-200 pt-6 mt-4">

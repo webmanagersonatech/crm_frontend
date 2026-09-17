@@ -55,6 +55,55 @@ export interface ExportResponse<T> {
   data: T[];
   totalCount: number;
 }
+
+
+export interface PaidFeeEntry {
+  amount: number;
+  description?: string;
+}
+
+export interface PaidFeeRecord {
+  _id: string;
+  studentId: string;
+  studentCode?: string;
+  instituteId: string;
+  programId?: string;
+  year: number;
+  entries: PaidFeeEntry[];
+  totalAmount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface YearOption {
+  value: number;
+  label: string;
+  hasEntry: boolean;
+}
+
+export interface AddPaidFeeResponse {
+  success: boolean;
+  message: string;
+  data: PaidFeeRecord;
+}
+
+export interface GetPaidFeesResponse {
+  success: boolean;
+  data: {
+    paidFees: PaidFeeRecord[];
+    grandTotal: number;
+    courseYears: number;
+    yearOptions: YearOption[];
+    student: {
+      _id: string;
+      studentId: string;
+      firstname: string;
+      lastname: string;
+      programId?: string;
+      instituteId: string;
+    };
+  };
+}
 /* =======================
    Axios Instance
 ======================= */
@@ -79,6 +128,41 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+
+/* =======================
+   Paid Fee APIs
+======================= */
+
+export async function addPaidFeeRequest(
+  studentId: string,
+  payload: {
+    year: number;
+    entries: PaidFeeEntry[];
+    programId?: string;
+  }
+): Promise<AddPaidFeeResponse> {
+  try {
+    const res = await api.post(`/paid-fees/${studentId}`, payload);
+    return res.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to save given amount."
+    );
+  }
+}
+
+export async function getPaidFeesRequest(
+  studentId: string
+): Promise<GetPaidFeesResponse> {
+  try {
+    const res = await api.get(`/paid-fees/${studentId}`);
+    return res.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch paid fees."
+    );
+  }
+}
 
 /* =======================
    Student APIs

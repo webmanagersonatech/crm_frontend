@@ -20,7 +20,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import StudentViewDialog from "@/components/StudentViewDialog";
 import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
-
+import GivenAmountDialog from "@/components/GivenAmountDialog";
 import FeesConcessionDialog from "@/components/FeesConcessionDialog";
 import StudentCleanupForm from "@/components/Forms/Studentdatacleanform";
 import { listStudentsRequest } from "@/app/lib/request/studentRequest";
@@ -108,6 +108,7 @@ export default function StudentsPage() {
   const [reshareLoading, setReshareLoading] = useState(false);
   const [programs, setPrograms] = useState<any[]>([]);
   const [communityFilter, setCommunityFilter] = useState<string[]>([]);
+  const [givenAmountOpen, setGivenAmountOpen] = useState(false);
   const [selectedPrograms, setSelectedPrograms] = useState<string[]>([]);
   const [institutions, setInstitutions] = useState<
     { value: string; label: string }[]
@@ -379,18 +380,18 @@ export default function StudentsPage() {
     "Unknown"
   ];
 
-const communityOptions = [
-  { value: "OC", label: "OC" },
-  { value: "BC", label: "BC" },
-  { value: "BCM", label: "BCM" },
-  { value: "MBC", label: "MBC" },
-  { value: "DNC", label: "DNC" },
-  { value: "SC", label: "SC" },
-  { value: "SCA", label: "SCA" },
-  { value: "ST", label: "ST" },
-  { value: "EWS", label: "EWS" },
-  { value: "Other", label: "Others" },
-];
+  const communityOptions = [
+    { value: "OC", label: "OC" },
+    { value: "BC", label: "BC" },
+    { value: "BCM", label: "BCM" },
+    { value: "MBC", label: "MBC" },
+    { value: "DNC", label: "DNC" },
+    { value: "SC", label: "SC" },
+    { value: "SCA", label: "SCA" },
+    { value: "ST", label: "ST" },
+    { value: "EWS", label: "EWS" },
+    { value: "Other", label: "Others" },
+  ];
   const occupationOptions = [
     { value: "farmer", label: "Farmer / Agriculture" },
     { value: "business", label: "Business" },
@@ -669,6 +670,18 @@ const communityOptions = [
                   title="Manual Payment"
                 >
                   <span>₹</span>Payment
+                </button>
+
+                <button
+                  onClick={() => {
+                    setSelectedStudentId(s._id);
+                    setGivenAmountOpen(true);
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"
+                  title="Add Given Amount"
+                >
+                  <span>₹</span>
+                    Entry
                 </button>
               </>
             )}
@@ -1206,6 +1219,20 @@ const communityOptions = [
           setSelectedStudentId(null);
         }}
       />
+
+      <GivenAmountDialog
+        open={givenAmountOpen}
+        studentId={selectedStudentId}
+        onClose={() => {
+          setGivenAmountOpen(false);
+          setSelectedStudentId(null);
+        }}
+        onSuccess={() => {
+          fetchStudents();
+        }}
+      />
+
+
       <StudentViewDialog
         open={viewOpen}
         title="Student Details"
