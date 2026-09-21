@@ -20,8 +20,36 @@ interface GivenAmountDialogProps {
 }
 
 interface Entry {
+    date: string; // always YYYY-MM-DD in state
     amount: string;
     description: string;
+}
+
+/* ─────────────────────────────────────────────
+   Date helpers
+   ───────────────────────────────────────────── */
+
+/**
+ * Convert any date-ish value (ISO string, Date, timestamp)
+ * into the `YYYY-MM-DD` string that <input type="date"> needs.
+ * Returns "" if the value can't be parsed.
+ */
+function toInputDate(value: unknown): string {
+    if (!value) return "";
+
+    // Already YYYY-MM-DD
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return value;
+    }
+
+    const d = new Date(value as string | number | Date);
+    if (isNaN(d.getTime())) return "";
+
+    // Use UTC parts to avoid timezone shifting the day
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(d.getUTCDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
 }
 
 export default function GivenAmountDialog({
@@ -33,7 +61,7 @@ export default function GivenAmountDialog({
 }: GivenAmountDialogProps) {
     const [year, setYear] = useState("");
     const [entries, setEntries] = useState<Entry[]>([
-        { amount: "", description: "" },
+        { date: "", amount: "", description: "" },
     ]);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(false);
@@ -50,7 +78,7 @@ export default function GivenAmountDialog({
         if (!open) return;
 
         setYear("");
-        setEntries([{ amount: "", description: "" }]);
+        setEntries([{ date: "", amount: "", description: "" }]);
         setExistingFees([]);
         setYearOptions([]);
 
@@ -85,12 +113,14 @@ export default function GivenAmountDialog({
         if (match && match.entries?.length) {
             setEntries(
                 match.entries.map((e) => ({
+                    // ✅ normalize ISO / Date → YYYY-MM-DD
+                    date: toInputDate(e.date),
                     amount: String(e.amount ?? ""),
                     description: e.description ?? "",
                 }))
             );
         } else {
-            setEntries([{ amount: "", description: "" }]);
+            setEntries([{ date: "", amount: "", description: "" }]);
         }
     }, [year, existingFees]);
 
@@ -100,7 +130,10 @@ export default function GivenAmountDialog({
     }, 0);
 
     const addEntry = () =>
-        setEntries((prev) => [...prev, { amount: "", description: "" }]);
+        setEntries((prev) => [
+            ...prev,
+            { date: "", amount: "", description: "" },
+        ]);
 
     const removeEntry = (i: number) =>
         setEntries((prev) => prev.filter((_, idx) => idx !== i));
@@ -116,15 +149,23 @@ export default function GivenAmountDialog({
         if (!studentId) return toast.error("Student not selected");
         if (!year) return toast.error("Please select year");
 
-        const cleaned = entries.filter(
-            (e) => e.amount && Number(e.amount) > 0
-        );
+        if (entries.length === 0) {
+            return toast.error("Please add at least one entry");
+        }
 
-        if (cleaned.length === 0)
-            return toast.error("Please add at least one valid amount");
+        // Validate every entry: date + amount are required
+        for (let i = 0; i < entries.length; i++) {
+            const entry = entries[i];
 
-        if (cleaned.length !== entries.length)
-            return toast.error("Please fill or remove empty entries");
+            if (!entry.date) {
+                return toast.error(`Entry ${i + 1}: Date is required`);
+            }
+
+            const amt = Number(entry.amount);
+            if (!entry.amount || isNaN(amt) || amt <= 0) {
+                return toast.error(`Entry ${i + 1}: Amount is required`);
+            }
+        }
 
         try {
             setLoading(true);
@@ -132,7 +173,9 @@ export default function GivenAmountDialog({
             const res = await addPaidFeeRequest(studentId, {
                 year: Number(year),
                 programId: programId || undefined,
-                entries: cleaned.map((e) => ({
+                entries: entries.map((e) => ({
+                    // ✅ entry.date is already YYYY-MM-DD
+                    date: e.date,
                     amount: Number(e.amount),
                     description: e.description.trim(),
                 })),
@@ -269,22 +312,47 @@ export default function GivenAmountDialog({
                                             )}
                                         </div>
 
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                                                ₹
-                                            </span>
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                step="0.01"
-                                                value={entry.amount}
-                                                onChange={(e) =>
-                                                    updateEntry(index, "amount", e.target.value)
-                                                }
-                                                placeholder="Enter amount"
-                                                disabled={loading}
-                                                className="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                                            />
+                                        {/* Date + Amount row */}
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                                                    Date <span className="text-red-500">*</span>
+                                                </label>
+                                                <input
+                                                    type="date"
+                                                    value={entry.date}
+                                                    onChange={(e) =>
+                                                        updateEntry(index, "date", e.target.value)
+                                                    }
+                                                    disabled={loading}
+                                                    required
+                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-[11px] font-medium text-gray-500 mb-1">
+                                                    Amount <span className="text-red-500">*</span>
+                                                </label>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                                        ₹
+                                                    </span>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        step="0.01"
+                                                        value={entry.amount}
+                                                        onChange={(e) =>
+                                                            updateEntry(index, "amount", e.target.value)
+                                                        }
+                                                        placeholder="Enter amount"
+                                                        disabled={loading}
+                                                        required
+                                                        className="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <input

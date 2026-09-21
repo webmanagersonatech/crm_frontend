@@ -12,6 +12,7 @@ interface ManualPaymentDialogProps {
 }
 
 interface GivenAmountEntry {
+    date: string;
     amount: number;
     description: string;
 }
@@ -673,42 +674,57 @@ export default function ManualPaymentDialog({
                         </div>
 
                         {/* Given Amount */}
-{(feeData.givenAmountEntries?.length ?? 0) > 0 && (
-    <div className="mb-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">
-            Given Amount
-        </h3>
+                        {(feeData.givenAmountEntries?.length ?? 0) > 0 && (
+                            <div className="mb-6">
+                                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                                    Paid Amount
+                                </h3>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2">
-            {feeData.givenAmountEntries
-                ?.flatMap((record) => record.entries)
-                .map((entry, index) => (
-                    <div
-                        key={index}
-                        className="flex items-center justify-between text-sm"
-                    >
-                        <span className="text-gray-600">
-                            {entry.description}
-                        </span>
+                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-3">
+                                    {feeData.givenAmountEntries
+                                        ?.flatMap((record) => record.entries)
+                                        .map((entry, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-center justify-between gap-4 text-sm"
+                                            >
+                                                {/* Date + Description */}
+                                                <div className="min-w-0">
+                                                    <p className="text-xs text-gray-500">
+                                                        {new Date(entry.date).toLocaleDateString("en-IN", {
+                                                            day: "2-digit",
+                                                            month: "short",
+                                                            year: "numeric",
+                                                        })}
+                                                    </p>
 
-                        <span className="font-medium text-gray-800">
-                            {formatCurrency(entry.amount)}
-                        </span>
-                    </div>
-                ))}
+                                                    {entry.description && (
+                                                        <p className="text-gray-600 truncate">
+                                                            {entry.description}
+                                                        </p>
+                                                    )}
+                                                </div>
 
-            <div className="flex items-center justify-between border-t border-gray-200 pt-2 mt-2">
-                <span className="font-semibold text-gray-700">
-                    Total Given Amount
-                </span>
+                                                {/* Amount */}
+                                                <span className="font-medium text-gray-800 whitespace-nowrap">
+                                                    {formatCurrency(entry.amount)}
+                                                </span>
+                                            </div>
+                                        ))}
 
-                <span className="font-bold text-green-600">
-                    {formatCurrency(feeData.givenAmount || 0)}
-                </span>
-            </div>
-        </div>
-    </div>
-)}
+                                    {/* Total */}
+                                    <div className="flex items-center justify-between border-t border-gray-200 pt-2 mt-2">
+                                        <span className="font-semibold text-gray-700">
+                                            Total Paid Amount
+                                        </span>
+
+                                        <span className="font-bold text-green-600">
+                                            {formatCurrency(feeData.givenAmount || 0)}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Payment Details Form */}
                         <div className="border-t border-gray-200 pt-6 mt-4">

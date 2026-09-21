@@ -57,7 +57,9 @@ export interface ExportResponse<T> {
 }
 
 
+
 export interface PaidFeeEntry {
+  date?: string;
   amount: number;
   description?: string;
 }
