@@ -661,7 +661,7 @@ export default function StudentsPage() {
                   <span>₹</span> Concession
                 </button>
 
-                <button
+                {/* <button
                   onClick={() => {
                     setSelectedStudentId(s._id);
                     setManualPaymentOpen(true); // Open Manual Payment Modal
@@ -670,7 +670,7 @@ export default function StudentsPage() {
                   title="Manual Payment"
                 >
                   <span>₹</span>Payment
-                </button>
+                </button> */}
 
                 <button
                   onClick={() => {
