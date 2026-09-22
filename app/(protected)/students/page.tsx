@@ -661,16 +661,16 @@ export default function StudentsPage() {
                   <span>₹</span> Concession
                 </button>
 
-                {/* <button
+                <button
                   onClick={() => {
                     setSelectedStudentId(s._id);
                     setManualPaymentOpen(true); // Open Manual Payment Modal
                   }}
                   className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-0.5"
-                  title="Manual Payment"
+                  title="Payment History"
                 >
-                  <span>₹</span>Payment
-                </button> */}
+                  <span>₹</span> History
+                </button>
 
                 <button
                   onClick={() => {
@@ -681,7 +681,7 @@ export default function StudentsPage() {
                   title="Add Given Amount"
                 >
                   <span>₹</span>
-                    Entry
+                  Entry
                 </button>
               </>
             )}
