@@ -1593,6 +1593,8 @@ export default function FeeStructurePage() {
                 </div>
               </div>
 
+              
+
               {feeStructure.referrals.length > 0 ? (
                 <div className="border rounded-lg overflow-hidden">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -1645,7 +1647,7 @@ export default function FeeStructurePage() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  No referrals added yet. Add your first referral above.
+                  No Concession added yet.
                 </div>
               )}
             </div>
