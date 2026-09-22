@@ -485,19 +485,21 @@ export default function StudentCleanupForm({
                     <section className="space-y-2 border p-4 rounded-lg shadow-sm">
                         <h3 className="font-semibold text-gray-700 mb-2">Admission Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="flex flex-col">
-                                <label className={labelClass}>Quota</label>
-                                <select
-                                    className={inputClass}
-                                    value={form.quota}
-                                    onChange={e => handleChange("quota", e.target.value)}
-                                >
-                                    <option value="">Select Quota</option>
-                                    {quotaOptions.map(q => (
-                                        <option key={q.value} value={q.value}>{q.label}</option>
-                                    ))}
-                                </select>
-                            </div>
+
+                            {student.instituteId !== "INS-3-ZXYXKM" && (
+                                <div className="flex flex-col">
+                                    <label className={labelClass}>Quota</label>
+                                    <select
+                                        className={inputClass}
+                                        value={form.quota}
+                                        onChange={e => handleChange("quota", e.target.value)}
+                                    >
+                                        <option value="">Select Quota</option>
+                                        {quotaOptions.map(q => (
+                                            <option key={q.value} value={q.value}>{q.label}</option>
+                                        ))}
+                                    </select>
+                                </div>)}
 
                             <div className="flex flex-col">
                                 <label className={labelClass}> Reg No</label>
