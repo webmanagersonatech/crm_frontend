@@ -916,6 +916,7 @@ export default function ApplicationsPage() {
         const colorMap: Record<string, string> = {
           "New": "text-gray-600",
           "Followup": "text-blue-600",
+          "Future Followup": "text-purple-600",
           "Not Reachable": "text-red-600",
           "Switched Off": "text-yellow-600",
           "Not Picked": "text-purple-600",
@@ -1466,8 +1467,8 @@ export default function ApplicationsPage() {
                     }}
                     disabled={exportLoading}
                     className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium rounded-md transition-all shadow-sm ${exportLoading
-                        ? 'bg-green-400 text-white cursor-not-allowed opacity-75'
-                        : 'bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:shadow-md'
+                      ? 'bg-green-400 text-white cursor-not-allowed opacity-75'
+                      : 'bg-gradient-to-b from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:shadow-md'
                       }`}
                   >
                     <FileDown className="w-3.5 h-3.5" />
@@ -1770,6 +1771,7 @@ export default function ApplicationsPage() {
                         options={[
                           { value: "New", label: "New" },
                           { value: "Followup", label: "Followup" },
+                          { value: "Future Followup", label: "Future Followup" },
                           { value: "Not Reachable", label: "Not Reachable" },
                           { value: "Switched Off", label: "Switched Off" },
                           { value: "Not Picked", label: "Not Picked" },

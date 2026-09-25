@@ -331,6 +331,7 @@ export default function LeadsPage() {
     { value: "New", label: "New" },
     { value: "Followup", label: "Followup" },
     { value: "Not Reachable", label: "Not Reachable" },
+    { value: "Future Followup", label: "Future Followup" },
     { value: "Switched Off", label: "Switched Off" },
     { value: "Not Picked", label: "Not Picked" },
     { value: "Irrelevant", label: "Irrelevant" },
@@ -755,6 +756,8 @@ export default function LeadsPage() {
         const statusColorMap: Record<string, string> = {
           New: "bg-gray-100 text-gray-700 border border-gray-400",
           Followup: "bg-blue-100 text-blue-700 border border-blue-400",
+
+          "Future Followup": "bg-purple-100 text-purple-700 border border-purple-400",
           "Not Reachable": "bg-yellow-100 text-yellow-700 border border-yellow-400",
           "Switched Off": "bg-orange-100 text-orange-700 border border-orange-400",
           "Not Picked": "bg-amber-100 text-amber-700 border border-amber-400",

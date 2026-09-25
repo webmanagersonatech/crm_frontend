@@ -96,6 +96,7 @@ export default function CreateLeadForm({
     const statusOptions: OptionType[] = [
         { value: "New", label: "New" },
         { value: "Followup", label: "Followup" },
+        { value: "Future Followup", label: "Future Followup" },
         { value: "Not Reachable", label: "Not Reachable" },
         { value: "Switched Off", label: "Switched Off" },
         { value: "Not Picked", label: "Not Picked" },
