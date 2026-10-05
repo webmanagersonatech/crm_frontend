@@ -99,6 +99,8 @@ export default function ManualPaymentDialog({
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'full_payment' | 'installment'>('full_payment');
     const [isSelectedPaid, setIsSelectedPaid] = useState<boolean>(false);
 
+    console.log(feeData, "feeData")
+
     // Fetch fee data with payment method
     const fetchFeeConfiguration = async (paymentMethod?: string) => {
         if (!studentId) return;
@@ -313,278 +315,290 @@ export default function ManualPaymentDialog({
     if (!open) return null;
 
     return (
-       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div className="bg-white w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-800">Payment History</h2>
-            <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-
-        {loading ? (
-            <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                <p className="mt-4 text-gray-600">Loading fee details...</p>
-            </div>
-        ) : feeData ? (
-            <form onSubmit={handleSubmit}>
-                {/* Student Info */}
-                <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 pb-6 border-b border-gray-200">
-                    <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wider">Student ID</p>
-                        <p className="font-semibold text-gray-800 mt-1">{feeData.studentId}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wider">Student Name</p>
-                        <p className="font-semibold text-gray-800 mt-1">{feeData.studentName}</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wider">Course</p>
-                        <p className="font-semibold text-gray-800 mt-1">{feeData.courseName}</p>
-                    </div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+                    <h2 className="text-2xl font-bold text-gray-800">Payment History</h2>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
-                {/* Fee Concession */}
-                {feeData.feeConcession?.concessionPercentage > 0 && (
-                    <div className="mb-6 pb-6 border-b border-gray-200">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                            <div className="flex-shrink-0 bg-green-100 rounded-full p-2">
-                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                {loading ? (
+                    <div className="text-center py-12">
+                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                        <p className="mt-4 text-gray-600">Loading fee details...</p>
+                    </div>
+                ) : feeData ? (
+                    <form onSubmit={handleSubmit}>
+                        {/* Student Info */}
+                        <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 pb-6 border-b border-gray-200">
+                            <div>
+                                <p className="text-xs text-gray-500 uppercase tracking-wider">Student ID</p>
+                                <p className="font-semibold text-gray-800 mt-1">{feeData.studentId}</p>
                             </div>
-                            <div className="flex-1">
-                                <p className="text-sm sm:text-base font-semibold text-green-800">
-                                    Fee Concession Applied:
-                                </p>
+                            <div>
+                                <p className="text-xs text-gray-500 uppercase tracking-wider">Student Name</p>
+                                <p className="font-semibold text-gray-800 mt-1">{feeData.studentName}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 uppercase tracking-wider">Course</p>
+                                <p className="font-semibold text-gray-800 mt-1">{feeData.courseName}</p>
+                            </div>
+                        </div>
 
-                                {feeData.feeConcession.matchedReferrals && feeData.feeConcession.matchedReferrals.length > 0 && (
-                                    <div className="mt-2 flex flex-wrap gap-2">
-                                        {feeData.feeConcession.matchedReferrals.map((referral, idx) => (
-                                            <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                                                {referral.name} ({referral.percentage}%)
-                                            </span>
-                                        ))}
+                        {/* Fee Concession */}
+                        {feeData.feeConcession?.concessionPercentage > 0 && (
+                            <div className="mb-6 pb-6 border-b border-gray-200">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                                    <div className="flex-shrink-0 bg-green-100 rounded-full p-2">
+                                        <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
                                     </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
+                                    <div className="flex-1">
+                                        <p className="text-sm sm:text-base font-semibold text-green-800">
+                                            Fee Concession Applied:
+                                        </p>
 
-                {/* Payment Method Toggle */}
-                <div className="mb-6 pb-6 border-b border-gray-200">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                          
-                            <div className="flex border border-gray-300 rounded-md overflow-hidden">
-                                <button
-                                    type="button"
-                                    onClick={() => handlePaymentMethodToggle("full_payment")}
-                                    className={`px-4 py-2 text-sm font-medium transition-colors
+                                        {feeData.feeConcession.matchedReferrals && feeData.feeConcession.matchedReferrals.length > 0 && (
+                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                {feeData.feeConcession.matchedReferrals.map((referral, idx) => (
+                                                    <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                                        {referral.name} ({referral.percentage}%)
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Payment Method Toggle */}
+                        <div className="mb-6 pb-6 border-b border-gray-200">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div className="flex items-center gap-4">
+
+                                    <div className="flex border border-gray-300 rounded-md overflow-hidden">
+                                        <button
+                                            type="button"
+                                            onClick={() => handlePaymentMethodToggle("full_payment")}
+                                            className={`px-4 py-2 text-sm font-medium transition-colors
                                         ${selectedPaymentMethod === "full_payment"
-                                            ? "bg-blue-600 text-white"
-                                            : "bg-white text-gray-700 hover:bg-gray-50"
-                                        }
+                                                    ? "bg-blue-600 text-white"
+                                                    : "bg-white text-gray-700 hover:bg-gray-50"
+                                                }
                                         disabled:bg-gray-100
                                         disabled:text-gray-400
                                         disabled:border-gray-200
                                         disabled:cursor-not-allowed
                                         disabled:hover:bg-gray-100
                                     `}
-                                    disabled={
-                                        loading ||
-                                        feeData?.initialPaymentType === "installment"
-                                    }
-                                >
-                                    Full Payment
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handlePaymentMethodToggle("installment")}
-                                    className={`px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300
+                                            disabled={
+                                                loading ||
+                                                feeData?.initialPaymentType === "installment"
+                                            }
+                                        >
+                                            Full Payment
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handlePaymentMethodToggle("installment")}
+                                            className={`px-4 py-2 text-sm font-medium transition-colors border-l border-gray-300
                                         ${selectedPaymentMethod === "installment"
-                                            ? "bg-blue-600 text-white"
-                                            : "bg-white text-gray-700 hover:bg-gray-50"
-                                        }
+                                                    ? "bg-blue-600 text-white"
+                                                    : "bg-white text-gray-700 hover:bg-gray-50"
+                                                }
                                         disabled:bg-gray-100
                                         disabled:text-gray-400
                                         disabled:border-gray-200
                                         disabled:cursor-not-allowed
                                         disabled:hover:bg-gray-100
                                     `}
-                                    disabled={
-                                        loading ||
-                                        feeData?.initialPaymentType === "full_payment"
-                                    }
-                                >
-                                    Installments
-                                </button>
+                                            disabled={
+                                                loading ||
+                                                feeData?.initialPaymentType === "full_payment"
+                                            }
+                                        >
+                                            Installments
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                {/* Previous Year Pending Fees */}
-                {(feeData.unpaidYears?.length ?? 0) > 0 && (
-                    <div className="mb-6 pb-6 border-b border-gray-200">
-                        <div className="mb-2">
-                            <h3 className="text-sm font-semibold text-gray-900">
-                                Fee Year
-                            </h3>
-                            <p className="text-[11px] text-gray-500 mt-0.5">
-                                Select a year to view fees
-                            </p>
-                        </div>
+                        {/* Previous Year Pending Fees */}
+                        {(feeData.unpaidYears?.length ?? 0) > 0 && (
+                            <div className="mb-6 pb-6 border-b border-gray-200">
+                                <div className="mb-2">
+                                    <h3 className="text-sm font-semibold text-gray-900">
+                                        Fee Year
+                                    </h3>
+                                    <p className="text-[11px] text-gray-500 mt-0.5">
+                                        Select a year to view fees
+                                    </p>
+                                </div>
 
-                        <div className="flex flex-wrap gap-2">
-                            {feeData.unpaidYears.map((year) => {
-                                const isSelected = selectedUnpaidYear === year;
+                                <div className="flex flex-wrap gap-2">
+                                    {feeData.unpaidYears.map((year) => {
+                                        const isSelected = selectedUnpaidYear === year;
 
-                                return (
+                                        return (
+                                            <button
+                                                key={year}
+                                                type="button"
+                                                onClick={() => setSelectedUnpaidYear(year)}
+                                                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-all duration-200 ${isSelected
+                                                    ? "border-blue-600 bg-blue-50 text-blue-700"
+                                                    : "border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-gray-50"
+                                                    }`}
+                                            >
+                                                <span
+                                                    className={`w-1.5 h-1.5 rounded-full ${isSelected
+                                                        ? "bg-blue-600"
+                                                        : "bg-orange-500"
+                                                        }`}
+                                                />
+
+                                                <span className="text-xs font-semibold">
+                                                    Year {year}
+                                                </span>
+
+                                                <svg
+                                                    className={`w-3.5 h-3.5 ${isSelected
+                                                        ? "text-blue-600"
+                                                        : "text-gray-400"
+                                                        }`}
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth={2}
+                                                        d="M9 5l7 7-7 7"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        );
+                                    })}
+
+                                    {/* Current Year */}
                                     <button
-                                        key={year}
                                         type="button"
-                                        onClick={() => setSelectedUnpaidYear(year)}
-                                        className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-all duration-200 ${isSelected
-                                            ? "border-blue-600 bg-blue-50 text-blue-700"
-                                            : "border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-gray-50"
+                                        onClick={() => setSelectedUnpaidYear(null)}
+                                        className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-all duration-200 ${selectedUnpaidYear === null
+                                            ? "border-green-600 bg-green-50 text-green-700"
+                                            : "border-gray-200 bg-white text-gray-700 hover:border-green-300 hover:bg-green-50"
                                             }`}
                                     >
                                         <span
-                                            className={`w-1.5 h-1.5 rounded-full ${isSelected
-                                                ? "bg-blue-600"
-                                                : "bg-orange-500"
+                                            className={`w-1.5 h-1.5 rounded-full ${selectedUnpaidYear === null
+                                                ? "bg-green-600"
+                                                : "bg-gray-400"
                                                 }`}
                                         />
 
                                         <span className="text-xs font-semibold">
-                                            Year {year}
+                                            Current Year
                                         </span>
-
-                                        <svg
-                                            className={`w-3.5 h-3.5 ${isSelected
-                                                ? "text-blue-600"
-                                                : "text-gray-400"
-                                                }`}
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M9 5l7 7-7 7"
-                                            />
-                                        </svg>
                                     </button>
-                                );
-                            })}
-
-                            {/* Current Year */}
-                            <button
-                                type="button"
-                                onClick={() => setSelectedUnpaidYear(null)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-md border transition-all duration-200 ${selectedUnpaidYear === null
-                                    ? "border-green-600 bg-green-50 text-green-700"
-                                    : "border-gray-200 bg-white text-gray-700 hover:border-green-300 hover:bg-green-50"
-                                    }`}
-                            >
-                                <span
-                                    className={`w-1.5 h-1.5 rounded-full ${selectedUnpaidYear === null
-                                        ? "bg-green-600"
-                                        : "bg-gray-400"
-                                        }`}
-                                />
-
-                                <span className="text-xs font-semibold">
-                                    Current Year
-                                </span>
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Fee Structure */}
-                <div className="mb-6">
-                    {feeData.years?.map((year: YearData, index: number) => (
-                        <div
-                            key={index}
-                            className={`border border-gray-200 mb-4 overflow-hidden ${selectedYear === year.year ? 'ring-2 ring-blue-500' : ''}`}
-                            onClick={() => {
-                                setSelectedYear(year.year);
-                                const firstUnpaid = year.paymentOptions?.find(
-                                    (opt: Installment) => !opt.paid
-                                );
-                                if (firstUnpaid) {
-                                    setSelectedInstallment(firstUnpaid.number);
-                                    setSelectedPaymentOptionId(firstUnpaid.paymentOptionId);
-                                    setAmount(firstUnpaid.payableAmount.toString());
-                                    setIsSelectedPaid(false);
-                                } else {
-                                    const firstOption = year.paymentOptions?.[0];
-                                    if (firstOption) {
-                                        setSelectedInstallment(firstOption.number);
-                                        setSelectedPaymentOptionId(firstOption.paymentOptionId);
-                                        setAmount(firstOption.payableAmount.toString());
-                                        setIsSelectedPaid(true);
-                                    }
-                                }
-                            }}
-                        >
-                            <div className="px-4 py-3 border-b border-gray-200">
-                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                                    <h2 className="text-lg font-semibold text-gray-800">
-                                        Year {year.year}
-                                    </h2>
-                                    <div className="text-right">
-                                        <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
-
-                                            {year.concessionPercentage > 0 && (
-                                                <span className="text-xs text-green-600 font-medium">
-                                                    -{formatCurrency(year.concessionAmount)}
-                                                </span>
-                                            )}
-                                            <span className="text-sm font-bold text-blue-600">
-                                                Payable: {formatCurrency(year.payableAmount)}
-                                            </span>
-                                        </div>
-                                    </div>
                                 </div>
                             </div>
+                        )}
 
-                            <div className="p-4">
-                                {year.paymentOptions && year.paymentOptions.length > 0 ? (
-                                    <div className="space-y-3">
+                        {/* Fee Structure */}
+                        <div className="mb-6">
+                            {feeData.years?.map((year: YearData, index: number) => (
+                                <div
+                                    key={index}
+                                    className={`border border-gray-200 mb-4 overflow-hidden ${selectedYear === year.year ? 'ring-2 ring-blue-500' : ''}`}
+                                    onClick={() => {
+                                        setSelectedYear(year.year);
+                                        const firstUnpaid = year.paymentOptions?.find(
+                                            (opt: Installment) => !opt.paid
+                                        );
+                                        if (firstUnpaid) {
+                                            setSelectedInstallment(firstUnpaid.number);
+                                            setSelectedPaymentOptionId(firstUnpaid.paymentOptionId);
+                                            setAmount(firstUnpaid.payableAmount.toString());
+                                            setIsSelectedPaid(false);
+                                        } else {
+                                            const firstOption = year.paymentOptions?.[0];
+                                            if (firstOption) {
+                                                setSelectedInstallment(firstOption.number);
+                                                setSelectedPaymentOptionId(firstOption.paymentOptionId);
+                                                setAmount(firstOption.payableAmount.toString());
+                                                setIsSelectedPaid(true);
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <div className="px-4 py-3 border-b border-gray-200">
+                                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                                            <h2 className="text-lg font-semibold text-gray-800">
+                                                Year {year.year}
+                                            </h2>
+                                            <div className="text-right">
+                                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+
+                                                    {year.concessionPercentage > 0 && (
+                                                        <span className="text-xs text-green-600 font-medium">
+                                                            -{formatCurrency(year.concessionAmount)}
+                                                        </span>
+                                                    )}
+                                                    <span className="text-sm font-bold text-blue-600">
+                                                        Payable: {formatCurrency(year.payableAmount)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4">
                                         {year.paymentOptions.map((option: Installment, idx: number) => {
                                             const isPastDue = isDueDatePassed(option.dueDate);
-                                            const isPaid = option.paid;
-                                            const isSelected = selectedYear === year.year && selectedInstallment === option.number;
+                                            const isPaid = option.paid === true;
+                                            const isSelected =
+                                                selectedYear === year.year &&
+                                                selectedInstallment === option.number;
 
-                                            let label = '';
-                                            if (selectedPaymentMethod === 'full_payment') {
-                                                label = 'Full Payment';
-                                            } else if (selectedPaymentMethod === 'installment') {
+                                            let label = "";
+
+                                            if (selectedPaymentMethod === "full_payment") {
+                                                label = "Full Payment";
+                                            } else {
                                                 label = `Installment ${option.number} of ${year.paymentOptions.length}`;
                                             }
 
+                                            // IMPORTANT:
+                                            // Paid installment -> use paymentAmount
+                                            // Unpaid installment -> use payableAmount
+                                            const displayAmount = isPaid
+                                                ? Number(option.paymentAmount ?? 0)
+                                                : Number(option.payableAmount ?? 0);
+
+                                            const displayTuition = option.tuitionConcession > 0
+                                                ? option.tuitionFee - option.tuitionConcession
+                                                : option.tuitionFee;
+
                                             return (
                                                 <div
-                                                    key={idx}
+                                                    key={`${year.year}-${option.number}-${idx}`}
                                                     className={`p-4 border-l-4 transition-all ${isPaid
-                                                        ? "bg-green-50 border-green-400 cursor-not-allowed opacity-75"
-                                                        : isPastDue
-                                                            ? "bg-red-50 border-red-400"
-                                                            : isSelected
-                                                                ? "bg-blue-50 border-blue-500"
-                                                                : "bg-gray-50 border-gray-200 hover:border-blue-300 cursor-pointer"
+                                                            ? "bg-green-50 border-green-400 cursor-not-allowed"
+                                                            : isPastDue
+                                                                ? "bg-red-50 border-red-400"
+                                                                : isSelected
+                                                                    ? "bg-blue-50 border-blue-500"
+                                                                    : "bg-gray-50 border-gray-200 hover:border-blue-300 cursor-pointer"
                                                         }`}
                                                     onClick={() => {
                                                         if (!isPaid) {
@@ -598,148 +612,169 @@ export default function ManualPaymentDialog({
                                                         }
                                                     }}
                                                 >
-                                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+                                                        {/* LEFT SIDE */}
                                                         <div className="flex-1">
+
+                                                            {/* Installment title + status */}
                                                             <div className="flex flex-wrap items-center gap-2">
                                                                 <h3 className="text-base font-semibold text-gray-800">
                                                                     {label}
                                                                 </h3>
+
                                                                 {isPaid && (
                                                                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-200 text-green-800">
-                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                        <svg
+                                                                            className="w-3 h-3"
+                                                                            fill="none"
+                                                                            stroke="currentColor"
+                                                                            viewBox="0 0 24 24"
+                                                                        >
+                                                                            <path
+                                                                                strokeLinecap="round"
+                                                                                strokeLinejoin="round"
+                                                                                strokeWidth={2}
+                                                                                d="M5 13l4 4L19 7"
+                                                                            />
                                                                         </svg>
                                                                         Paid
                                                                     </span>
                                                                 )}
+
                                                                 {!isPaid && isPastDue && (
                                                                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-200 text-red-800">
-                                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                                                        </svg>
                                                                         Overdue
                                                                     </span>
                                                                 )}
                                                             </div>
 
+                                                            {/* Due Date */}
                                                             <p className="text-xs text-gray-500 mt-1">
-                                                                Due: {new Date(option.dueDate).toLocaleDateString('en-IN', {
-                                                                    day: '2-digit',
-                                                                    month: 'short',
-                                                                    year: 'numeric'
+                                                                Due:{" "}
+                                                                {new Date(option.dueDate).toLocaleDateString("en-IN", {
+                                                                    day: "2-digit",
+                                                                    month: "short",
+                                                                    year: "numeric",
                                                                 })}
                                                             </p>
 
-                                                            {!isPaid && (
-                                                                <div className="mt-1 flex flex-wrap items-center gap-3 text-xs">
+                                                           
+
+                                                            {/* PAYMENT AMOUNT / FEE BREAKDOWN */}
+                                                            {isPaid ? (
+                                                                <div className="mt-3">
+                                                                 
+
+                                                                    {option.paidDate && (
+                                                                        <p className="text-xs text-green-600 mt-1">
+                                                                            Paid on: {formatDate(option.paidDate)}
+                                                                        </p>
+                                                                    )}
+
+                                                                    {option.paymentId && (
+                                                                        <p className="text-xs text-gray-400 mt-1 truncate">
+                                                                            Payment ID: {option.paymentId}
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
                                                                     <span className="text-gray-500">
-                                                                        Tuition: {formatCurrency(
-                                                                            option.tuitionConcession > 0
-                                                                                ? option.tuitionFee - option.tuitionConcession
-                                                                                : option.tuitionFee
-                                                                        )}
+                                                                        Tuition: {formatCurrency(displayTuition)}
                                                                     </span>
 
-                                                                    <span className="text-gray-500">Other: {formatCurrency(option.otherFee)}</span>
+                                                                    <span className="text-gray-500">
+                                                                        Other: {formatCurrency(option.otherFee)}
+                                                                    </span>
 
+                                                                   
                                                                 </div>
-                                                            )}
-
-                                                            {isPaid && option.paidDate && (
-                                                                <p className="text-xs text-green-600 mt-1">
-                                                                    Paid on: {formatDate(option.paidDate)}
-                                                                </p>
-                                                            )}
-                                                            {isPaid && option.paymentId && (
-                                                                <p className="text-xs text-gray-400 truncate">
-                                                                    Payment ID: {option.paymentId}
-                                                                </p>
                                                             )}
                                                         </div>
 
+                                                        {/* RIGHT SIDE AMOUNT */}
                                                         <div className="flex items-center gap-4">
                                                             <div className="text-right">
 
-                                                                <p className={`text-lg font-bold ${isPaid ? 'text-green-600' : 'text-gray-800'}`}>
-                                                                    {formatCurrency(option.payableAmount)}
+                                                                <p
+                                                                    className={`text-lg font-bold ${isPaid
+                                                                            ? "text-green-600"
+                                                                            : "text-gray-800"
+                                                                        }`}
+                                                                >
+                                                                    {formatCurrency(displayAmount)}
+                                                                </p>
+
+                                                                <p className="text-xs text-gray-500 mt-1">
+                                                                    {isPaid ? "Paid Amount" : "Amount Due"}
                                                                 </p>
                                                             </div>
-                                                            {/* {isSelected && !isPaid && (
-                                                                <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-medium">
-                                                                    Selected
-                                                                </div>
-                                                            )} */}
                                                         </div>
                                                     </div>
                                                 </div>
                                             );
                                         })}
                                     </div>
-                                ) : (
-                                    <div className="text-center py-6 text-gray-500">
-                                        No payment options available.
-                                    </div>
-                                )}
-                            </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
 
-                {/* Given Amount */}
-                {(feeData.givenAmountEntries?.length ?? 0) > 0 && (
-                    <div className="mb-6 pt-6 border-t border-gray-200">
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                            Paid Amount
-                        </h3>
+                        {/* Given Amount */}
+                        {(feeData.givenAmountEntries?.length ?? 0) > 0 && (
+                            <div className="mb-6 pt-6 border-t border-gray-200">
+                                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                                    Paid Amount
+                                </h3>
 
-                        <div className="space-y-3">
-                            {feeData.givenAmountEntries
-                                ?.flatMap((record) => record.entries)
-                                .map((entry, index) => (
-                                    <div
-                                        key={index}
-                                        className="flex items-center justify-between gap-4 text-sm border-b border-gray-100 pb-2 last:border-0"
-                                    >
-                                        {/* Date + Description */}
-                                        <div className="min-w-0">
-                                            <p className="text-xs text-gray-500">
-                                                {new Date(entry.date).toLocaleDateString("en-IN", {
-                                                    day: "2-digit",
-                                                    month: "short",
-                                                    year: "numeric",
-                                                })}
-                                            </p>
+                                <div className="space-y-3">
+                                    {feeData.givenAmountEntries
+                                        ?.flatMap((record) => record.entries)
+                                        .map((entry, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-center justify-between gap-4 text-sm border-b border-gray-100 pb-2 last:border-0"
+                                            >
+                                                {/* Date + Description */}
+                                                <div className="min-w-0">
+                                                    <p className="text-xs text-gray-500">
+                                                        {new Date(entry.date).toLocaleDateString("en-IN", {
+                                                            day: "2-digit",
+                                                            month: "short",
+                                                            year: "numeric",
+                                                        })}
+                                                    </p>
 
-                                            {entry.description && (
-                                                <p className="text-gray-600 truncate">
-                                                    {entry.description}
-                                                </p>
-                                            )}
-                                        </div>
+                                                    {entry.description && (
+                                                        <p className="text-gray-600 truncate">
+                                                            {entry.description}
+                                                        </p>
+                                                    )}
+                                                </div>
 
-                                        {/* Amount */}
-                                        <span className="font-medium text-gray-800 whitespace-nowrap">
-                                            {formatCurrency(entry.amount)}
+                                                {/* Amount */}
+                                                <span className="font-medium text-gray-800 whitespace-nowrap">
+                                                    {formatCurrency(entry.amount)}
+                                                </span>
+                                            </div>
+                                        ))}
+
+                                    {/* Total */}
+                                    <div className="flex items-center justify-between border-t border-gray-200 pt-2 mt-2">
+                                        <span className="font-semibold text-gray-700">
+                                            Total Paid Amount
+                                        </span>
+
+                                        <span className="font-bold text-green-600">
+                                            {formatCurrency(feeData.givenAmount || 0)}
                                         </span>
                                     </div>
-                                ))}
-
-                            {/* Total */}
-                            <div className="flex items-center justify-between border-t border-gray-200 pt-2 mt-2">
-                                <span className="font-semibold text-gray-700">
-                                    Total Paid Amount
-                                </span>
-
-                                <span className="font-bold text-green-600">
-                                    {formatCurrency(feeData.givenAmount || 0)}
-                                </span>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                )}
+                        )}
 
-                {/* Payment Details Form */}
-                {/* <div className="border-t border-gray-200 pt-6 mt-4">
+                        {/* Payment Details Form */}
+                        {/* <div className="border-t border-gray-200 pt-6 mt-4">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">Payment Details</h3>
 
                     {isSelectedPaid ? (
@@ -817,8 +852,8 @@ export default function ManualPaymentDialog({
                     )}
                 </div> */}
 
-                {/* Payment Summary */}
-                {/* <div className="mb-6 mt-6">
+                        {/* Payment Summary */}
+                        {/* <div className="mb-6 mt-6">
                     <h3 className="text-sm font-medium text-gray-700 mb-3">Payment Summary</h3>
                     <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div>
@@ -849,8 +884,8 @@ export default function ManualPaymentDialog({
                     </div>
                 </div> */}
 
-                {/* Action Buttons */}
-                {/* <div className="flex justify-end gap-3 pt-4 border-t">
+                        {/* Action Buttons */}
+                        {/* <div className="flex justify-end gap-3 pt-4 border-t">
                     <button
                         type="button"
                         onClick={onClose}
@@ -879,20 +914,20 @@ export default function ManualPaymentDialog({
                         )}
                     </button>
                 </div> */}
-            </form>
-        ) : (
-            <div className="text-center py-12">
-                <div className="flex justify-center mb-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
+                    </form>
+                ) : (
+                    <div className="text-center py-12">
+                        <div className="flex justify-center mb-4">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p className="text-gray-600">No fee configuration found for this student.</p>
                     </div>
-                </div>
-                <p className="text-gray-600">No fee configuration found for this student.</p>
+                )}
             </div>
-        )}
-    </div>
-</div>
+        </div>
     );
 }

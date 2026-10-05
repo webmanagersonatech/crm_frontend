@@ -22,6 +22,8 @@ import { Country, State, City } from "country-state-city";
 import LocationStatsSection from "@/components/Locationstatssection";
 import AsyncSelect from "react-select/async";
 
+
+
 interface Application {
   _id?: string;
   instituteId: any;
@@ -34,6 +36,12 @@ interface Application {
   paymentStatus: string;
   status: "Pending" | "Approved" | "Rejected";
   createdAt: string;
+  student?: {
+    _id: string;
+    applicationId: string;
+    admissionNumber?: string;
+    classSection?: string;
+  };
   lead?: {
     _id: string;
     leadId: string;
@@ -173,6 +181,10 @@ export default function ApplicationsPage() {
   };
   const systemExportFields = [
     { key: "applicationId", label: "Application ID" },
+    {
+      key: "admissionNumber",
+      label: "Admission Number",
+    },
     ...(userpermission === "superadmin" ? [{ key: "institute", label: "Institute" }] : []),
     { key: "applicantName", label: "Applicant Name" },
     { key: "program", label: "Program" },
@@ -413,10 +425,10 @@ export default function ApplicationsPage() {
       if (res.academicYears) {
         setAcademicYears(res.academicYears);
       }
-      if (res.courses) {
+      if (res.courses) { 
         const formatted = res.courses.map((c: any) => ({
-          value: c.courseId,   // ✅ ID
-          label: c.name        // ✅ Name
+          value: c.courseId,
+          label: c.name   
         }));
 
         setPrograms(formatted);
@@ -478,6 +490,8 @@ export default function ApplicationsPage() {
       });
 
       const exportedData = (exportResult.data || []).map((app: any) => {
+
+       
         const obj: any = {};
 
         fields.forEach((key) => {
@@ -486,6 +500,10 @@ export default function ApplicationsPage() {
           if (sys) {
             switch (key) {
               case "applicationId": obj["Application Id"] = app.applicationId || "-"; break;
+              case "admissionNumber":
+                obj["Admission Number"] =
+                  app.student?.admissionNumber || "-";
+                break;
               case "institute": obj["Institute"] = app.institute?.name || app.instituteId || "-"; break;
               case "applicantName": obj["Applicant Name"] = app.applicantName || "-"; break;
               case "program": obj["Program"] = app.program || "-"; break;
