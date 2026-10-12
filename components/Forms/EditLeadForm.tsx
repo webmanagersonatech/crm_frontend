@@ -111,7 +111,7 @@ export default function EditLeadPage() {
         }));
 
         // ✅ Append "Other"
-        options.push({ value: "__OTHER__", label: "Other" });
+        // options.push({ value: "__OTHER__", label: "Other" });
 
         setMediumOptions(options);
       } catch (error) {

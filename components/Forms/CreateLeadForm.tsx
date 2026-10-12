@@ -207,7 +207,7 @@ export default function CreateLeadForm({
                 }));
 
                 // ✅ Append "Other" option
-                options.push({ value: "__OTHER__", label: "Other" });
+                // options.push({ value: "__OTHER__", label: "Other" });
 
                 setMediumOptions(options);
             } catch (error) {
