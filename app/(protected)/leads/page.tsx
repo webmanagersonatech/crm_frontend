@@ -1170,6 +1170,7 @@ export default function LeadsPage() {
                       <option value="offline">Offline</option>
                       <option value="online">Online</option>
                       <option value="application">Application</option>
+                      <option value="sm-26-paid">SM-26-Paid</option>
                     </select>
                   )}
                   {/* Medium Source Filter */}

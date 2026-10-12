@@ -122,6 +122,7 @@ export default function CreateLeadForm({
         { value: "offline", label: "Offline" },
         { value: "online", label: "Online" },
         { value: "application", label: "Application" },
+         { value: "sm-26-paid", label: "SM-26-Paid" },
     ];
     const communicationOptions: OptionType[] = [
         { value: "WhatsApp", label: "WhatsApp" },
