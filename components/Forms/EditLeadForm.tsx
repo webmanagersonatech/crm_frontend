@@ -77,7 +77,7 @@ export default function EditLeadPage() {
     { value: "Offline", label: "Offline" },
     { value: "Online", label: "Online" },
     { value: "Phone", label: "Phone" },
-    { value: "Social Media", label: "Social Media" },
+  
   ];
   const isValidAge = (dob: string, minAge: number) => {
     const birthDate = new Date(dob);
