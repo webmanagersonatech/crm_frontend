@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Eye, Pencil, FileDown, Users, ArrowRight, Plus, Loader2, Settings, Trash2, Search, FileText, X, AlertTriangle, CheckCircle } from "lucide-react";
+import { Eye, Pencil, EyeOff, FileDown, Users, ArrowRight, Plus, Loader2, Settings, Trash2, Search, FileText, X, AlertTriangle, CheckCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import Link from "next/link";
 import { DataTable } from "@/components/Tablecomponents";
@@ -20,6 +20,7 @@ import BulkLeadGenerator from "@/components/oko";
 import DuplicatePopup from "@/components/DuplicatePopup";
 import LeadFunnel from "@/components/LeadFunnel";
 import AsyncSelect from "react-select/async";
+
 
 interface OptionType {
   value: string;
@@ -113,7 +114,7 @@ export default function LeadsPage() {
   const [selectedNonDuplicateLead, setSelectedNonDuplicateLead] = useState<Lead | null>(null);
   const [mediumSources, setMediumSources] = useState<string[]>([]);
   const [selectedMediumSource, setSelectedMediumSource] = useState("all");
-
+  const [visiblePhones, setVisiblePhones] = useState<Record<string, boolean>>({});
 
   const toggleFilter = (value: string) => {
     if (!value) return;
@@ -714,10 +715,52 @@ export default function LeadsPage() {
       accessor: "program",
     },
 
+
     columnVisibility.phoneNumber && {
       header: "Phone",
-      accessor: "phoneNumber",
+      render: (lead: Lead) => {
+        const leadKey = String(lead._id);
+        const isVisible = !!visiblePhones[leadKey];
+        const phone = String(lead.phoneNumber || "");
+
+        const maskedPhone =
+          phone.length > 4
+            ? "*".repeat(phone.length - 4) + phone.slice(-4)
+            : "****";
+
+        return (
+          <div className="flex items-center gap-2 min-w-[150px]">
+            <span className="font-mono text-sm">
+              {isVisible ? phone : maskedPhone}
+            </span>
+
+            {phone && (
+              <button
+                type="button"
+                title={isVisible ? "Hide phone number" : "Show phone number"}
+                aria-label={
+                  isVisible ? "Hide phone number" : "Show phone number"
+                }
+                onClick={() =>
+                  setVisiblePhones((prev) => ({
+                    ...prev,
+                    [leadKey]: !prev[leadKey],
+                  }))
+                }
+                className="text-gray-500 hover:text-blue-600 transition-colors"
+              >
+                {isVisible ? (
+                  <EyeOff size={17} />
+                ) : (
+                  <Eye size={17} />
+                )}
+              </button>
+            )}
+          </div>
+        );
+      },
     },
+
 
     columnVisibility.city && {
       header: "City",

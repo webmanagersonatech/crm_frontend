@@ -3,7 +3,7 @@
 import { useState, useEffect, } from "react";
 import { MdDashboard } from "react-icons/md";
 import { DataTable } from "@/components/Tablecomponents";
-import { Building2, Pencil, FileStack, Users2, PhoneCall, Calendar } from "lucide-react";
+import { Building2, Pencil, FileStack, Users2, Eye, EyeOff, PhoneCall, Calendar } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   LineChart,
@@ -21,6 +21,7 @@ import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { toast } from "react-toastify";
 import { getaccesscontrol, } from "@/app/lib/request/permissionRequest";
 import DuplicatePopup from "@/components/DuplicatePopup";
+
 
 interface OptionType {
   value: string;
@@ -83,7 +84,7 @@ export default function DashboardPage() {
   const [duplicateData, setDuplicateData] = useState<Lead | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean>(false);
   const [userpermission, setUserpermisssion] = useState<any | null>(null);
-
+  const [visiblePhones, setVisiblePhones] = useState<Record<string, boolean>>({});
 
   const COLORS = ["#22c55e", "#ef4444", "#3b82f6", "#f59e0b"];
   const today = new Date();
@@ -416,10 +417,54 @@ export default function DashboardPage() {
       accessor: "program",
     },
 
+
     {
       header: "Phone",
-      accessor: "phoneNumber",
+      render: (lead: Lead) => {
+        const leadKey = String(lead._id);
+        const phone = String(lead.phoneNumber || "");
+        const isVisible = !!visiblePhones[leadKey];
+
+        const maskedPhone =
+          phone.length > 4
+            ? "*".repeat(phone.length - 4) + phone.slice(-4)
+            : phone
+              ? "*".repeat(phone.length)
+              : "—";
+
+        return (
+          <div className="flex items-center gap-2 min-w-[140px]">
+            <span className="font-mono text-sm">
+              {isVisible ? phone : maskedPhone}
+            </span>
+
+            {phone && (
+              <button
+                type="button"
+                title={isVisible ? "Hide phone number" : "Show phone number"}
+                aria-label={
+                  isVisible ? "Hide phone number" : "Show phone number"
+                }
+                onClick={() =>
+                  setVisiblePhones((prev) => ({
+                    ...prev,
+                    [leadKey]: !prev[leadKey],
+                  }))
+                }
+                className="text-gray-500 hover:text-blue-600 transition-colors"
+              >
+                {isVisible ? (
+                  <EyeOff size={17} />
+                ) : (
+                  <Eye size={17} />
+                )}
+              </button>
+            )}
+          </div>
+        );
+      },
     },
+
     {
       header: "City",
       accessor: "city",
