@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Select, { SingleValue } from "react-select";
 import { toast } from "react-toastify";
 import { Edit3 } from "lucide-react";
-import { getLeadById, updateLead, Lead } from "@/app/lib/request/leadRequest";
+import { getLeadById, updateLead, Lead, getMediumSources } from "@/app/lib/request/leadRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { getSettingsByInstitute } from "@/app/lib/request/settingRequest";
 import { Country, State, City } from "country-state-city";
@@ -28,6 +28,10 @@ export default function EditLeadPage() {
   const [selectedInstitute, setSelectedInstitute] = useState<string>("");
   const [applicantAge, setApplicantAge] = useState<number>(18);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [mediumOptions, setMediumOptions] = useState<OptionType[]>([]);
+  const [isCustomMedium, setIsCustomMedium] = useState(false);
+  const [customMedium, setCustomMedium] = useState("");
+  const [initialMediumSynced, setInitialMediumSynced] = useState(false);
   const [form, setForm] = useState<Partial<Lead>>({
     instituteId: "",
     programId: "",
@@ -43,6 +47,7 @@ export default function EditLeadPage() {
     followUpDate: "",
     description: "",
     counsellorName: "",
+    medium: "",
   });
 
   const statusOptions: OptionType[] = [
@@ -84,6 +89,55 @@ export default function EditLeadPage() {
 
     return age >= minAge;
   };
+
+
+
+  // --- Load Medium Sources ---
+  useEffect(() => {
+    const loadMediumSources = async () => {
+      try {
+        const targetInstitute = selectedInstitute || form.instituteId || undefined;
+        const res = await getMediumSources(targetInstitute);
+
+        const options = (res?.mediumsources || []).map((m: string) => ({
+          value: m,
+          label: m,
+        }));
+
+        // ✅ Append "Other"
+        options.push({ value: "__OTHER__", label: "Other" });
+
+        setMediumOptions(options);
+      } catch (error) {
+        console.error("Failed to load medium sources:", error);
+        setMediumOptions([{ value: "__OTHER__", label: "Other" }]);
+      }
+    };
+
+    loadMediumSources();
+  }, [selectedInstitute, form.instituteId]);
+
+
+  // --- Seed custom medium UI from DB (only once) ---
+  useEffect(() => {
+    if (initialMediumSynced) return;
+    if (!form.medium || mediumOptions.length === 0) return;
+
+    const existsInOptions = mediumOptions.some(
+      (opt) => opt.value === form.medium && opt.value !== "__OTHER__"
+    );
+
+    if (!existsInOptions && form.medium.trim() !== "") {
+      // Existing lead has a custom medium value → use "Other" mode
+      setIsCustomMedium(true);
+      setCustomMedium(form.medium);
+    } else {
+      setIsCustomMedium(false);
+      setCustomMedium("");
+    }
+
+    setInitialMediumSynced(true);
+  }, [mediumOptions, form.medium, initialMediumSynced]);
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
@@ -97,7 +151,9 @@ export default function EditLeadPage() {
     } else if (!/^[0-9]{10}$/.test(form.phoneNumber)) {
       newErrors.phoneNumber = "Enter valid 10 digit phone number";
     }
-
+    if (isCustomMedium && !customMedium.trim()) {
+      newErrors.medium = "Please enter the medium source name";
+    }
     if (form.dateOfBirth) {
       const today = new Date();
       const dobDate = new Date(form.dateOfBirth);
@@ -128,6 +184,32 @@ export default function EditLeadPage() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+
+  const handleMediumChange = (selected: SingleValue<OptionType>) => {
+    setErrors((prev) => ({ ...prev, medium: "" }));
+
+    // Case 1: Cleared (user pressed X or selected nothing)
+    if (!selected) {
+      setIsCustomMedium(false);
+      setCustomMedium("");
+      setForm((prev) => ({ ...prev, medium: "" }));
+      return;
+    }
+
+    // Case 2: "Other" selected → show custom text field
+    if (selected.value === "__OTHER__") {
+      setIsCustomMedium(true);
+      setCustomMedium("");
+      setForm((prev) => ({ ...prev, medium: "" }));
+      return;
+    }
+
+    // Case 3: Normal option selected
+    setIsCustomMedium(false);
+    setCustomMedium("");
+    setForm((prev) => ({ ...prev, medium: selected.value }));
   };
   //  Load institutions & countries
   useEffect(() => {
@@ -288,7 +370,17 @@ export default function EditLeadPage() {
     setLoading(true);
 
     try {
-      await updateLead(id as string, form);
+      // ✅ Resolve medium (empty string means "clear it")
+      const finalMedium = isCustomMedium
+        ? customMedium.trim()
+        : (form.medium ?? "").trim();
+
+      // ✅ Always send `medium` so backend can clear it when empty
+      await updateLead(id as string, {
+        ...form,
+        medium: finalMedium,
+      });
+
       toast.success("Lead updated successfully!");
       router.push("/leads");
     } catch (err: any) {
@@ -498,6 +590,44 @@ export default function EditLeadPage() {
             onChange={selected => handleSelectChange("status", selected)}
             styles={customSelectStyles("status")}
           />
+        </div>
+
+        {/* Medium Source */}
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold mb-1">
+            Medium Source
+          </label>
+
+          <Select
+            options={mediumOptions}
+            value={
+              isCustomMedium
+                ? mediumOptions.find((opt) => opt.value === "__OTHER__")
+                : mediumOptions.find((opt) => opt.value === form.medium) || null
+            }
+            onChange={handleMediumChange}
+            styles={customSelectStyles("medium")}
+            isClearable
+            placeholder="Select Medium Source"
+          />
+
+          {/* ✅ Custom Medium Text Field */}
+          {isCustomMedium && (
+            <input
+              type="text"
+              name="customMedium"
+              value={customMedium}
+              onChange={(e) => setCustomMedium(e.target.value)}
+              className={`${inputClass} mt-2`}
+              placeholder="Enter medium source name"
+            />
+          )}
+
+          {errors.medium && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.medium}
+            </span>
+          )}
         </div>
 
         {/* Communication */}

@@ -61,6 +61,7 @@ export interface Lead {
   phoneNumber?: string;
   dateOfBirth?: string;
   country?: string;
+  medium?: string;
   state?: string;
   city?: string;
   status?: string;
@@ -131,6 +132,25 @@ export async function createLead(data: Partial<Lead>) {
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || "Failed to create lead.");
+  }
+}
+
+
+export async function getMediumSources(instituteId?: string) {
+  try {
+    const params = new URLSearchParams();
+    if (instituteId) params.append("instituteId", instituteId);  // ✅ skips empty/undefined
+
+    const query = params.toString();
+    const response = await api.get(
+      `/leads/medium-sources${query ? `?${query}` : ""}`
+    );
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch medium sources."
+    );
   }
 }
 // Bulk upload leads (CSV)

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Select, { SingleValue } from "react-select";
 import { toast } from "react-toastify";;
 import { UserPlus2 } from "lucide-react";
-import { createLead, Lead } from "@/app/lib/request/leadRequest";
+import { createLead, Lead, getMediumSources } from "@/app/lib/request/leadRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 import { getSettingsByInstitute } from "@/app/lib/request/settingRequest";
 import { Country, State, City } from "country-state-city";
@@ -43,6 +43,9 @@ export default function CreateLeadForm({
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [applicantAge, setApplicantAge] = useState<number>(18);
     const [userDepartments, setUserDepartments] = useState<string[]>([]);
+    const [mediumOptions, setMediumOptions] = useState<OptionType[]>([]);
+    const [isCustomMedium, setIsCustomMedium] = useState(false);
+    const [customMedium, setCustomMedium] = useState("");
 
     const validateForm = () => {
         const newErrors: Record<string, string> = {};
@@ -66,6 +69,9 @@ export default function CreateLeadForm({
 
         if (!form.country) newErrors.country = "Country is required";
         if (!form.state) newErrors.state = "State is required";
+        if (isCustomMedium && !customMedium.trim()) {
+            newErrors.medium = "Please enter the medium source name";
+        }
         if (!form.city) newErrors.city = "City is required";
         if (!form.communication) newErrors.communication = "Communication is required";
         if (form.status === "Followup" && !form.followUpDate) {
@@ -90,6 +96,7 @@ export default function CreateLeadForm({
         status: "New",
         communication: "",
         followUpDate: "",
+        medium: "",
         description: "",
     });
 
@@ -179,7 +186,30 @@ export default function CreateLeadForm({
             }
         }
     }, [selectedApplication]);
+    // --- Load Medium Sources ---
+    useEffect(() => {
+        const loadMediumSources = async () => {
+            try {
+                const targetInstitute = instituteId || selectedInstitute || undefined;
+                const res = await getMediumSources(targetInstitute);
 
+                const options = (res?.mediumsources || []).map((m: string) => ({
+                    value: m,
+                    label: m,
+                }));
+
+                // ✅ Append "Other" option
+                options.push({ value: "__OTHER__", label: "Other" });
+
+                setMediumOptions(options);
+            } catch (error) {
+                console.error("Failed to load medium sources:", error);
+                setMediumOptions([{ value: "__OTHER__", label: "Other" }]);
+            }
+        };
+
+        loadMediumSources();
+    }, [instituteId, selectedInstitute]);
 
     useEffect(() => {
         if (selectedApplication?.programId && programOptions.length) {
@@ -353,6 +383,18 @@ export default function CreateLeadForm({
         loadPrograms();
     }, [selectedInstitute]);
 
+    const handleMediumChange = (selected: SingleValue<OptionType>) => {
+        if (selected?.value === "__OTHER__") {
+            setIsCustomMedium(true);
+            setForm((prev) => ({ ...prev, medium: "" })); // will use customMedium on submit
+        } else {
+            setIsCustomMedium(false);
+            setCustomMedium("");
+            setForm((prev) => ({ ...prev, medium: selected?.value || "" }));
+        }
+        setErrors((prev) => ({ ...prev, medium: "" }));
+    };
+
     // --- Input Change Handler ---
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -419,10 +461,9 @@ export default function CreateLeadForm({
 
     // --- Submit Handler ---
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();  // ✅ MUST BE FIRST LINE
+        e.preventDefault();
 
         const isValid = validateForm();
-
         if (!isValid) {
             toast.error("Please fill all required fields correctly.");
             return;
@@ -431,11 +472,29 @@ export default function CreateLeadForm({
         setLoading(true);
 
         try {
-            await createLead({
+            // ✅ Resolve medium: custom text if "Other", else form.medium
+            const finalMedium = isCustomMedium
+                ? customMedium.trim()
+                : (form.medium ?? "").trim();
+
+            // ✅ Build payload — only include medium if it has a value
+            const payload: Partial<Lead> & {
+                applicationId?: string;
+                leadSource?: string;
+            } = {
                 ...form,
                 ...(applicationId ? { applicationId } : {}),
-                ...(leadSource ? { leadSource } : { leadSource: "offline" }),
-            });
+                leadSource: leadSource || "offline",
+            };
+
+            // ✅ Delete medium from payload if empty
+            if (!finalMedium) {
+                delete payload.medium;
+            } else {
+                payload.medium = finalMedium;
+            }
+
+            await createLead(payload);
 
             toast.success("Lead created successfully!");
 
@@ -680,6 +739,39 @@ export default function CreateLeadForm({
                         onChange={(selected) => handleSelectChange("status", selected)}
                         styles={customSelectStyles("status")}
                     />
+                </div>
+
+                {/* Medium Source */}
+                {/* Medium Source */}
+                <div className="flex flex-col">
+                    <label className="text-sm font-semibold mb-1">
+                        Medium Source
+                    </label>
+
+                    <Select
+                        options={mediumOptions}
+                        value={
+                            isCustomMedium
+                                ? mediumOptions.find((opt) => opt.value === "__OTHER__")
+                                : mediumOptions.find((opt) => opt.value === form.medium) || null
+                        }
+                        onChange={handleMediumChange}
+                        styles={customSelectStyles("medium")}
+                        isClearable
+                        placeholder="Select Medium Source"
+                    />
+
+                    {/* ✅ Custom Medium Text Field */}
+                    {isCustomMedium && (
+                        <input
+                            type="text"
+                            name="customMedium"
+                            value={customMedium}
+                            onChange={(e) => setCustomMedium(e.target.value)}
+                            className={`${inputClass} mt-2`}
+                            placeholder="Enter medium source name"
+                        />
+                    )}
                 </div>
 
                 {/* Communication */}
