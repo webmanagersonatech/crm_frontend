@@ -48,6 +48,7 @@ export default function EditLeadPage() {
     description: "",
     counsellorName: "",
     medium: "",
+    leadSource: "offline",
   });
 
   const statusOptions: OptionType[] = [
@@ -65,6 +66,11 @@ export default function EditLeadPage() {
     { value: "Closed", label: "Closed" },
   ];
 
+  const leadSourceOptions: OptionType[] = [
+    { value: "offline", label: "Offline" },
+    { value: "online", label: "Online" },
+    { value: "application", label: "Application" },
+  ];
 
   const communicationOptions: OptionType[] = [
     { value: "WhatsApp", label: "WhatsApp" },
@@ -590,6 +596,26 @@ export default function EditLeadPage() {
             onChange={selected => handleSelectChange("status", selected)}
             styles={customSelectStyles("status")}
           />
+        </div>
+
+        {/* Lead Source */}
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold mb-1">
+            Lead Source <span className="text-red-500">* </span>
+          </label>
+          <Select
+            options={leadSourceOptions}
+            value={leadSourceOptions.find((opt) => opt.value === form.leadSource) || null}
+            onChange={(selected) => handleSelectChange("leadSource", selected)}
+            styles={customSelectStyles("leadSource")}
+            isDisabled          // ✅ read-only in edit mode
+            placeholder="Select Lead Source"
+          />
+          {errors.leadSource && (
+            <span className="text-red-500 text-xs mt-1">
+              {errors.leadSource}
+            </span>
+          )}
         </div>
 
         {/* Medium Source */}

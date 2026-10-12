@@ -66,7 +66,9 @@ export default function CreateLeadForm({
                 newErrors.dateOfBirth = `Must be at least ${applicantAge} years old`;
             }
         }
-
+        if (!form.leadSource) {
+            newErrors.leadSource = "Lead source is required";
+        }
         if (!form.country) newErrors.country = "Country is required";
         if (!form.state) newErrors.state = "State is required";
         if (isCustomMedium && !customMedium.trim()) {
@@ -98,6 +100,7 @@ export default function CreateLeadForm({
         followUpDate: "",
         medium: "",
         description: "",
+        leadSource: "offline",
     });
 
     const statusOptions: OptionType[] = [
@@ -115,12 +118,17 @@ export default function CreateLeadForm({
         { value: "Closed", label: "Closed" },
     ];
 
+    const leadSourceOptions: OptionType[] = [
+        { value: "offline", label: "Offline" },
+        { value: "online", label: "Online" },
+        { value: "application", label: "Application" },
+    ];
     const communicationOptions: OptionType[] = [
         { value: "WhatsApp", label: "WhatsApp" },
         { value: "Offline", label: "Offline" },
         { value: "Online", label: "Online" },
         { value: "Phone", label: "Phone" },
-        { value: "Social Media", label: "Social Media" },
+
     ];
 
     useEffect(() => {
@@ -484,7 +492,8 @@ export default function CreateLeadForm({
             } = {
                 ...form,
                 ...(applicationId ? { applicationId } : {}),
-                leadSource: leadSource || "offline",
+                leadSource: leadSource || form.leadSource || "offline",
+
             };
 
             // ✅ Delete medium from payload if empty
@@ -739,6 +748,27 @@ export default function CreateLeadForm({
                         onChange={(selected) => handleSelectChange("status", selected)}
                         styles={customSelectStyles("status")}
                     />
+                </div>
+
+                {/* Lead Source */}
+                <div className="flex flex-col">
+                    <label className="text-sm font-semibold mb-1">
+                        Lead Source <span className="text-red-500">* </span>
+                    </label>
+                    <Select
+                        options={leadSourceOptions}
+                        value={leadSourceOptions.find((opt) => opt.value === form.leadSource) || null}
+                        onChange={(selected) => handleSelectChange("leadSource", selected)}
+                        styles={customSelectStyles("leadSource")}
+                        isDisabled={!!leadSource}
+                        placeholder="Select Lead Source"
+                    // ⚠️ do NOT make it clearable if it's required
+                    />
+                    {errors.leadSource && (
+                        <span className="text-red-500 text-xs mt-1">
+                            {errors.leadSource}
+                        </span>
+                    )}
                 </div>
 
                 {/* Medium Source */}
