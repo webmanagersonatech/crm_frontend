@@ -40,12 +40,12 @@ const formatINR = (n: number) =>
 const formatDate = (iso: string) =>
   iso
     ? new Date(iso).toLocaleString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
     : "-";
 
 const GATEWAY_BADGE: Record<PaymentGateway, string> = {
@@ -389,9 +389,8 @@ export default function PaymentsPage() {
         header: "Gateway",
         render: (p) => (
           <span
-            className={`px-2 py-0.5 rounded text-xs font-medium capitalize ${
-              GATEWAY_BADGE[p.gateway] ?? "bg-gray-100 text-gray-700"
-            }`}
+            className={`px-2 py-0.5 rounded text-xs font-medium capitalize ${GATEWAY_BADGE[p.gateway] ?? "bg-gray-100 text-gray-700"
+              }`}
           >
             {p.gateway}
           </span>
@@ -473,11 +472,10 @@ export default function PaymentsPage() {
           type="button"
           onClick={handleExport}
           disabled={exportLoading}
-          className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md text-white ${
-            exportLoading
+          className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md text-white ${exportLoading
               ? "bg-emerald-400 cursor-not-allowed"
               : "bg-emerald-600 hover:bg-emerald-700"
-          }`}
+            }`}
         >
           {exportLoading ? (
             <>
@@ -586,7 +584,7 @@ export default function PaymentsPage() {
             className="border text-sm rounded-md py-2 px-2 focus:outline-none focus:ring-2 focus:ring-[#3a4480]"
           />
 
-          <select
+          {role === "superadmin" && (<select
             value={gateway}
             onChange={(e) => {
               setGateway(e.target.value as PaymentGateway | "all");
@@ -598,7 +596,9 @@ export default function PaymentsPage() {
             <option value="razorpay">Razorpay</option>
             <option value="instamojo">Instamojo</option>
             <option value="ccavenue">CCAvenue</option>
-          </select>
+          </select>)}
+
+
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -829,9 +829,8 @@ function Row({
     <div className="flex justify-between gap-3">
       <span className="text-gray-500">{label}</span>
       <span
-        className={`text-right ${mono ? "font-mono text-xs" : ""} ${
-          capitalize ? "capitalize" : ""
-        }`}
+        className={`text-right ${mono ? "font-mono text-xs" : ""} ${capitalize ? "capitalize" : ""
+          }`}
       >
         {value}
       </span>
