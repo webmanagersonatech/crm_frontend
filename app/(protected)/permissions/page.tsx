@@ -26,7 +26,9 @@ interface OptionType {
 const defaultPermissions: Permission[] = [
   { id: 1, moduleName: "Dashboard", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 2, moduleName: "Students", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 24, moduleName: "Students Pass Change", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 6, moduleName: "Application", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 23, moduleName: "Application Payment", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 7, moduleName: "Lead Manager", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 8, moduleName: "Communication", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 9, moduleName: "Reports", view: false, create: false, edit: false, delete: false, filter: false, download: false },

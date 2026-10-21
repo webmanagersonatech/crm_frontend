@@ -28,7 +28,10 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardList,
-  Receipt
+  Receipt,
+  ShieldCheck,
+  CreditCard,
+  type LucideIcon,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -47,6 +50,7 @@ const labelToPermissionMap: Record<string, string> = {
   "Users": "Users",
   "Permissions": "Permissions",
   "Students": "Students",
+  "Students Pass Change": "Students Pass Change",
   "Applications Manager": "Application",
   "Leads Manager": "Lead Manager",
   "Communications": "Communication",
@@ -54,6 +58,7 @@ const labelToPermissionMap: Record<string, string> = {
   "Reports": "Reports",
   "Login History": "Login History",
   "CIICP": "CIICP",
+  "Application Payment": "Application Payment",
   "Summer Camp": "Summer Camp",
   "MAT Registration": "MAT Registration",
   "Fee Configuration": "Fee Configuration",
@@ -71,13 +76,20 @@ const allItems: MenuItem[] = [
   { href: "/institution", label: "Institution", icon: Building },
   { href: "/users", label: "Users", icon: Users },
   { href: "/permissions", label: "Permissions", icon: Key },
+  {
+    href: "/passwordchange",
+    label: "Students Pass Change",
+    icon: ShieldCheck,          // import this
+  },
   { href: "/students", label: "Students", icon: GraduationCap },
   { href: "/applications", label: "Applications Manager", icon: FileText },
+  { href: "/application-payment", label: "Application Payment", icon: CreditCard },
   { href: "/leads", label: "Leads Manager", icon: UserPlus },
   { href: "/communications", label: "Communications", icon: MessageCircle },
   { href: "/templates", label: "Email Templates", icon: Mail },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/login-history", label: "Login History", icon: History },
+
   {
     label: "Registrations",
     icon: Grid,

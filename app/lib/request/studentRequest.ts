@@ -24,6 +24,35 @@ export interface Student {
   updatedAt: string;
 }
 
+/* =======================
+   New & Admitted Students
+======================= */
+
+export interface NewAndAdmittedStudent {
+  _id: string;
+  firstname: string;
+  lastname: string;
+  email: string;
+  mobileNo: string;
+  username: string;
+}
+
+export interface NewAndAdmittedStudentsResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    docs: NewAndAdmittedStudent[];
+    totalDocs: number;
+    limit: number;
+    page: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+    nextPage: number | null;
+    prevPage: number | null;
+  };
+}
+
 export interface CreateStudentData {
   firstname: string;
   lastname: string;
@@ -166,6 +195,81 @@ export async function getPaidFeesRequest(
   }
 }
 
+
+/* =======================
+   New & Admitted Students API
+======================= */
+
+export async function getNewAndAdmittedStudentsRequest({
+  page = 1,
+  limit = 10,
+  search = "",
+  instituteId,
+}: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  instituteId?: string;
+}): Promise<NewAndAdmittedStudentsResponse> {
+  try {
+    const params: Record<string, any> = {
+      page,
+      limit,
+      search,
+    };
+
+    // Only superadmin needs this — harmless to omit for admins
+    if (instituteId && instituteId !== "all") {
+      params.instituteId = instituteId;
+    }
+
+    const response = await api.get<NewAndAdmittedStudentsResponse>(
+      "/student/new-and-admitted",
+      { params }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message ||
+      "Failed to load students. Please try again."
+    );
+  }
+}
+
+
+/* =======================
+   Admin Change Student Password
+======================= */
+
+export interface AdminChangeStudentPasswordPayload {
+  studentId: string;
+  newPassword: string;
+}
+
+export interface AdminChangeStudentPasswordPayload {
+  studentId: string;
+  newPassword: string;
+}
+
+export async function adminChangeStudentPasswordRequest({
+  studentId,
+  newPassword,
+}: AdminChangeStudentPasswordPayload): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  try {
+    const res = await api.put(`/student/admin/change-password/${studentId}`, {
+      password: newPassword,
+    });
+    return res.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to change password."
+    );
+  }
+}
 /* =======================
    Student APIs
 ======================= */
