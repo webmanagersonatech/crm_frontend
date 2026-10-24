@@ -301,16 +301,16 @@ export default function ManualPaymentDialog({
             minute: '2-digit'
         });
     };
-
-    const formatCurrency = (amount: number) => {
-        if (!amount) return '₹0';
-        return new Intl.NumberFormat('en-IN', {
-            style: 'currency',
-            currency: 'INR',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(amount);
-    };
+const formatCurrency = (amount: number | string) => {
+  const num = Number(amount);
+  if (!num || isNaN(num)) return "₹0";
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,   // ✅ allow up to 2 decimals
+  }).format(num);
+};
 
     if (!open) return null;
 

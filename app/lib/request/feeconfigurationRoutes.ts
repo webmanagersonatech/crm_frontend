@@ -48,6 +48,7 @@ export interface Installment {
 }
 export interface FeeConfiguration {
   _id?: string;
+  academicYear: string;
   instituteId: string;
   courseFeeStructure: CourseFeeStructure[];
   referrals: Referral[];
@@ -120,14 +121,15 @@ export async function saveFeeConfiguration(
 // Get Fee Configuration
 
 export async function getFeeConfigurationByInstitute(
-  instituteId: string
+  instituteId: string,
+  academicYear: string
 ) {
   try {
     const response = await api.get(
-      `/fee-configuration/${instituteId}`
+      `/fee-configuration/${instituteId}`,
+      { params: { academicYear } }
     );
-
-    return response.data.data;
+    return response.data; // { success, exists, data }
   } catch (error: any) {
     throw new Error(
       error.response?.data?.message ||

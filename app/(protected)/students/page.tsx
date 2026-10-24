@@ -681,7 +681,7 @@ export default function StudentsPage() {
                   title="Add Given Amount"
                 >
                   <span>₹</span>
-                  Entry
+                  Edit
                 </button>
               </>
             )}

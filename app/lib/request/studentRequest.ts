@@ -109,7 +109,9 @@ export interface PaidFeeRecord {
 export interface YearOption {
   value: number;
   label: string;
+
   hasEntry: boolean;
+  hasSnapshot: boolean;
 }
 
 export interface AddPaidFeeResponse {
@@ -118,9 +120,80 @@ export interface AddPaidFeeResponse {
   data: PaidFeeRecord;
 }
 
+
+
+export interface YearFeePayload {
+  year: number;
+  source: "studentFeeStructure" | "feeConfiguration";
+
+  academicYear: string | null;
+  courseId: string | null;
+  courseName: string;
+
+  totalAmount: number;
+  tuitionFee: number;
+  otherFee: number;
+  otherFeeDescription?: string;
+
+  concessionPercentage: number;
+  concessionName: string;
+  appliedReferrals: Array<{
+    referralId: string;
+    name: string;
+    percentage: number;
+  }>;
+  tuitionConcession: number;
+  otherFeeConcession: number;
+  concessionAmount: number;
+
+  // 🔹 Given-amount block
+  givenAmount?: number;
+  givenEntries?: Array<{
+    date: string;
+    amount: number;
+    description?: string;
+  }>;
+
+  paymentOption: {
+    paymentOptionId: string;
+    name: string;
+    type: "full_payment" | "installment";
+    installments: Array<{
+      number: number;
+      amount: number;
+      tuitionFee: number;
+      otherFee: number;
+      tuitionConcession?: number;
+      otherFeeConcession?: number;
+      concessionPercentage?: number;
+      payableAmount?: number;
+      dueDate: string;
+      status: string;
+      paidAmount?: number;
+      paidDate?: string | null;
+      paymentId?: string | null;
+      appliedNow?: number; // 🔹 ADDED
+    }>;
+  } | null;
+
+  paymentOptions?: Array<{
+    paymentOptionId: string;
+    name: string;
+    type: "full_payment" | "installment";
+    installments: Array<{
+      number: number;
+      amount: number;
+      tuitionFee: number;
+      otherFee: number;
+      dueDate: string;
+    }>;
+  }>;
+}
+
 export interface GetPaidFeesResponse {
   success: boolean;
   data: {
+    years: YearFeePayload[];
     paidFees: PaidFeeRecord[];
     grandTotal: number;
     courseYears: number;
@@ -132,9 +205,79 @@ export interface GetPaidFeesResponse {
       lastname: string;
       programId?: string;
       instituteId: string;
+      academicYear?: string;
+      year?: string | number;
     };
   };
 }
+
+
+/* =======================
+   Student Fee Structure
+======================= */
+
+export interface UpsertStudentFeeStructurePayload {
+  studentId: string;
+  programId: string;
+  instituteId: string;
+  year: number;
+  academicYear?: string;
+  courseName?: string;
+
+  totalAmount: number;
+  tuitionFee: number;
+  otherFee: number;
+  otherFeeDescription?: string;
+
+  concessionPercentage: number;
+  tuitionConcession: number;
+  otherFeeConcession: number;
+  concessionAmount: number;
+  concessionName?: string;
+  appliedReferrals?: Array<{
+    referralId: string;
+    name: string;
+    percentage: number;
+  }>;
+
+  paymentOption: {
+    paymentOptionId: string;
+    type: "full_payment" | "installment";
+    name: string;
+    installments: Array<{
+      number: number;
+      amount: number;
+      tuitionFee: number;
+      otherFee: number;
+      dueDate: string;
+      status?: string;
+      paidAmount?: number;
+      paidDate?: string | null;
+      paymentId?: string | null;
+      concessionPercentage?: number;
+      tuitionConcession?: number;
+      otherFeeConcession?: number;
+      payableAmount?: number;
+      appliedNow?: number;
+    }>;
+  };
+
+  givenAmount: number;
+  givenEntries: Array<{
+    date: string;
+    amount: number;
+    description?: string;
+  }>;
+  offer?: boolean;
+}
+
+export interface UpsertStudentFeeStructureResponse {
+  success: boolean;
+  message: string;
+  data: any;
+}
+
+
 /* =======================
    Axios Instance
 ======================= */
@@ -164,20 +307,19 @@ api.interceptors.request.use(
    Paid Fee APIs
 ======================= */
 
-export async function addPaidFeeRequest(
-  studentId: string,
-  payload: {
-    year: number;
-    entries: PaidFeeEntry[];
-    programId?: string;
-  }
-): Promise<AddPaidFeeResponse> {
+export async function upsertStudentFeeStructureRequest(
+  payload: UpsertStudentFeeStructurePayload
+): Promise<UpsertStudentFeeStructureResponse> {
   try {
-    const res = await api.post(`/paid-fees/${studentId}`, payload);
+    const res = await api.post(
+      "/studentfeestructure/upsert",
+      payload
+    );
     return res.data;
   } catch (error: any) {
     throw new Error(
-      error.response?.data?.message || "Failed to save given amount."
+      error.response?.data?.message ||
+      "Failed to save student fee structure."
     );
   }
 }
