@@ -649,41 +649,34 @@ export default function StudentsPage() {
             s.instituteId === "INS-3-ZXYXKM" ||
             s.instituteId === "INS-ESTKLHCB"
           ) && (
-              <>
-                <button
-                  onClick={() => {
-                    setSelectedStudentId(s._id);
+              <select
+                defaultValue=""
+                onChange={(e) => {
+                  const action = e.target.value;
+
+                  if (!action) return;
+
+                  setSelectedStudentId(s._id);
+
+                  if (action === "concession") {
                     setConcessionOpen(true);
-                  }}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-0.5"
-                  title="Fees Concession"
-                >
-                  <span>₹</span> Concession
-                </button>
-
-                <button
-                  onClick={() => {
-                    setSelectedStudentId(s._id);
-                    setManualPaymentOpen(true); // Open Manual Payment Modal
-                  }}
-                  className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-0.5"
-                  title="Payment History"
-                >
-                  <span>₹</span> History
-                </button>
-
-                <button
-                  onClick={() => {
-                    setSelectedStudentId(s._id);
+                  } else if (action === "history") {
+                    setManualPaymentOpen(true);
+                  } else if (action === "edit") {
                     setGivenAmountOpen(true);
-                  }}
-                  className="bg-orange-600 hover:bg-orange-700 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1"
-                  title="Add Given Amount"
-                >
-                  <span>₹</span>
-                  Edit
-                </button>
-              </>
+                  }
+
+                  e.target.value = "";
+                }}
+                className="w-28 rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs font-medium text-gray-700 outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+              >
+                <option value="" disabled>
+                  ₹ Fee Actions
+                </option>
+                <option value="concession">₹ Concession</option>
+                <option value="history">₹ History</option>
+                <option value="edit">₹ Edit Amount</option>
+              </select>
             )}
           <button
             onClick={() => handleReshareCredentials(s)}
@@ -979,7 +972,7 @@ export default function StudentsPage() {
             </div>
 
 
-            
+
             {/* Feedback */}
             <select
               value={feedbackFilter}
