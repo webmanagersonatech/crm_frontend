@@ -849,6 +849,13 @@ export default function GivenAmountDialog({
     setWorkingInstallments(rebuilt);
   };
 
+  /* ── Update an installment's due date ── */
+  const updateInstallmentDueDate = (number: number, dueDate: string) => {
+    setWorkingInstallments((prev) =>
+      prev.map((i) => (i.number === number ? { ...i, dueDate } : i))
+    );
+  };
+
   /* ── Apply Vijayadashami preset (academic-year aware) ── */
 
   const applyVijayDashami = () => {
@@ -983,6 +990,15 @@ export default function GivenAmountDialog({
           splitTotal
         )}) must equal the year total (${formatCurrency(yearPool)})`
       );
+    }
+
+    // guard: every installment must have a due date
+    for (let i = 0; i < workingInstallments.length; i++) {
+      if (!workingInstallments[i].dueDate) {
+        return toast.error(
+          `Installment #${workingInstallments[i].number}: Due date is required`
+        );
+      }
     }
 
     const instituteId = student?.instituteId;
@@ -1132,6 +1148,10 @@ export default function GivenAmountDialog({
 
   /** All form controls are disabled when the plan is fully paid. */
   const formDisabled = loading || allPaid;
+
+  /** A specific installment's due date is editable only while pending. */
+  const isDueDateEditable = (inst: InstallmentView) =>
+    !formDisabled && !planLocked && !inst.isPaid;
 
   return (
     <AnimatePresence>
@@ -1514,9 +1534,31 @@ export default function GivenAmountDialog({
                                     ? " (Full)"
                                     : ""}
                                 </span>
-                                <span className="text-[10px] text-gray-500">
-                                  Due {formatDate(inst.dueDate)}
-                                </span>
+                                {/* ✅ Editable due date */}
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  <span className="text-[10px] text-gray-500">
+                                    Due
+                                  </span>
+                                  <input
+                                    type="date"
+                                    value={toInputDate(inst.dueDate)}
+                                    onChange={(e) =>
+                                      updateInstallmentDueDate(
+                                        inst.number,
+                                        e.target.value
+                                      )
+                                    }
+                                    disabled={!isDueDateEditable(inst)}
+                                    className="border border-gray-300 rounded px-1.5 py-0.5 text-[10px] bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-gray-100"
+                                    title={
+                                      inst.isPaid
+                                        ? "Paid installment — date locked"
+                                        : planLocked
+                                          ? "Payment made — date locked"
+                                          : "Edit due date"
+                                    }
+                                  />
+                                </div>
                               </div>
 
                               <div className="flex items-center gap-3 text-right">
