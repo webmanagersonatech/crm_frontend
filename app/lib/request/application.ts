@@ -175,6 +175,7 @@ export async function getApplications(params?: {
   limit?: number;
   academicYear?: string;
   instituteId?: string;
+  userId?: string;
   paymentStatus?: string;
   startCutoff?: number;   // ✅ NEW
   endCutoff?: number;
@@ -201,6 +202,7 @@ export async function getApplications(params?: {
     if (params?.limit) queryParams.append("limit", String(params.limit));
     if (params?.academicYear) queryParams.append("academicYear", params.academicYear);
     if (params?.instituteId) queryParams.append("instituteId", params.instituteId);
+    if (params?.userId) queryParams.append("userId", params.userId);
     if (params?.paymentStatus) queryParams.append("paymentStatus", params.paymentStatus);
     if (params?.formStatus) queryParams.append("formStatus", params.formStatus);
     if (params?.showCountryStateCityStats) {
@@ -288,6 +290,7 @@ export async function exportApplications(params?: {
   academicYear?: string;
   instituteId?: string;
   paymentStatus?: string;
+  userId?: string;
   formStatus?: string;
   startCutoff?: number;   // ✅ NEW
   endCutoff?: number;
@@ -313,6 +316,7 @@ export async function exportApplications(params?: {
     if (params?.instituteId) queryParams.append("instituteId", params.instituteId);
     if (params?.paymentStatus) queryParams.append("paymentStatus", params.paymentStatus);
     if (params?.formStatus) queryParams.append("formStatus", params.formStatus);
+    if (params?.userId) queryParams.append("userId", params.userId);
     if (params?.applicationId) queryParams.append("applicationId", params.applicationId);
     if (params?.applicantName) queryParams.append("applicantName", params.applicantName);
     if (params?.program) {

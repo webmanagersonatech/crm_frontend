@@ -68,6 +68,11 @@ const VIJAY_DASHAMI_PRESETS: Record<
     tuitionFee: 60000,
     otherFee: 12000,
   },
+  "2027-2028": {
+    label: "Vijayadashami 2027-28",
+    tuitionFee: 60000,
+    otherFee: 12000,
+  },
 };
 
 interface AppliedPreset {
@@ -124,39 +129,6 @@ const splitEvenly = (total: number, n: number): number[] => {
   const remainder = round2(safeTotal - per * n);
   if (remainder > 0.001) parts[n - 1] = round2(parts[n - 1] + remainder);
   return parts;
-};
-
-/**
- * Redistribute a pool across `others` so the sum stays equal to `pool`.
- * Weights come from the current values; if all zero, split evenly.
- * Any rounding drift is dumped onto the last row so the sum is exact.
- */
-const redistributePreservingSum = (
-  pool: number,
-  others: { number: number; value: number }[]
-): { number: number; value: number }[] => {
-  if (others.length === 0) return [];
-  const safePool = round2(Math.max(pool, 0));
-  const currentTotal = others.reduce((s, o) => s + o.value, 0);
-
-  if (currentTotal <= 0) {
-    const parts = splitEvenly(safePool, others.length);
-    return others.map((o, idx) => ({ number: o.number, value: parts[idx] }));
-  }
-
-  const scaled = others.map((o) => ({
-    number: o.number,
-    value: round2((o.value / currentTotal) * safePool),
-  }));
-
-  const sum = scaled.reduce((s, o) => s + o.value, 0);
-  const drift = round2(safePool - sum);
-  if (Math.abs(drift) > 0.001) {
-    scaled[scaled.length - 1].value = round2(
-      scaled[scaled.length - 1].value + drift
-    );
-  }
-  return scaled;
 };
 
 interface InstallmentView {
@@ -580,7 +552,7 @@ export default function GivenAmountDialog({
     return { ...baseOption, installments: workingInstallments };
   }, [baseOption, workingInstallments]);
 
-  /* ── Plan lock: any paid installment freezes add/remove/fee edit ── */
+  /* ── Plan lock: any paid installment freezes add/remove ── */
   const planLocked = useMemo(
     () => workingInstallments.some((i) => i.status === "paid"),
     [workingInstallments]
@@ -613,15 +585,6 @@ export default function GivenAmountDialog({
     activeOption.type === "installment" &&
     !planLocked &&
     workingInstallments.length > 1;
-
-  /**
-   * ✅ Fee editing works for BOTH full payment and installment — the pool
-   * is just one row in the full-payment case.
-   */
-  const canEditFees =
-    !!activeOption &&
-    workingInstallments.length > 0 &&
-    !planLocked;
 
   /**
    * ✅ The Vijayadashami preset is gated on:
@@ -884,91 +847,6 @@ export default function GivenAmountDialog({
     );
 
     setWorkingInstallments(rebuilt);
-  };
-
-  /* ── Edit a single installment's fee (auto-rebalances to keep sum) ── */
-
-  const updateInstallmentFee = (
-    number: number,
-    field: "tuitionFee" | "otherFee",
-    rawValue: string
-  ) => {
-    if (planLocked) {
-      toast.error("Cannot edit installments after a payment is made");
-      return;
-    }
-
-    const target = workingInstallments.find((i) => i.number === number);
-    if (!target) return;
-
-    const totalPool = workingInstallments.reduce(
-      (s, i) => s + Number(i[field] || 0),
-      0
-    );
-
-    let value = Number(rawValue);
-    if (rawValue === "" || isNaN(value)) value = 0;
-    if (value < 0) value = 0;
-
-    // clamp so this row can't exceed the pool
-    value = round2(Math.min(value, totalPool));
-
-    const currentTarget = Number(target[field] || 0);
-    const delta = round2(value - currentTarget);
-
-    const others = workingInstallments.filter(
-      (i) => i.number !== number
-    );
-    const otherPool = round2(totalPool - currentTarget);
-    const newOtherPool = round2(otherPool - delta);
-
-    if (newOtherPool < 0) {
-      // can't redistribute — clamp to available headroom
-      value = round2(currentTarget + otherPool);
-      toast.error(
-        `Only ${formatCurrency(totalPool)} is available in this pool`
-      );
-    }
-
-    const finalDelta = round2(value - currentTarget);
-    const finalOtherPool = round2(otherPool - finalDelta);
-
-    const redistributed = redistributePreservingSum(
-      finalOtherPool,
-      others.map((i) => ({
-        number: i.number,
-        value: Number(i[field] || 0),
-      }))
-    );
-
-    const byNumber = new Map(
-      redistributed.map((r) => [r.number, r.value])
-    );
-
-    setWorkingInstallments((prev) =>
-      prev.map((i) => {
-        const concPct = Number(
-          i.concessionPercentage ?? concessionPercentage
-        );
-
-        if (i.number === number) {
-          const nextTuition =
-            field === "tuitionFee" ? value : Number(i.tuitionFee || 0);
-          const nextOther =
-            field === "otherFee" ? value : Number(i.otherFee || 0);
-          return rebuildInstallment(i, nextTuition, nextOther, concPct);
-        }
-
-        const newVal = byNumber.get(i.number);
-        if (newVal === undefined) return i;
-
-        const nextTuition =
-          field === "tuitionFee" ? newVal : Number(i.tuitionFee || 0);
-        const nextOther =
-          field === "otherFee" ? newVal : Number(i.otherFee || 0);
-        return rebuildInstallment(i, nextTuition, nextOther, concPct);
-      })
-    );
   };
 
   /* ── Apply Vijayadashami preset (academic-year aware) ── */
@@ -1587,7 +1465,7 @@ export default function GivenAmountDialog({
                         </div>
                       </div>
 
-                      {/* Split-vs-year summary (both option types) */}
+                      {/* Split-vs-year summary (read-only) */}
                       <div className="flex flex-wrap items-center justify-between gap-1 px-1 text-[10px]">
                         <span
                           className={
@@ -1698,29 +1576,9 @@ export default function GivenAmountDialog({
 
                             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] border-t border-gray-200 pt-1.5 items-center">
                               <span className="text-gray-500">Tuition Fee</span>
-                              <div className="flex justify-end">
-                                {canEditFees ? (
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={Number(inst.tuitionFee || 0)}
-                                    onChange={(e) =>
-                                      updateInstallmentFee(
-                                        inst.number,
-                                        "tuitionFee",
-                                        e.target.value
-                                      )
-                                    }
-                                    disabled={loading}
-                                    className="w-24 text-right border border-gray-300 rounded px-2 py-0.5 text-[10px] bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
-                                  />
-                                ) : (
-                                  <span className="text-right text-gray-700">
-                                    {formatCurrency(inst.tuitionFee)}
-                                  </span>
-                                )}
-                              </div>
+                              <span className="text-right text-gray-700">
+                                {formatCurrency(inst.tuitionFee)}
+                              </span>
 
                               {inst.tuitionConcession > 0 && (
                                 <>
@@ -1734,29 +1592,9 @@ export default function GivenAmountDialog({
                               )}
 
                               <span className="text-gray-500">Other Fee</span>
-                              <div className="flex justify-end">
-                                {canEditFees ? (
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={Number(inst.otherFee || 0)}
-                                    onChange={(e) =>
-                                      updateInstallmentFee(
-                                        inst.number,
-                                        "otherFee",
-                                        e.target.value
-                                      )
-                                    }
-                                    disabled={loading}
-                                    className="w-24 text-right border border-gray-300 rounded px-2 py-0.5 text-[10px] bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-500"
-                                  />
-                                ) : (
-                                  <span className="text-right text-gray-700">
-                                    {formatCurrency(inst.otherFee)}
-                                  </span>
-                                )}
-                              </div>
+                              <span className="text-right text-gray-700">
+                                {formatCurrency(inst.otherFee)}
+                              </span>
 
                               <span className="text-blue-900 font-semibold border-t border-gray-200 pt-0.5">
                                 Payable

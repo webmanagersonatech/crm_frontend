@@ -15,6 +15,7 @@ import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import { Column } from "@/components/Tablecomponents";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { getActivedata } from "@/app/lib/request/institutionRequest";
 import CreateLeadform from "@/components/Forms/CreateLeadForm";
 import Select from "react-select";
 import { Country, State, City } from "country-state-city";
@@ -116,7 +117,8 @@ export default function ApplicationsPage() {
   const [availableFilterFields, setAvailableFilterFields] =
     useState<FilterMeta[]>([]);
   const [searchAny, setSearchAny] = useState("");
-  const [searchFieldNo, setSearchFieldNo] = useState("");
+  const [userList, setUserList] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
   const [locationCondition, setLocationCondition] = useState("equals");
   const [locationStats, setLocationStats] = useState<any>({
     countries: [],
@@ -146,8 +148,10 @@ export default function ApplicationsPage() {
   const filterOptions = [
     { value: "academicYear", label: "Academic Year" },
     ...(userpermission === "superadmin" ? [{ value: "instituteId", label: "Institution" }] : []),
+    ...(userpermission === "superadmin" ? [{ value: "user", label: "User" }] : []),
     { value: "formStatus", label: "Form Status" },
     { value: "paymentStatus", label: "Payment Status" },
+
     { value: "country", label: "Country" },
     { value: "state", label: "State" },
     { value: "city", label: "City" },
@@ -314,7 +318,19 @@ export default function ApplicationsPage() {
     { key: "paymentStatus", label: "Payment Status" },
     { key: "createdAt", label: "Created At" },
   ];
-
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const data = await getActivedata(
+          selectedInstitution !== "all" ? selectedInstitution : undefined
+        );
+        setUserList(data.users || []);
+      } catch (err: any) {
+        console.error("Failed to fetch users:", err.message);
+      }
+    };
+    fetchUsers();
+  }, [selectedInstitution]);
 
   useEffect(() => {
     const fetchPermissions = async () => {
@@ -403,6 +419,7 @@ export default function ApplicationsPage() {
         formStatus:
           selectedFormStatus !== "all" ? selectedFormStatus : undefined,
         applicationId: searchApplicationId.trim() || undefined,
+        userId: selectedUserId || undefined,
         applicantName: searchApplicantName.trim() || undefined,
         program: selectedPrograms.length ? selectedPrograms : undefined,
         country: selectedCountry || undefined,
@@ -425,10 +442,10 @@ export default function ApplicationsPage() {
       if (res.academicYears) {
         setAcademicYears(res.academicYears);
       }
-      if (res.courses) { 
+      if (res.courses) {
         const formatted = res.courses.map((c: any) => ({
           value: c.courseId,
-          label: c.name   
+          label: c.name
         }));
 
         setPrograms(formatted);
@@ -463,7 +480,7 @@ export default function ApplicationsPage() {
       setLoading(false);
     }
   }, [currentPage, searchAny,
-    selectedYear, selectedInstitution, startDate, endDate, locationCondition, activeFilters.includes("locationStats"), startCutoff, endCutoff, selectedPrograms, limit, selectedPayment, selectedCountry, selectedStates, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
+    selectedYear, selectedInstitution, selectedUserId, startDate, endDate, locationCondition, activeFilters.includes("locationStats"), startCutoff, endCutoff, selectedPrograms, limit, selectedPayment, selectedCountry, selectedStates, selectedCities, selectedApplicationSource, selectedInteraction, selectedFormStatus, searchApplicationId, searchApplicantName, searchProgram,]);
   const runExport = async (fields: string[]) => {
     try {
       setExportLoading(true);
@@ -477,6 +494,7 @@ export default function ApplicationsPage() {
         applicantName: searchApplicantName.trim() || undefined,
         program: selectedPrograms.length ? selectedPrograms : undefined,
         country: selectedCountry || undefined,
+        userId: selectedUserId || undefined,
         state: selectedStates.length ? selectedStates : undefined,
         city: selectedCities.length ? selectedCities : undefined,
         locationCondition,
@@ -491,7 +509,7 @@ export default function ApplicationsPage() {
 
       const exportedData = (exportResult.data || []).map((app: any) => {
 
-       
+
         const obj: any = {};
 
         fields.forEach((key) => {
@@ -530,84 +548,6 @@ export default function ApplicationsPage() {
       setExportData(exportedData);
       setOpen(true);
       setExportFieldModalOpen(false);
-    } catch (error: any) {
-      toast.error("Failed to export applications");
-      console.error("Error exporting applications:", error);
-    } finally {
-      setExportLoading(false);
-    }
-  };
-  const handleExport = async () => {
-    try {
-      setExportLoading(true); // You'll need to add this state
-
-      // Call the export API with the same filters (without pagination)
-      const exportResult = await exportApplications({
-        academicYear: selectedYear !== "all" ? selectedYear : undefined,
-        instituteId: selectedInstitution !== "all" ? selectedInstitution : undefined,
-        paymentStatus: selectedPayment !== "all" ? selectedPayment : undefined,
-        formStatus: selectedFormStatus !== "all" ? selectedFormStatus : undefined,
-        applicationId: searchApplicationId.trim() || undefined,
-        applicantName: searchApplicantName.trim() || undefined,
-        program: selectedPrograms.length ? selectedPrograms : undefined,
-        country: selectedCountry || undefined,
-        state: selectedStates.length ? selectedStates : undefined,
-        city: selectedCities.length ? selectedCities : undefined,
-        locationCondition,
-        applicationSource: selectedApplicationSource || undefined,
-        startDate: startDate || undefined,
-        endDate: endDate || undefined,
-        interactions: selectedInteraction || undefined,
-        startCutoff: startCutoff ? Number(startCutoff) : undefined,
-        endCutoff: endCutoff ? Number(endCutoff) : undefined,
-        q: searchAny.trim() || undefined,
-      });
-
-      // Transform the exported data for display in modal
-      const exportedData = (exportResult.data || []).map((app: any) => {
-        const obj: any = {};
-
-        if (columnVisibility.applicationId) {
-          obj.ApplicationId = app.applicationId || "-";
-        }
-
-        if (userpermission === "superadmin" && columnVisibility.institute) {
-          obj.Institute = app.institute?.name || app.instituteId || "-";
-        }
-
-        if (columnVisibility.applicantName) {
-          obj.ApplicantName = app.applicantName || app.personalData?.["Full Name"] || "-";
-        }
-
-        // if (columnVisibility.academicYear) {
-        //   obj.AcademicYear = app.academicYear || "-";
-        // }
-
-        if (columnVisibility.city) {
-          obj.City = app.city || app?.City || "-";
-        }
-
-        if (columnVisibility.paymentStatus) {
-          obj.PaymentStatus = app.paymentStatus || "-";
-        }
-
-        if (columnVisibility.formStatus) {
-          obj.FormStatus = app.formStatus || "-";
-        }
-
-        if (columnVisibility.createdAt) {
-          obj.CreatedAt = app.createdAt
-            ? new Date(app.createdAt).toLocaleDateString()
-            : "-";
-        }
-
-        return obj;
-      });
-
-      // Set the exported data to the modal
-      setExportData(exportedData); // You'll need to add this state
-      setOpen(true); // Open the modal with exported data
-
     } catch (error: any) {
       toast.error("Failed to export applications");
       console.error("Error exporting applications:", error);
@@ -1562,6 +1502,7 @@ export default function ApplicationsPage() {
                           case "interactions": setSelectedInteraction(""); break;
                           case "applicationId": setSearchApplicationId(""); break;
                           case "applicantName": setSearchApplicantName(""); break;
+                          case "user": setSelectedUserId(""); break;
                           case "cutoff":
                             setStartCutoff("");
                             setEndCutoff("");
@@ -1640,6 +1581,24 @@ export default function ApplicationsPage() {
                       <option value="all">All Form Status</option>
                       <option value="Complete">Complete</option>
                       <option value="Incomplete">Incomplete</option>
+                    </select>
+                  )}
+
+                  {activeFilters.includes("user") && (
+                    <select
+                      value={selectedUserId}
+                      onChange={(e) => {
+                        setSelectedUserId(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="px-3 py-1.5 text-xs border border-gray-200 rounded-md focus:ring-1 focus:ring-[#3a4480] focus:border-[#3a4480] bg-white shadow-sm"
+                    >
+                      <option value="">Select User</option>
+                      {userList.map((user) => (
+                        <option key={user._id} value={user._id}>
+                          {user.firstname} {user.lastname}
+                        </option>
+                      ))}
                     </select>
                   )}
 
