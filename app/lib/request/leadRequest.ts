@@ -123,6 +123,21 @@ export interface DuplicateLeadsResponse {
   duplicateData: Lead[];
 }
 
+
+export interface LeadByPhoneItem {
+  leadId: string;
+  leadName: string;
+  phoneNumber: string;
+  status: string;
+  leadGivenBy: string;
+  leadCreatedAt?: string;
+}
+
+export interface LeadsByPhoneResponse {
+  success: boolean;
+  count: number;
+  data: LeadByPhoneItem[];
+}
 // ---------------- API Calls ----------------
 
 // Create a lead
@@ -134,7 +149,26 @@ export async function createLead(data: Partial<Lead>) {
     throw new Error(error.response?.data?.message || "Failed to create lead.");
   }
 }
+export async function getLeadsByPhone(
+  phone: string,
+  instituteId?: string
+): Promise<LeadsByPhoneResponse> {
+  try {
+    const params = new URLSearchParams();
+    if (phone) params.append("phone", phone);
+    if (instituteId) params.append("instituteId", instituteId);
 
+    const response = await api.get<LeadsByPhoneResponse>(
+      `/leads/match-by-phone-simple?${params.toString()}`
+    );
+
+    return response.data;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message || "Failed to fetch leads by phone."
+    );
+  }
+}
 
 export async function getMediumSources(instituteId?: string) {
   try {

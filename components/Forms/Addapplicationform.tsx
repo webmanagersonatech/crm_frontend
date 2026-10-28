@@ -10,6 +10,7 @@ import { getFormByInstituteId } from "@/app/lib/request/formManager"
 import { createApplication, getApplicationById, updateApplication } from "@/app/lib/request/application"
 import { getSettingsByInstitute } from "@/app/lib/request/settingRequest"
 import SignatureCanvas from 'react-signature-canvas';
+import { getLeadsByPhone } from "@/app/lib/request/leadRequest";
 import { Country, State, City } from "country-state-city"
 
 
@@ -77,6 +78,13 @@ export default function AddApplicationForm({
     const [signaturesData, setSignaturesData] = useState<Record<string, string>>({});
     const signaturesLoaded = useRef<Record<string, boolean>>({}); // Track loaded signatures
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    // ── Matched leads (phone → lead) ──────────────────
+    const [matchedLeads, setMatchedLeads] = useState<
+        { leadId: string; leadName: string; phoneNumber: string; status: string; leadGivenBy: string }[]
+    >([]);
+    const [matchedLeadsLoading, setMatchedLeadsLoading] = useState(false);
+    const [matchedLeadsSearched, setMatchedLeadsSearched] = useState(false);
+    const [pickedLeadId, setPickedLeadId] = useState<string>("");
     const countryOptions = Country.getAllCountries().map(c => ({
         value: c.isoCode,
         label: c.name,
@@ -100,7 +108,7 @@ export default function AddApplicationForm({
 
         // 🎯 Idhula irukka fields required auto-maari aagadhu
         const EXCLUDE_FROM_AUTO_REQUIRED = [
-            "Class 12 Backlogs","Diploma Backlogs"
+            "Class 12 Backlogs", "Diploma Backlogs"
         ];
 
         const updateRequiredFields = (details: any[]) => {
@@ -131,6 +139,63 @@ export default function AddApplicationForm({
             educationDetails: updateRequiredFields(prev.educationDetails || []),
         }));
     }, [formData]);
+
+
+    // Auto-search leads when Contact Number changes (debounced)
+    useEffect(() => {
+        if (!selectedInstitute) return;
+        if (isEdit) return;              // don't interfere with edit mode
+        if (LeadId) return;              // leadId already supplied from props
+
+        const phone = formData["Contact Number"];
+        const digits = String(phone ?? "").replace(/\D/g, "").slice(-10);
+
+        // Reset when input is too short
+        if (digits.length < 10) {
+            setMatchedLeads([]);
+            setMatchedLeadsSearched(false);
+            setPickedLeadId("");
+            return;
+        }
+
+        let cancelled = false;
+        const t = setTimeout(async () => {
+            try {
+                setMatchedLeadsLoading(true);
+                setMatchedLeadsSearched(false);
+
+                const res = await getLeadsByPhone(digits, selectedInstitute);
+                if (cancelled) return;
+
+                const list = res?.success ? res.data || [] : [];
+                setMatchedLeads(list);
+
+                // Auto-pick when exactly one match
+                if (list.length === 1) {
+                    setPickedLeadId(list[0].leadId);
+                } else if (list.length === 0) {
+                    setPickedLeadId("");
+                }
+
+                setMatchedLeadsSearched(true);
+            } catch {
+                if (!cancelled) {
+                    setMatchedLeads([]);
+                    setMatchedLeadsSearched(true);
+                }
+            } finally {
+                if (!cancelled) setMatchedLeadsLoading(false);
+            }
+        }, 500);
+
+        return () => {
+            cancelled = true;
+            clearTimeout(t);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [formData["Contact Number"], selectedInstitute, isEdit, LeadId]);
+
+
     const validateField = (field: any, value: any): string => {
         // Required field validation
         if (field.required && (!value || value.toString().trim() === "")) {
@@ -1999,7 +2064,11 @@ export default function AddApplicationForm({
             if (applicationSource) {
                 fd.append("applicationSource", applicationSource);
             }
-            if (LeadId) fd.append("leadId", LeadId)
+            if (LeadId) {
+                fd.append("leadId", LeadId)
+            } else if (pickedLeadId) {
+                fd.append("leadId", pickedLeadId)
+            }
 
 
             fd.append(
@@ -2235,7 +2304,110 @@ export default function AddApplicationForm({
                 </div>
             )}
 
+            {/* ─── Matched Lead Picker (phone → lead) ─── */}
+            {!isEdit &&
+                !LeadId &&
+                formData["Contact Number"] &&
+                String(formData["Contact Number"]).replace(/\D/g, "").length >= 10 && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                            <div>
+                                <h3 className="text-sm font-semibold text-amber-900">
+                                    Lead Match by Contact Number
+                                </h3>
+                                <p className="text-[11px] text-amber-800">
+                                    Matching leads for{" "}
+                                    <span className="font-mono">{formData["Contact Number"]}</span>.
+                                    Pick one to attach this application to that lead.
+                                </p>
+                            </div>
+                            {matchedLeadsLoading && (
+                                <span className="text-[11px] text-amber-800">Searching…</span>
+                            )}
+                        </div>
 
+                        {/* No matches */}
+                        {matchedLeadsSearched && matchedLeads.length === 0 && (
+                            <p className="text-xs text-gray-600">
+                                No matching leads found. You can continue and create a new
+                                application without a lead.
+                            </p>
+                        )}
+
+                        {/* Matches */}
+                        {matchedLeads.length > 0 && (
+                            <div className="space-y-2">
+                                {/* "Don't attach" option */}
+                                <label
+                                    className={`flex items-start gap-2 p-2 rounded border cursor-pointer ${pickedLeadId === ""
+                                        ? "bg-white border-amber-500 ring-1 ring-amber-500"
+                                        : "bg-white border-gray-200"
+                                        }`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="pickedLead"
+                                        value=""
+                                        checked={pickedLeadId === ""}
+                                        onChange={() => setPickedLeadId("")}
+                                        className="mt-1"
+                                    />
+                                    <div className="text-xs">
+                                        <span className="font-semibold text-gray-800">
+                                            Don't attach any lead
+                                        </span>
+                                        <p className="text-gray-500">
+                                            Create the application without linking to a lead.
+                                        </p>
+                                    </div>
+                                </label>
+
+                                {matchedLeads.map((lead) => {
+                                    const isPicked = pickedLeadId === lead.leadId;
+                                    return (
+                                        <label
+                                            key={lead.leadId}
+                                            className={`flex items-start gap-2 p-2 rounded border cursor-pointer ${isPicked
+                                                ? "bg-white border-amber-500 ring-1 ring-amber-500"
+                                                : "bg-white border-gray-200"
+                                                }`}
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="pickedLead"
+                                                value={lead.leadId}
+                                                checked={isPicked}
+                                                onChange={() => setPickedLeadId(lead.leadId)}
+                                                className="mt-1"
+                                            />
+                                            <div className="text-xs space-y-0.5">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="font-semibold text-gray-800">
+                                                        {lead.leadName || "Unnamed Lead"}
+                                                    </span>
+                                                    <span className="font-mono text-[10px] text-gray-500">
+                                                        {lead.leadId}
+                                                    </span>
+                                                    {lead.status && (
+                                                        <span className="text-[10px] bg-blue-100 text-blue-800 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                                                            {lead.status}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-gray-600">
+                                                    📞 {lead.phoneNumber}
+                                                    {lead.leadGivenBy
+                                                        ? ` • Given by ${lead.leadGivenBy}`
+                                                        : ""}
+                                                </p>
+                                            </div>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
 
 
             {/* Step Form */}
