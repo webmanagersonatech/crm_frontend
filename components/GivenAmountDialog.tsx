@@ -46,37 +46,149 @@ const MAX_INSTALLMENTS = 5;
 const VIJAY_DASHAMI_INSTITUTE_ID = "INS-3-ZXYXKM";
 
 /**
- * Academic-year-wise Vijayadashami fee structure.
- * Add / adjust entries per academic year as needed.
+ * Vijayadashami fee — academic-year × program-ID wise.
+ *
+ *   VIJAY_DASHAMI_PRESETS[academicYear][programId] = { label, tuitionFee, otherFee }
+ *
+ * Only applies to VIJAY_DASHAMI_INSTITUTE_ID (INS-3-ZXYXKM).
+ * If a program is missing for an AY, the preset button is disabled
+ * for that (AY, program) pair.
  */
 const VIJAY_DASHAMI_PRESETS: Record<
   string,
-  { label: string; tuitionFee: number; otherFee: number }
+  Record<string, { label: string; tuitionFee: number; otherFee: number }>
 > = {
-  "2023-2024": {
-    label: "Vijayadashami 2023-24",
-    tuitionFee: 50000,
-    otherFee: 8000,
-  },
-  "2024-2025": {
-    label: "Vijayadashami 2024-25",
-    tuitionFee: 35000,
-    otherFee: 5000,
-  },
+
   "2025-2026": {
-    label: "Vijayadashami 2025-26",
-    tuitionFee: 60000,
-    otherFee: 12000,
+    PREKG00001: {
+      label: "Vijayadashami 2025-26 — Pre-KG",
+      tuitionFee: 50000,
+      otherFee: 0,
+    },
+    LKG0000002: {
+      label: "Vijayadashami 2025-26 — LKG",
+      tuitionFee: 50000,
+      otherFee: 0,
+    },
+    UKG0000003: {
+      label: "Vijayadashami 2025-26 — UKG",
+      tuitionFee: 50000,
+      otherFee: 0,
+    },
+    STD0000001: {
+      label: "Vijayadashami 2025-26 — I Std",
+      tuitionFee: 55000,
+      otherFee: 0,
+    },
+    STD0000002: {
+      label: "Vijayadashami 2025-26 — II Std",
+      tuitionFee: 55000,
+      otherFee: 0,
+    },
+    STD0000003: {
+      label: "Vijayadashami 2025-26 — III Std",
+      tuitionFee: 55000,
+      otherFee: 0,
+    },
+    STD0000004: {
+      label: "Vijayadashami 2025-26 — IV Std",
+      tuitionFee: 55000,
+      otherFee: 0,
+    },
+    STD0000005: {
+      label: "Vijayadashami 2025-26 — V Std",
+      tuitionFee: 55000,
+      otherFee: 0,
+    },
+    STD0000006: {
+      label: "Vijayadashami 2025-26 — VI Std",
+      tuitionFee: 55000,
+      otherFee: 0,
+    },
+    STD0000007: {
+      label: "Vijayadashami 2025-26 — VII Std",
+      tuitionFee: 55000,
+      otherFee: 0,
+    },
+    STD0000008: {
+      label: "Vijayadashami 2025-26 — VIII Std",
+      tuitionFee: 55000,
+      otherFee: 0,
+    },
+    STD0000009: {
+      label: "Vijayadashami 2025-26 — IX Std",
+      tuitionFee: 55000,
+      otherFee: 0,
+    },
   },
+
   "2027-2028": {
-    label: "Vijayadashami 2027-28",
-    tuitionFee: 60000,
-    otherFee: 12000,
+    PREKG00001: {
+      label: "Vijayadashami 2027-28 — Pre-KG",
+      tuitionFee: 50000,
+      otherFee: 0,
+    },
+    LKG0000002: {
+      label: "Vijayadashami 2027-28 — LKG",
+      tuitionFee: 55000,
+      otherFee: 0,
+    },
+    UKG0000003: {
+      label: "Vijayadashami 2027-28 — UKG",
+      tuitionFee: 55000,
+      otherFee: 0,
+    },
+    STD0000001: {
+      label: "Vijayadashami 2027-28 — I Std",
+      tuitionFee: 61000,
+      otherFee: 0,
+    },
+    STD0000002: {
+      label: "Vijayadashami 2027-28 — II Std",
+      tuitionFee: 61000,
+      otherFee: 0,
+    },
+    STD0000003: {
+      label: "Vijayadashami 2027-28 — III Std",
+      tuitionFee: 61000,
+      otherFee: 0,
+    },
+    STD0000004: {
+      label: "Vijayadashami 2027-28 — IV Std",
+      tuitionFee: 61000,
+      otherFee: 0,
+    },
+    STD0000005: {
+      label: "Vijayadashami 2027-28 — V Std",
+      tuitionFee: 61000,
+      otherFee: 0,
+    },
+    STD0000006: {
+      label: "Vijayadashami 2027-28 — VI Std",
+      tuitionFee: 64000,
+      otherFee: 0,
+    },
+    STD0000007: {
+      label: "Vijayadashami 2027-28 — VII Std",
+      tuitionFee: 64000,
+      otherFee: 0,
+    },
+    STD0000008: {
+      label: "Vijayadashami 2027-28 — VIII Std",
+      tuitionFee: 64000,
+      otherFee: 0,
+    },
+    STD0000009: {
+      label: "Vijayadashami 2027-28 — IX Std",
+      tuitionFee: 67100,
+      otherFee: 0,
+    },
   },
 };
 
 interface AppliedPreset {
   academicYear: string;
+  programId: string;
   label: string;
   tuitionFee: number;
   otherFee: number;
@@ -136,7 +248,7 @@ interface InstallmentView {
   optionName: string;
   optionType: "full_payment" | "installment";
   number: number;
-  amount: number; // ORIGINAL payable (before any given amount)
+  amount: number;
   tuitionFee: number;
   otherFee: number;
   tuitionConcession: number;
@@ -144,10 +256,10 @@ interface InstallmentView {
   dueDate: string;
   status?: string;
   paidAmount?: number;
-  existingApplied: number; // appliedNow already persisted in the snapshot
-  applied: number; // NEW allocation computed for this submission only
-  totalApplied: number; // existingApplied + applied  (what gets saved)
-  remaining: number; // original payable − paid − totalApplied
+  existingApplied: number;
+  applied: number;
+  totalApplied: number;
+  remaining: number;
   isPaid: boolean;
   isFullyCovered: boolean;
 }
@@ -187,12 +299,6 @@ interface StudentInfo {
   academicYear?: string;
 }
 
-/**
- * Original payable of an installment BEFORE the given amount was applied.
- * A saved snapshot stores payableAmount already reduced by appliedNow, so
- * appliedNow is added back. For `paid` installments appliedNow is
- * intentionally NOT added back — the paid snapshot is already final.
- */
 const getOriginalPayable = (inst: NormalizedInstallment): number => {
   const instTuition = Number(inst.tuitionFee || 0);
   const instOther = Number(inst.otherFee || 0);
@@ -211,11 +317,6 @@ const getOriginalPayable = (inst: NormalizedInstallment): number => {
   return round2(stored + appliedBefore);
 };
 
-/**
- * Rebuild an installment's derived fields after its tuitionFee / otherFee
- * change, keeping paid status, paidAmount, and appliedNow intact so the
- * given-amount allocation keeps working.
- */
 const rebuildInstallment = (
   inst: NormalizedInstallment,
   tuitionFee: number,
@@ -251,7 +352,6 @@ export default function GivenAmountDialog({
   const [entries, setEntries] = useState<Entry[]>([
     { date: "", amount: "", description: "" },
   ]);
-  /** Opt-in: user must explicitly enable "Amount Details" to require entries. */
   const [entriesEnabled, setEntriesEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
@@ -277,12 +377,10 @@ export default function GivenAmountDialog({
     "full_payment" | "installment"
   >("installment");
 
-  /** Editable working copy of the active option's installments. */
   const [workingInstallments, setWorkingInstallments] = useState<
     NormalizedInstallment[]
   >([]);
 
-  /** Applied Vijayadashami preset for the current year (null = none). */
   const [appliedPreset, setAppliedPreset] = useState<AppliedPreset | null>(
     null
   );
@@ -297,7 +395,6 @@ export default function GivenAmountDialog({
   );
   const hasSnapshot = selectedYearData?.source === "studentFeeStructure";
 
-  /* ── Reset + fetch when dialog opens ── */
   useEffect(() => {
     if (!open) return;
 
@@ -344,7 +441,6 @@ export default function GivenAmountDialog({
             academicYear: res.data.student.academicYear,
           });
 
-          // ✅ Default-select the student's current year
           const defaultYear = res.data.student.year;
           if (defaultYear != null && String(defaultYear) !== "") {
             setYear(String(defaultYear));
@@ -373,7 +469,6 @@ export default function GivenAmountDialog({
     }
   };
 
-  /* ── Prefill entries when editing ── */
   useEffect(() => {
     if (!year) return;
 
@@ -415,8 +510,6 @@ export default function GivenAmountDialog({
     }
   }, [year, existingFees, yearFeeData]);
 
-  /* ── Totals ── */
-
   const totalGivenAmount = useMemo(() => {
     if (!entriesEnabled) return 0;
     return entries.reduce((sum, e) => {
@@ -438,29 +531,37 @@ export default function GivenAmountDialog({
 
   const tuitionConcessionYear = selectedYearData
     ? Number(selectedYearData.tuitionConcession || 0) ||
-    round2((tuitionFeeYear * concessionPercentage) / 100)
+      round2((tuitionFeeYear * concessionPercentage) / 100)
     : 0;
 
   const discountedTuitionYear = round2(
     tuitionFeeYear - tuitionConcessionYear
   );
 
-  /* ── Institute gate for the Vijayadashami preset ── */
-
+  /* ── Institute gate ── */
   const isVijayInstitute =
     student?.instituteId === VIJAY_DASHAMI_INSTITUTE_ID;
 
+  /* ── Preset resolution: (academicYear × programId) ── */
+
+  /** AY used to look up the preset. Stable once a preset is applied. */
   const effectiveAcademicYear = appliedPreset
     ? appliedPreset.academicYear
     : selectedYearData?.academicYear || academicYear || undefined;
 
-  /** The preset definition for the active academic year (if any). */
-  const activePresetDefinition = useMemo(() => {
-    if (!effectiveAcademicYear) return null;
-    return VIJAY_DASHAMI_PRESETS[effectiveAcademicYear] ?? null;
-  }, [effectiveAcademicYear]);
+  /** Program ID used to look up the preset. */
+  const effectiveProgramId =
+    student?.programId || programId || selectedYearData?.courseId || null;
 
-  /* ── Effective year pools (respect the applied preset) ── */
+  /** The preset for (AY, programId), or null if not configured. */
+  const activePresetDefinition = useMemo(() => {
+    if (!effectiveAcademicYear || !effectiveProgramId) return null;
+    const byYear = VIJAY_DASHAMI_PRESETS[effectiveAcademicYear];
+    if (!byYear) return null;
+    return byProgramLookup(byYear, effectiveProgramId);
+  }, [effectiveAcademicYear, effectiveProgramId]);
+
+  /* ── Effective pools (respect the applied preset) ── */
 
   const effectiveTuitionFee = appliedPreset
     ? appliedPreset.tuitionFee
@@ -511,7 +612,6 @@ export default function GivenAmountDialog({
     availableOptions[0] ||
     null;
 
-  /* ── Seed the editable working copy from the base option ── */
   const seedKey = useMemo(() => {
     if (!baseOption) return "";
     return [
@@ -522,7 +622,8 @@ export default function GivenAmountDialog({
       baseOption.installments
         .map(
           (i) =>
-            `${i.number}:${i.tuitionFee}:${i.otherFee}:${i.appliedNow ?? 0}:${i.status ?? ""
+            `${i.number}:${i.tuitionFee}:${i.otherFee}:${i.appliedNow ?? 0}:${
+              i.status ?? ""
             }`
         )
         .join("|"),
@@ -538,30 +639,20 @@ export default function GivenAmountDialog({
       return;
     }
     setWorkingInstallments(baseOption.installments.map((i) => ({ ...i })));
-    // reseed whenever the underlying option changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seedKey]);
 
-  /**
-   * The active option is the base option with its installments replaced
-   * by the editable working copy (once seeded).
-   */
   const activeOption: NormalizedOption | null = useMemo(() => {
     if (!baseOption) return null;
     if (workingInstallments.length === 0) return baseOption;
     return { ...baseOption, installments: workingInstallments };
   }, [baseOption, workingInstallments]);
 
-  /* ── Plan lock: any paid installment freezes add/remove ── */
   const planLocked = useMemo(
     () => workingInstallments.some((i) => i.status === "paid"),
     [workingInstallments]
   );
 
-  /**
-   * ✅ Fully paid = EVERY installment in the plan is `paid`.
-   * When true, nothing can be saved / edited at all.
-   */
   const allPaid = useMemo(
     () =>
       workingInstallments.length > 0 &&
@@ -569,10 +660,6 @@ export default function GivenAmountDialog({
     [workingInstallments]
   );
 
-  /**
-   * ✅ Add/Remove only make sense for installment plans — a full-payment
-   * option must always have exactly one row.
-   */
   const canAddInstallment =
     !!activeOption &&
     activeOption.type === "installment" &&
@@ -586,12 +673,6 @@ export default function GivenAmountDialog({
     !planLocked &&
     workingInstallments.length > 1;
 
-  /**
-   * ✅ The Vijayadashami preset is gated on:
-   *   - the correct institute (INS-3-ZXYXKM)
-   *   - a preset defined for the active academic year
-   *   - the plan not being locked / fully paid
-   */
   const canApplyVijayPreset =
     !!activeOption &&
     isVijayInstitute &&
@@ -602,7 +683,7 @@ export default function GivenAmountDialog({
     !loading &&
     !fetching;
 
-  /* ── Pool totals across the working copy (must equal year totals) ── */
+  /* ── Pool totals ── */
 
   const workingTuitionPool = useMemo(
     () =>
@@ -618,15 +699,10 @@ export default function GivenAmountDialog({
   const workingOtherPool = useMemo(
     () =>
       round2(
-        workingInstallments.reduce(
-          (s, i) => s + Number(i.otherFee || 0),
-          0
-        )
+        workingInstallments.reduce((s, i) => s + Number(i.otherFee || 0), 0)
       ),
     [workingInstallments]
   );
-
-  /* ── yearTotalPayable (BEFORE the given amount) ── */
 
   const yearTotalPayable = useMemo(() => {
     if (activeOption && activeOption.installments.length > 0) {
@@ -644,14 +720,11 @@ export default function GivenAmountDialog({
   const installmentViews: InstallmentView[] = useMemo(() => {
     if (!activeOption) return [];
 
-    // how much of the cumulative given amount is already baked into the
-    // snapshot as `appliedNow` across all installments.
     const alreadyAllocated = activeOption.installments.reduce(
       (s, inst) => s + Number(inst.appliedNow || 0),
       0
     );
 
-    // only the *delta* (unallocated remainder) may be freshly distributed.
     const unallocatedGiven = round2(
       Math.max(totalGivenAmount - alreadyAllocated, 0)
     );
@@ -668,7 +741,6 @@ export default function GivenAmountDialog({
       );
       const instOtherConc = 0;
 
-      // Original payable BEFORE any given amount (appliedNow added back)
       const payable = getOriginalPayable({
         ...inst,
         concessionPercentage: instConcPct,
@@ -678,7 +750,6 @@ export default function GivenAmountDialog({
       const isPaid = inst.status === "paid";
       const existingApplied = Number(inst.appliedNow || 0);
 
-      // subtract the *existing* appliedNow when computing what's owed
       const owed = isPaid
         ? 0
         : Math.max(payable - alreadyPaid - existingApplied, 0);
@@ -726,7 +797,7 @@ export default function GivenAmountDialog({
         optionName: activeOption.name,
         optionType: activeOption.type,
         number: b.inst.number,
-        amount: b.payable, // original, before any given amount
+        amount: b.payable,
         tuitionFee: b.instTuition,
         otherFee: b.instOther,
         tuitionConcession: b.instTuitionConc,
@@ -826,7 +897,6 @@ export default function GivenAmountDialog({
       (i) => i.number !== number
     );
 
-    // Re-merge the removed row's fees and re-split across the rest.
     const totalTuition = workingInstallments.reduce(
       (s, i) => s + Number(i.tuitionFee || 0),
       0
@@ -849,14 +919,13 @@ export default function GivenAmountDialog({
     setWorkingInstallments(rebuilt);
   };
 
-  /* ── Update an installment's due date ── */
   const updateInstallmentDueDate = (number: number, dueDate: string) => {
     setWorkingInstallments((prev) =>
       prev.map((i) => (i.number === number ? { ...i, dueDate } : i))
     );
   };
 
-  /* ── Apply Vijayadashami preset (academic-year aware) ── */
+  /* ── Apply Vijayadashami preset (AY × program) ── */
 
   const applyVijayDashami = () => {
     if (!isVijayInstitute) {
@@ -864,10 +933,23 @@ export default function GivenAmountDialog({
       return;
     }
 
-    if (!activePresetDefinition || !effectiveAcademicYear) {
+    if (!effectiveAcademicYear || !effectiveProgramId) {
       toast.error(
-        `No Vijayadashami preset configured for academic year ${effectiveAcademicYear || "—"
+        `Cannot resolve preset: missing ${
+          !effectiveAcademicYear ? "academic year" : "program ID"
         }`
+      );
+      return;
+    }
+
+    const byYear = VIJAY_DASHAMI_PRESETS[effectiveAcademicYear];
+    const preset = byYear
+      ? byProgramLookup(byYear, effectiveProgramId)
+      : null;
+
+    if (!preset) {
+      toast.error(
+        `No Vijayadashami preset configured for AY ${effectiveAcademicYear} • program ${effectiveProgramId}`
       );
       return;
     }
@@ -892,14 +974,8 @@ export default function GivenAmountDialog({
     );
 
     const count = workingInstallments.length;
-    const tuitionParts = splitEvenly(
-      activePresetDefinition.tuitionFee,
-      count
-    );
-    const otherParts = splitEvenly(
-      activePresetDefinition.otherFee,
-      count
-    );
+    const tuitionParts = splitEvenly(preset.tuitionFee, count);
+    const otherParts = splitEvenly(preset.otherFee, count);
 
     const rebuilt = workingInstallments.map((inst, idx) =>
       rebuildInstallment(inst, tuitionParts[idx], otherParts[idx], concPct)
@@ -908,13 +984,14 @@ export default function GivenAmountDialog({
     setWorkingInstallments(rebuilt);
     setAppliedPreset({
       academicYear: effectiveAcademicYear,
-      label: activePresetDefinition.label,
-      tuitionFee: activePresetDefinition.tuitionFee,
-      otherFee: activePresetDefinition.otherFee,
+      programId: effectiveProgramId,
+      label: preset.label,
+      tuitionFee: preset.tuitionFee,
+      otherFee: preset.otherFee,
     });
 
     toast.success(
-      `${activePresetDefinition.label} fee structure applied (${effectiveAcademicYear})`
+      `${preset.label} fee structure applied (AY ${effectiveAcademicYear})`
     );
   };
 
@@ -936,7 +1013,6 @@ export default function GivenAmountDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // ✅ Hard guard: nothing can be saved when the plan is fully paid.
     if (allPaid) {
       toast.error("All installments are paid — fee structure is locked");
       return;
@@ -949,7 +1025,6 @@ export default function GivenAmountDialog({
       return toast.error("Payment option not available");
     }
 
-    // Amount entries are optional — only validate when the user turned them on.
     let givenEntriesPayload: {
       date: string;
       amount: number;
@@ -981,7 +1056,6 @@ export default function GivenAmountDialog({
         }));
     }
 
-    // guard: split must equal year total (which may be the preset)
     const yearPool = round2(effectiveTuitionFee + effectiveOtherFee);
     const splitTotal = round2(workingTuitionPool + workingOtherPool);
     if (Math.abs(splitTotal - yearPool) > 0.01) {
@@ -992,7 +1066,6 @@ export default function GivenAmountDialog({
       );
     }
 
-    // guard: every installment must have a due date
     for (let i = 0; i < workingInstallments.length; i++) {
       if (!workingInstallments[i].dueDate) {
         return toast.error(
@@ -1015,14 +1088,12 @@ export default function GivenAmountDialog({
     try {
       setLoading(true);
 
-      /* Build per-installment payload (renumber 1..N) */
       const installments = activeOption.installments.map((inst, idx) => {
         const view = installmentViews[idx];
         const originalPayable = view?.amount ?? getOriginalPayable(inst);
         const alreadyPaid = Number(inst.paidAmount || 0);
         const isPaid = inst.status === "paid";
 
-        // persist the CUMULATIVE applied amount, not just the new delta
         const existingApplied = Number(inst.appliedNow || 0);
         const newApplied = view?.applied ?? 0;
         const totalApplied = round2(existingApplied + newApplied);
@@ -1047,7 +1118,7 @@ export default function GivenAmountDialog({
           payableAmount?: number;
           appliedNow?: number;
         } = {
-          number: idx + 1, // renumber 1..N for the backend
+          number: idx + 1,
           amount: Number(inst.amount || 0),
           tuitionFee: Number(inst.tuitionFee || 0),
           otherFee: Number(inst.otherFee || 0),
@@ -1076,12 +1147,12 @@ export default function GivenAmountDialog({
       });
 
       const paymentOptionPayload: UpsertStudentFeeStructurePayload["paymentOption"] =
-      {
-        paymentOptionId: activeOption.paymentOptionId,
-        type: activeOption.type,
-        name: activeOption.name,
-        installments,
-      };
+        {
+          paymentOptionId: activeOption.paymentOptionId,
+          type: activeOption.type,
+          name: activeOption.name,
+          installments,
+        };
 
       const payload: UpsertStudentFeeStructurePayload = {
         studentId,
@@ -1121,9 +1192,9 @@ export default function GivenAmountDialog({
 
       toast.success(
         res.message ||
-        (isEditing
-          ? "Given amount updated successfully"
-          : "Given amount added successfully")
+          (isEditing
+            ? "Given amount updated successfully"
+            : "Given amount added successfully")
       );
 
       onSuccess?.();
@@ -1143,13 +1214,11 @@ export default function GivenAmountDialog({
   const splitMatches =
     Math.abs(
       round2(workingTuitionPool + workingOtherPool) -
-      round2(effectiveTuitionFee + effectiveOtherFee)
+        round2(effectiveTuitionFee + effectiveOtherFee)
     ) <= 0.01;
 
-  /** All form controls are disabled when the plan is fully paid. */
   const formDisabled = loading || allPaid;
 
-  /** A specific installment's due date is editable only while pending. */
   const isDueDateEditable = (inst: InstallmentView) =>
     !formDisabled && !planLocked && !inst.isPaid;
 
@@ -1194,7 +1263,9 @@ export default function GivenAmountDialog({
                   {isEditing
                     ? `Editing existing entry for Year ${year}`
                     : "Add payment details for a specific year"}
-                  {effectiveAcademicYear ? ` • ${effectiveAcademicYear}` : ""}
+                  {effectiveAcademicYear
+                    ? ` • ${effectiveAcademicYear}`
+                    : ""}
                 </p>
               </div>
               <button
@@ -1270,6 +1341,7 @@ export default function GivenAmountDialog({
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full">
                         <Wallet className="w-3 h-3" />
                         {appliedPreset.label} applied
+                        {" • "}AY {appliedPreset.academicYear}
                       </span>
                     )}
 
@@ -1279,10 +1351,11 @@ export default function GivenAmountDialog({
                         {" • "}
                         {concessionMeta.paymentMode === "full_payment"
                           ? "Full Payment"
-                          : `${concessionMeta.allowedInstallmentCount} installment${concessionMeta.allowedInstallmentCount > 1
-                            ? "s"
-                            : ""
-                          }`}
+                          : `${concessionMeta.allowedInstallmentCount} installment${
+                              concessionMeta.allowedInstallmentCount > 1
+                                ? "s"
+                                : ""
+                            }`}
                       </span>
                     )}
                   </div>
@@ -1299,7 +1372,6 @@ export default function GivenAmountDialog({
                       : "Fee Structure (Configuration)"}
                   </div>
 
-                  {/* Applied referrals */}
                   {selectedYearData.appliedReferrals &&
                     selectedYearData.appliedReferrals.length > 0 && (
                       <div className="flex flex-wrap items-center gap-1.5">
@@ -1317,14 +1389,12 @@ export default function GivenAmountDialog({
                       </div>
                     )}
 
-                  {/* Fee summary */}
                   <div className="rounded-md border border-blue-200 bg-white p-3 space-y-2 text-xs">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] font-semibold text-blue-900">
                         Fee Summary
                       </span>
 
-                      {/* ✅ Vijayadashami button only for the allowed institute */}
                       {isVijayInstitute && (
                         <button
                           type="button"
@@ -1333,14 +1403,14 @@ export default function GivenAmountDialog({
                           className="inline-flex items-center gap-1 rounded-md border border-purple-200 bg-purple-50 px-2 py-1 text-[10px] font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed"
                           title={
                             activePresetDefinition
-                              ? `Apply ${activePresetDefinition.label
-                              } (${formatCurrency(
-                                activePresetDefinition.tuitionFee
-                              )} tuition + ${formatCurrency(
-                                activePresetDefinition.otherFee
-                              )} other, AY ${effectiveAcademicYear})`
-                              : `No Vijayadashami preset configured for AY ${effectiveAcademicYear || "—"
-                              }`
+                              ? `Apply ${activePresetDefinition.label} (${formatCurrency(
+                                  activePresetDefinition.tuitionFee
+                                )} tuition + ${formatCurrency(
+                                  activePresetDefinition.otherFee
+                                )} other • AY ${effectiveAcademicYear}, program ${effectiveProgramId})`
+                              : `No Vijayadashami preset for AY ${
+                                  effectiveAcademicYear || "—"
+                                } • program ${effectiveProgramId || "—"}`
                           }
                         >
                           <Wallet className="w-3 h-3" />
@@ -1401,7 +1471,6 @@ export default function GivenAmountDialog({
                     </div>
                   </div>
 
-                  {/* Payment Option toggle */}
                   {(hasFullOption || hasInstallmentOption) &&
                     availableOptions.length > 0 && (
                       <div className="pt-1">
@@ -1416,10 +1485,11 @@ export default function GivenAmountDialog({
                                 setSelectedOptionType("full_payment")
                               }
                               disabled={allPaid}
-                              className={`px-4 py-1.5 text-xs font-medium rounded-md transition ${selectedOptionType === "full_payment"
-                                ? "bg-blue-600 text-white shadow"
-                                : "text-gray-600 hover:bg-blue-50"
-                                } disabled:opacity-50`}
+                              className={`px-4 py-1.5 text-xs font-medium rounded-md transition ${
+                                selectedOptionType === "full_payment"
+                                  ? "bg-blue-600 text-white shadow"
+                                  : "text-gray-600 hover:bg-blue-50"
+                              } disabled:opacity-50`}
                             >
                               Full Payment
                             </button>
@@ -1431,10 +1501,11 @@ export default function GivenAmountDialog({
                                 setSelectedOptionType("installment")
                               }
                               disabled={allPaid}
-                              className={`px-4 py-1.5 text-xs font-medium rounded-md transition ${selectedOptionType === "installment"
-                                ? "bg-blue-600 text-white shadow"
-                                : "text-gray-600 hover:bg-blue-50"
-                                } disabled:opacity-50`}
+                              className={`px-4 py-1.5 text-xs font-medium rounded-md transition ${
+                                selectedOptionType === "installment"
+                                  ? "bg-blue-600 text-white shadow"
+                                  : "text-gray-600 hover:bg-blue-50"
+                              } disabled:opacity-50`}
                             >
                               Installment
                             </button>
@@ -1451,7 +1522,6 @@ export default function GivenAmountDialog({
                       </div>
                     )}
 
-                  {/* Installments */}
                   {installmentViews.length > 0 && activeOption && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -1485,7 +1555,6 @@ export default function GivenAmountDialog({
                         </div>
                       </div>
 
-                      {/* Split-vs-year summary (read-only) */}
                       <div className="flex flex-wrap items-center justify-between gap-1 px-1 text-[10px]">
                         <span
                           className={
@@ -1517,14 +1586,15 @@ export default function GivenAmountDialog({
                         {installmentViews.map((inst, idx) => (
                           <div
                             key={`${inst.number}-${idx}`}
-                            className={`rounded-md border px-3 py-2 text-xs space-y-1.5 ${inst.isPaid
-                              ? "bg-green-50 border-green-200"
-                              : inst.isFullyCovered
+                            className={`rounded-md border px-3 py-2 text-xs space-y-1.5 ${
+                              inst.isPaid
+                                ? "bg-green-50 border-green-200"
+                                : inst.isFullyCovered
                                 ? "bg-blue-50 border-blue-200"
                                 : inst.totalApplied > 0
-                                  ? "bg-amber-50 border-amber-200"
-                                  : "bg-white border-gray-200"
-                              }`}
+                                ? "bg-amber-50 border-amber-200"
+                                : "bg-white border-gray-200"
+                            }`}
                           >
                             <div className="flex items-center justify-between gap-3">
                               <div className="flex flex-col">
@@ -1534,7 +1604,6 @@ export default function GivenAmountDialog({
                                     ? " (Full)"
                                     : ""}
                                 </span>
-                                {/* ✅ Editable due date */}
                                 <div className="flex items-center gap-1 mt-0.5">
                                   <span className="text-[10px] text-gray-500">
                                     Due
@@ -1554,8 +1623,8 @@ export default function GivenAmountDialog({
                                       inst.isPaid
                                         ? "Paid installment — date locked"
                                         : planLocked
-                                          ? "Payment made — date locked"
-                                          : "Edit due date"
+                                        ? "Payment made — date locked"
+                                        : "Edit due date"
                                     }
                                   />
                                 </div>
@@ -1653,7 +1722,7 @@ export default function GivenAmountDialog({
                 </div>
               )}
 
-              {/* Amount Details (optional toggle) */}
+              {/* Amount Details */}
               <div className="rounded-lg border border-gray-200 p-4 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -1681,12 +1750,14 @@ export default function GivenAmountDialog({
                       }
                     }}
                     disabled={formDisabled}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${entriesEnabled ? "bg-blue-600" : "bg-gray-300"
-                      }`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      entriesEnabled ? "bg-blue-600" : "bg-gray-300"
+                    }`}
                   >
                     <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${entriesEnabled ? "translate-x-6" : "translate-x-1"
-                        }`}
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                        entriesEnabled ? "translate-x-6" : "translate-x-1"
+                      }`}
                     />
                   </button>
                 </div>
@@ -1818,10 +1889,10 @@ export default function GivenAmountDialog({
                   {loading
                     ? "Saving..."
                     : allPaid
-                      ? "Locked"
-                      : isEditing
-                        ? "Update Amount"
-                        : "Save Amount"}
+                    ? "Locked"
+                    : isEditing
+                    ? "Update Amount"
+                    : "Save Amount"}
                 </button>
               </div>
             </form>
@@ -1830,4 +1901,12 @@ export default function GivenAmountDialog({
       )}
     </AnimatePresence>
   );
+}
+
+/* ───────── Internal helper (add at bottom or near top) ───────── */
+function byProgramLookup(
+  map: Record<string, { label: string; tuitionFee: number; otherFee: number }>,
+  programId: string
+) {
+  return map[programId] ?? null;
 }
