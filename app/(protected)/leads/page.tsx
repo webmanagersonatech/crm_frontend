@@ -724,8 +724,8 @@ export default function LeadsPage() {
         const phone = String(lead.phoneNumber || "");
 
         const maskedPhone =
-          phone.length > 4
-            ? "*".repeat(phone.length - 4) + phone.slice(-4)
+          phone.length > 3
+            ? "*".repeat(phone.length - 3) + phone.slice(-3)
             : "****";
 
         return (

@@ -426,8 +426,8 @@ export default function DashboardPage() {
         const isVisible = !!visiblePhones[leadKey];
 
         const maskedPhone =
-          phone.length > 4
-            ? "*".repeat(phone.length - 4) + phone.slice(-4)
+          phone.length > 3
+            ? "*".repeat(phone.length - 3) + phone.slice(-3)
             : phone
               ? "*".repeat(phone.length)
               : "—";
