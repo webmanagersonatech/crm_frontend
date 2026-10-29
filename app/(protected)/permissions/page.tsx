@@ -29,6 +29,8 @@ const defaultPermissions: Permission[] = [
   { id: 24, moduleName: "Students Pass Change", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 6, moduleName: "Application", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 23, moduleName: "Application Payment", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 25, moduleName: "Advance Token Amount", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 26, moduleName: "Tuition Fee", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 7, moduleName: "Lead Manager", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 8, moduleName: "Communication", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 9, moduleName: "Reports", view: false, create: false, edit: false, delete: false, filter: false, download: false },

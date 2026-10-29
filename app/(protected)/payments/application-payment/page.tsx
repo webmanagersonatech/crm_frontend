@@ -24,7 +24,7 @@ import {
   PaidPayment,
   PaidPaymentSummary,
   PaymentGateway,
-} from "@/app/lib/request/applicationpaymentRequest";
+} from "@/app/lib/request/paymentRequest";
 import { getActiveInstitutions } from "@/app/lib/request/institutionRequest";
 
 /* ============================================================

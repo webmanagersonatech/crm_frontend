@@ -146,6 +146,102 @@ export interface ExportResponse<T> {
   totalCount: number;
 }
 
+// ======================================================
+// ADVANCE TOKEN PAYMENT TYPES
+// ======================================================
+export interface AdvanceTokenPaymentStudent {
+  _id: string;
+  firstname?: string;
+  lastname?: string;
+  email?: string;
+  mobileNo?: string;
+  username?: string;
+  studentId?: string;
+}
+
+export interface AdvanceTokenPaymentInstitute {
+  _id: string;
+  name?: string;
+  instituteName?: string;
+  code?: string;
+  instituteId?: string;
+}
+
+export interface AdvanceTokenPayment {
+  _id: string;
+  studentId: string;
+  instituteId: string;
+  student: AdvanceTokenPaymentStudent | null;
+  institute: AdvanceTokenPaymentInstitute | null;
+  applicationId: string;
+  programId: string;
+  academicYear: string;
+
+  amount: number;
+  gstAmount: number;
+  totalAmount: number;
+
+  orderId: string;
+  paymentId?: string;
+
+  status: PaymentStatus;
+  gateway: PaymentGateway;
+
+  adjusted: boolean;
+  adjustedAt?: string | null;
+  adjustedIntoYear?: number | null;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdvanceTokenPaymentSummary {
+  totalPaidAmount: number;
+  totalBaseAmount: number;
+  totalGst: number;
+  totalPaidCount: number;
+}
+
+export interface AdvanceTokenPaymentsFiltersEcho {
+  startDate: string | null;
+  endDate: string | null;
+  search: string | null;
+  gateway: string;
+  instituteId: string | null;
+}
+
+export interface AdvanceTokenPaymentsResponse
+  extends PaginatedResponse<AdvanceTokenPayment> {
+  summary: AdvanceTokenPaymentSummary;
+  filters: AdvanceTokenPaymentsFiltersEcho;
+}
+
+export interface GetAdvanceTokenPaymentsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+  gateway?: PaymentGateway | "all";
+  instituteId?: string;
+}
+
+export type ExportAdvanceTokenPaymentsParams = Omit<
+  GetAdvanceTokenPaymentsParams,
+  "page" | "limit"
+>;
+
+export interface ExportAdvanceTokenPaymentsResponse {
+  success: boolean;
+  message?: string;
+  data: AdvanceTokenPayment[];
+  totalCount: number;
+  filters?: AdvanceTokenPaymentsFiltersEcho;
+}
+
+
+
+
 export type ExportPaidPaymentsParams = Omit<
   GetPaidPaymentsParams,
   "page" | "limit"
@@ -243,6 +339,68 @@ export async function exportPaidPayments(
     return response.data;
   } catch (error: unknown) {
     throw new Error(extractError(error, "Failed to export paid payments."));
+  }
+}
+
+
+
+// ======================================================
+// GET ALL PAID ADVANCE TOKEN PAYMENTS
+// ======================================================
+export async function getPaidAdvanceTokenPayments(
+  params?: GetAdvanceTokenPaymentsParams
+): Promise<AdvanceTokenPaymentsResponse> {
+  try {
+    const query = new URLSearchParams();
+    if (params?.page) query.append("page", String(params.page));
+    if (params?.limit) query.append("limit", String(params.limit));
+    if (params?.search) query.append("search", params.search);
+    if (params?.startDate) query.append("startDate", params.startDate);
+    if (params?.endDate) query.append("endDate", params.endDate);
+    if (params?.gateway && params.gateway !== "all") {
+      query.append("gateway", params.gateway);
+    }
+    if (params?.instituteId) {
+      query.append("instituteId", params.instituteId);
+    }
+
+    const response = await api.get<AdvanceTokenPaymentsResponse>(
+      `/advancetoken-amount/paid?${query.toString()}`
+    );
+    return response.data;
+  } catch (error: unknown) {
+    throw new Error(
+      extractError(error, "Failed to fetch advance token payments.")
+    );
+  }
+}
+
+// ======================================================
+// EXPORT PAID ADVANCE TOKEN PAYMENTS
+// ======================================================
+export async function exportPaidAdvanceTokenPayments(
+  params?: ExportAdvanceTokenPaymentsParams
+): Promise<ExportAdvanceTokenPaymentsResponse> {
+  try {
+    const query = new URLSearchParams();
+    if (params?.search) query.append("search", params.search);
+    if (params?.startDate) query.append("startDate", params.startDate);
+    if (params?.endDate) query.append("endDate", params.endDate);
+    if (params?.gateway && params.gateway !== "all") {
+      query.append("gateway", params.gateway);
+    }
+    if (params?.instituteId) {
+      query.append("instituteId", params.instituteId);
+    }
+
+    const response = await api.get<ExportAdvanceTokenPaymentsResponse>(
+      `/advancetoken-amount/paid/export?${query.toString()}`
+    );
+    return response.data;
+  } catch (error: unknown) {
+    throw new Error(
+      extractError(error, "Failed to export advance token payments.")
+    );
   }
 }
 

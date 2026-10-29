@@ -31,6 +31,7 @@ import {
   Receipt,
   ShieldCheck,
   CreditCard,
+  IndianRupee,
   type LucideIcon,
 } from "lucide-react";
 import clsx from "clsx";
@@ -69,6 +70,9 @@ const labelToPermissionMap: Record<string, string> = {
   "Dynamic Forms": "Dynamic Forms",
   "Settings": "Settings",
   "Application Settings": "Application Settings",
+  "Payments": "Payments",
+  "Advance Token Amount": "Advance Token Amount",
+  "Tuition Fee": "Tuition Fee",
 };
 
 const allItems: MenuItem[] = [
@@ -83,7 +87,15 @@ const allItems: MenuItem[] = [
   },
   { href: "/students", label: "Students", icon: GraduationCap },
   { href: "/applications", label: "Applications Manager", icon: FileText },
-  { href: "/application-payment", label: "Application Payment", icon: CreditCard },
+  {
+    label: "Payments",
+    icon: CreditCard,
+    submenu: [
+      { href: "/payments/application-payment", label: "Application Payment", icon: Receipt },
+      { href: "/payments/advance-token-amount", label: "Advance Token Amount", icon: CreditCard },
+      // { href: "/payments/tuition-fee",           label: "Tuition Fee",           icon: IndianRupee },
+    ],
+  },
   { href: "/leads", label: "Leads Manager", icon: UserPlus },
   { href: "/communications", label: "Communications", icon: MessageCircle },
   { href: "/templates", label: "Email Templates", icon: Mail },
