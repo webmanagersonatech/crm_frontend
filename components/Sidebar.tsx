@@ -31,7 +31,7 @@ import {
   Receipt,
   ShieldCheck,
   CreditCard,
-  IndianRupee,
+  Trophy,
   type LucideIcon,
 } from "lucide-react";
 import clsx from "clsx";
@@ -61,6 +61,7 @@ const labelToPermissionMap: Record<string, string> = {
   "CIICP": "CIICP",
   "Application Payment": "Application Payment",
   "Summer Camp": "Summer Camp",
+  "Sona Champs": "Sona Champs",
   "MAT Registration": "MAT Registration",
   "Fee Configuration": "Fee Configuration",
   "Events": "Events",
@@ -108,6 +109,7 @@ const allItems: MenuItem[] = [
     submenu: [
       { href: "/ciicp", label: "CIICP", icon: FlaskConical },
       { href: "/summercamp", label: "Summer Camp", icon: TentTree },
+      { href: "/sonachamp", label: "Sona Champs", icon: Trophy },
       { href: "/mat-registration", label: "MAT Registration", icon: ClipboardList },
     ]
   },
