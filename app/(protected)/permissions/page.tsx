@@ -36,6 +36,7 @@ const defaultPermissions: Permission[] = [
   { id: 9, moduleName: "Reports", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 11, moduleName: "Events", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 17, moduleName: "Summer Camp", view: false, create: false, edit: false, delete: false, filter: false, download: false },
+  { id: 27, moduleName: "Sona Champs", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 18, moduleName: "CIICP", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 19, moduleName: "MAT Registration", view: false, create: false, edit: false, delete: false, filter: false, download: false },
   { id: 21, moduleName: "Fee Concession Approval", view: false, create: false, edit: false, delete: false, filter: false, download: false },
