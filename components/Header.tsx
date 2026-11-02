@@ -25,17 +25,22 @@ type HeaderProps = {
 const focusRing =
   "outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40";
 
+const PLATFORM_NAME = "Hika CRM";
+const PLATFORM_LOGO = "/sonastar-logo.png";
+
 export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [role, setRole] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
+  const [institutionName, setInstitutionName] = useState<string>("");
+  const [institutionLogo, setInstitutionLogo] = useState<string | null>(null);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const [institutionName, setInstitutionName] = useState<string>("");
 
-  // Click outside
+  /* ---------- click outside ---------- */
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -52,9 +57,63 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  /* ---------- decode token + fetch branding ---------- */
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Not authorized: please log in.");
+      return;
+    }
+
+    let decoded: any;
+    try {
+      decoded = JSON.parse(atob(token.split(".")[1]));
+    } catch (error) {
+      console.error("Failed to decode token:", error);
+      toast.error("Session invalid, please log in again.");
+      return;
+    }
+
+    const userRole = decoded?.role?.toLowerCase();
+    const email = decoded?.email || decoded?.sub || "User";
+
+    if (!userRole) {
+      toast.error("Invalid user role.");
+      return;
+    }
+
+    setRole(userRole);
+    setUserEmail(email);
+
+    // Superadmin → platform branding
+    if (userRole === "superadmin") {
+      setInstitutionName(PLATFORM_NAME);
+      setInstitutionLogo(PLATFORM_LOGO);
+      return;
+    }
+
+    // Admin / user → institute branding
+    if (userRole === "admin" || userRole === "user") {
+      getInstitutionName()
+        .then((res) => {
+        
+          setInstitutionName(res?.name || "");
+          setInstitutionLogo(res?.insuitelogo ?? null);
+        })
+        .catch((err) => {
+          console.error("[Header] getInstitutionName failed:", err);
+          // graceful fallback — Shield icon renders
+          setInstitutionName("");
+          setInstitutionLogo(null);
+        });
+    }
+  }, []);
+
+  /* ---------- logout ---------- */
   const handleLogout = () => {
     try {
       localStorage.removeItem("token");
@@ -75,34 +134,7 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
     }
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast.error("Not authorized: please log in.");
-      return;
-    }
-    try {
-      const payload = token.split(".")[1];
-      const decoded: any = JSON.parse(atob(payload));
-      const userRole = decoded?.role?.toLowerCase();
-      const email = decoded?.email || decoded?.sub || "User";
-      if (!userRole) {
-        toast.error("Invalid user role.");
-        return;
-      }
-      setRole(userRole);
-      setUserEmail(email);
-      if (userRole === "admin" || userRole === "user") {
-        getInstitutionName()
-          .then((res) => setInstitutionName(res.name))
-          .catch((err) => console.error(err));
-      }
-    } catch (error) {
-      console.error("Failed to decode token:", error);
-      toast.error("Session invalid, please log in again.");
-    }
-  }, []);
-
+  /* ---------- helpers ---------- */
   const getRoleBadgeColor = () => {
     switch (role) {
       case "admin":
@@ -116,6 +148,9 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
     }
   };
 
+  const displayName = institutionName || "Institution";
+  const displayRole = tempAdmin ? "User" : role;
+
   const notifications = [
     { id: 1, title: "New update available", time: "5 min ago", read: false },
     { id: 2, title: "System maintenance at 2 AM", time: "1 hour ago", read: false },
@@ -126,7 +161,7 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white text-slate-900 shadow-sm">
       <div className="flex h-20 items-center justify-between px-4 sm:px-6">
-        {/* Left */}
+        {/* ---------- Left ---------- */}
         <div className="flex items-center gap-3 sm:gap-4">
           <button
             type="button"
@@ -141,21 +176,35 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 ring-1 ring-blue-100">
-              <Shield className="h-4 w-4 text-blue-600" strokeWidth={1.75} />
+            {/* Logo (institute or platform) → Shield fallback */}
+            <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-blue-50 ring-1 ring-blue-100">
+              {institutionLogo ? (
+                <img
+                  src={institutionLogo}
+                  alt={displayName}
+                  className="h-full w-full object-contain"
+                  onError={() => setInstitutionLogo(null)}
+                />
+              ) : (
+                <Shield
+                  className="h-4 w-4 text-blue-600"
+                  strokeWidth={1.75}
+                />
+              )}
             </div>
+
             <div className="hidden sm:block leading-tight">
               <h1 className="max-w-[220px] truncate text-[13.5px] font-semibold tracking-wide text-slate-900">
-                {institutionName || "Institution"}
+                {displayName}
               </h1>
               <p className="text-[12px] capitalize text-slate-500">
-                {tempAdmin ? "User" : role} Portal
+                {displayRole} Portal
               </p>
             </div>
           </div>
         </div>
 
-        {/* Right */}
+        {/* ---------- Right ---------- */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Notifications */}
           <div className="relative" ref={notificationsRef}>
@@ -178,7 +227,9 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
               <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-xl shadow-slate-900/10 sm:w-96">
                 <div className="border-b border-slate-200 p-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-[13.5px] font-semibold">Notifications</h3>
+                    <h3 className="text-[13.5px] font-semibold">
+                      Notifications
+                    </h3>
                     <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 ring-1 ring-blue-100">
                       {unreadCount} new
                     </span>
@@ -236,7 +287,7 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
             >
               <div className="relative">
                 <div className="grid h-9 w-9 place-items-center rounded-full bg-blue-600 text-sm font-semibold uppercase text-white">
-                  {userEmail.charAt(0)}
+                  {userEmail.charAt(0) || "U"}
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-white" />
               </div>
@@ -251,7 +302,7 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
                     getRoleBadgeColor()
                   )}
                 >
-                  {tempAdmin ? "User" : role}
+                  {displayRole}
                 </span>
               </div>
 
@@ -271,7 +322,7 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
                     {userEmail}
                   </p>
                   <p className="mt-1 text-[11.5px] capitalize text-slate-500">
-                    {tempAdmin ? "User" : role} Account
+                    {displayRole} Account
                   </p>
                 </div>
 
@@ -334,10 +385,10 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
       {/* Mobile institution name */}
       <div className="-mt-2 px-4 pb-3 sm:hidden">
         <h1 className="truncate text-[13.5px] font-semibold text-slate-900">
-          {institutionName || "Institution"}
+          {displayName}
         </h1>
         <p className="text-[11.5px] capitalize text-slate-500">
-          {tempAdmin ? "User" : role} Portal
+          {displayRole} Portal
         </p>
       </div>
     </header>
