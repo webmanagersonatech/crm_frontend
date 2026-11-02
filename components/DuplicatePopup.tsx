@@ -183,7 +183,7 @@ export default function DuplicatePopup({
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Header with gradient - Responsive padding */}
-                        <div className="bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] px-4 sm:px-6 py-3 sm:py-5">
+                        <div className="bg-gradient-to-b from-blue-600 to-blue-700 px-4 sm:px-6 py-3 sm:py-5">
                             <div className="flex items-start justify-between gap-2">
                                 <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                                     <div className="p-1.5 sm:p-2 bg-white/20 rounded-lg sm:rounded-xl backdrop-blur-sm flex-shrink-0">

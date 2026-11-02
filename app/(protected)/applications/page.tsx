@@ -1070,9 +1070,9 @@ export default function ApplicationsPage() {
 
           {(userpermission === "superadmin" || userpermission?.view) && (
 
-            <Link
+            <Link title="View"
               href={`/applications/${a._id} ` as any}
-              className="bg-gray-400  text-white px-3 py-1 rounded-md flex items-center justify-center"
+              className="icon-btn icon-btn-view"
             >
               <Eye className="w-4 h-4" />
             </Link>
@@ -1083,14 +1083,14 @@ export default function ApplicationsPage() {
           {/* ✏️ Edit */}
           {(userpermission === "superadmin" || userpermission?.edit) && (
             userpermission === "superadmin" || a.paymentStatus !== "Paid" || a.instituteId === "INS-3-ZXYXKM" ? (
-              <Link
+              <Link title="Edit"
                 href={`/applications/editapplication/${a._id}`}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md flex items-center justify-center"
+                className="icon-btn icon-btn-edit"
               >
                 <Pencil className="w-4 h-4" />
               </Link>
             ) : (
-              <span className="bg-gray-400 text-white px-3 py-1 rounded-md cursor-not-allowed flex items-center justify-center">
+              <span title="Edit" className="icon-btn icon-btn-edit icon-btn-disabled">
                 <Pencil className="w-4 h-4" />
               </span>
             )
@@ -1098,17 +1098,14 @@ export default function ApplicationsPage() {
 
           {/* 🗑 Delete */}
           {(userpermission === "superadmin" || userpermission?.delete) && (
-            <button
+            <button title="Delete"
               disabled={!(userpermission === "superadmin") && a.paymentStatus === "Paid"}
               onClick={() => {
                 setSelected(a);
                 setConfirmType("delete");
                 setConfirmOpen(true);
               }}
-              className={`px-3 py-1 rounded-md flex items-center justify-center text-white ${!(userpermission === "superadmin") && a.paymentStatus === "Paid"
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-red-600 hover:bg-red-700"
-                }`}
+              className={`icon-btn icon-btn-delete ${!(userpermission === "superadmin") && a.paymentStatus === "Paid" ? "icon-btn-disabled" : ""}`}
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -1366,7 +1363,7 @@ export default function ApplicationsPage() {
           <div className="flex justify-between items-center mt-6">
             <button
               onClick={addUiFilter}
-              className="bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-6 py-2 rounded-lg text-sm font-medium shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               + Add Filter
             </button>
@@ -1404,7 +1401,7 @@ export default function ApplicationsPage() {
               {/* Customize Button */}
               <button
                 onClick={() => setCustomizeOpen(true)}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91]   rounded-md hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm lg:w-auto"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-gradient-to-b from-blue-600 to-blue-700   rounded-md hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm lg:w-auto"
               >
                 <Settings className="w-3.5 h-3.5" />
                 <span>Customize Columns</span>
@@ -1460,7 +1457,7 @@ export default function ApplicationsPage() {
               {(userpermission === "superadmin" || userpermission?.create) && (
                 <Link
                   href="/applications/addapplication"
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] hover:from-[#2a3970] hover:to-[#4a5d9e] text-white rounded-md transition-all shadow-sm hover:shadow-md"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-md transition-all shadow-sm hover:shadow-md"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add New</span>

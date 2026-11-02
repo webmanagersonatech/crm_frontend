@@ -368,7 +368,7 @@ export default function UsersPage() {
             {user.status === "active" ? "Deactivate" : "Activate"}
           </button>
 
-          <button
+          <button title="View"
             onClick={() => {
               const viewData: any = {
                 firstname: user.firstname,
@@ -388,16 +388,16 @@ export default function UsersPage() {
               setSelected(viewData);
               setViewOpen(true);
             }}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md"
+            className="icon-btn icon-btn-view"
           >
             <Eye className="w-4 h-4" />
           </button>
 
 
           {user.role !== "superadmin" && (
-            <button
+            <button title="Delete"
               onClick={() => handleDelete(user)}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+              className="icon-btn icon-btn-delete"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -427,7 +427,7 @@ export default function UsersPage() {
             {/* Customize Columns Button */}
             <button
               onClick={() => setCustomizeOpen(true)}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] hover:from-[#2a3970] hover:to-[#4a5d9e] text-white rounded-lg transition-all shadow-sm whitespace-nowrap order-1 w-full sm:w-auto"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all shadow-sm whitespace-nowrap order-1 w-full sm:w-auto"
             >
               <Settings className="w-4 h-4" />
               <span>Customize</span>
@@ -509,7 +509,7 @@ export default function UsersPage() {
             {/* Add User Button */}
             <Link
               href="/users/adduser"
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all shadow-sm bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] hover:from-[#2a3970] hover:to-[#4a5d9e] text-white whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg transition-all shadow-sm bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
               <span>Add New</span>

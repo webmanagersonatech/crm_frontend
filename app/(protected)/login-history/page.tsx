@@ -137,7 +137,7 @@ export default function LoginHistoryPage() {
     {
       header: "Actions",
       render: (h: any) => (
-        <button
+        <button title="View"
           onClick={() => {
             if (!h) return;
 
@@ -161,7 +161,7 @@ export default function LoginHistoryPage() {
             setSelected(viewData);
             setViewOpen(true);
           }}
-          className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md"
+          className="icon-btn icon-btn-view"
         >
           <Eye className="w-4 h-4" />
         </button>

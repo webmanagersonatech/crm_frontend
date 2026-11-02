@@ -233,10 +233,9 @@ export default function Otherspages() {
 
                         {/* View Other */}
                         {(userpermission === "superadmin" || userpermission?.view) && (
-                            <Link
+                            <Link title="View"
                                 href={`/others/${o._id}` as any}
-                                className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md
-                                         flex items-center justify-center"
+                                className="icon-btn icon-btn-view"
                             >
                                 <Eye className="w-4 h-4" />
                             </Link>
@@ -248,13 +247,13 @@ export default function Otherspages() {
 
                         {/* Delete */}
                         {(userpermission === "superadmin" || userpermission?.delete) && (
-                            <button
+                            <button title="Delete"
                                 onClick={() => {
                                     setSelected(o);
                                     setConfirmType("delete");
                                     setConfirmOpen(true);
                                 }}
-                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+                                className="icon-btn icon-btn-delete"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
@@ -689,7 +688,7 @@ Jane Smith,9123456789,2025-01-02,jane@example.com,Referral,Interested`;
                             <button
                                 onClick={() => setCustomizeOpen(true)}
                                 className="flex items-center gap-2
-                        bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91]
+                        bg-gradient-to-b from-blue-600 to-blue-700
                         text-white px-3 sm:px-4 py-[6px] text-xs sm:text-sm
                         rounded-lg shadow-sm transition whitespace-nowrap"
                             >

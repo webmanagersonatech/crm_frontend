@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import Spinner from "@/components/Spinner";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface Column<T> {
     header: string;
@@ -47,13 +48,13 @@ export function DataTable<T extends { _id?: string }>({
         return date >= startOfDay && date <= endOfDay;
     };
     return (
-        <div className="bg-white dark:bg-neutral-900 rounded-lg shadow border border-gray-200 dark:border-neutral-800 overflow-hidden">
+        <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-soft border border-gray-200/70 dark:border-neutral-800 overflow-hidden">
             <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left min-w-[800px]">
-                    <thead className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                <table className="w-full text-sm text-left min-w-[800px] border-collapse">
+                    <thead className="bg-slate-50 dark:bg-neutral-800/60 text-slate-500 dark:text-neutral-400 border-b border-slate-200 dark:border-neutral-800">
                         <tr>
                             {columns.map((col, i) => (
-                                <th key={i} className="px-4 py-2">
+                                <th key={i} className="px-4 py-3 text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap">
                                     {col.header}
                                 </th>
                             ))}
@@ -64,7 +65,7 @@ export function DataTable<T extends { _id?: string }>({
                             <tr>
                                 <td
                                     colSpan={columns.length}
-                                    className="text-center py-6 text-gray-500 dark:text-gray-400"
+                                    className="text-center py-10 text-sm text-slate-400 dark:text-neutral-500"
                                 >
                                     <Spinner />
                                 </td>
@@ -73,7 +74,7 @@ export function DataTable<T extends { _id?: string }>({
                             <tr>
                                 <td
                                     colSpan={columns.length}
-                                    className="text-center py-6 text-gray-500 dark:text-gray-400"
+                                    className="text-center py-10 text-sm text-slate-400 dark:text-neutral-500"
                                 >
                                     No records found
                                 </td>
@@ -83,24 +84,24 @@ export function DataTable<T extends { _id?: string }>({
                                 <tr
                                     key={row._id || idx}
                                     className={`
-    border-b border-gray-200 dark:border-neutral-800
+    border-b border-slate-100 dark:border-neutral-800 last:border-b-0
     transition-colors duration-150
     ${highlightToday && isToday((row as any).createdAt)
                                             ? // Today's lead highlight
-                                            "bg-green-100 hover:bg-green-200 dark:bg-green-900/30 border-l-4 border-green-500"
+                                            "bg-emerald-50 hover:bg-emerald-100/70 dark:bg-emerald-900/20 border-l-4 border-emerald-500"
                                             : (row as any).isduplicate
                                                 ? // Duplicate lead
-                                                "bg-red-100 border-red-400 hover:bg-red-200 dark:bg-red-900/30"
+                                                "bg-rose-50 border-rose-300 hover:bg-rose-100/70 dark:bg-rose-900/20"
                                                 : (row as any).status === "inactive"
                                                     ? // Inactive lead
-                                                    "bg-red-50 hover:bg-red-100 dark:bg-red-900/20"
+                                                    "bg-rose-50/60 hover:bg-rose-50 dark:bg-rose-900/10"
                                                     : // Default row
-                                                    "hover:bg-gray-50 dark:hover:bg-neutral-800"
+                                                    "hover:bg-slate-50/80 dark:hover:bg-neutral-800/60"
                                         }
   `}
                                 >
                                     {columns.map((col, colIdx) => (
-                                        <td key={colIdx} className="px-4 py-2">
+                                        <td key={colIdx} className="px-4 py-2.5 text-slate-700 dark:text-neutral-200 align-middle">
                                             {col.render
                                                 ? col.render(row, idx)
                                                 : (row as any)[col.accessor as string]}
@@ -114,9 +115,9 @@ export function DataTable<T extends { _id?: string }>({
             </div>
 
             {onPageChange && (
-                <div className="flex justify-between items-center p-4 text-sm text-gray-600 dark:text-gray-300">
+                <div className="flex flex-wrap gap-3 justify-between items-center px-4 py-3 text-sm text-gray-600 dark:text-gray-300 border-t border-slate-100 dark:border-neutral-800 bg-slate-50/50 dark:bg-neutral-900">
                     <span className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300">
+                        <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 text-xs text-gray-700 dark:text-gray-300">
                             Page <b>{currentPage}</b> of <b>{totalPages}</b>
                         </span>
                         <span className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300">
@@ -135,16 +136,16 @@ export function DataTable<T extends { _id?: string }>({
                         <button
                             onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
                             disabled={currentPage === 1}
-                            className="px-3 py-1 border rounded disabled:opacity-50"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-lg hover:bg-slate-50 dark:hover:bg-neutral-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                            Prev
+                            <ChevronLeft className="w-3.5 h-3.5" /> Prev
                         </button>
                         <button
                             onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
                             disabled={currentPage === totalPages}
-                            className="px-3 py-1 border rounded disabled:opacity-50"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-lg hover:bg-slate-50 dark:hover:bg-neutral-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                            Next
+                            Next <ChevronRight className="w-3.5 h-3.5" />
                         </button>
                     </div>
                 </div>

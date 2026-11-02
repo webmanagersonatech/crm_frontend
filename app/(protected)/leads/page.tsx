@@ -951,10 +951,9 @@ export default function LeadsPage() {
 
 
           {(userpermission === "superadmin" || userpermission?.view) && (
-            <Link
+            <Link title="View"
               href={`/leads/${lead._id}` as any}
-              className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md
-               flex items-center justify-center"
+              className="icon-btn icon-btn-view"
             >
               <Eye className="w-4 h-4" />
             </Link>
@@ -964,27 +963,19 @@ export default function LeadsPage() {
 
 
           {(userpermission === "superadmin" || userpermission?.edit) && (
-            <button
+            <button title="Edit"
               onClick={() => router.push(`/leads/editlead/${lead._id}`)}
               disabled={!!lead?.applicationId}
-              className={`flex items-center justify-center px-3 py-1 rounded-md text-white transition-all duration-200
-      ${lead?.applicationId
-                  ? "bg-gray-400 cursor-not-allowed opacity-60"
-                  : "bg-blue-600 hover:bg-blue-700"
-                }`}
+              className={`icon-btn icon-btn-edit ${lead?.applicationId ? "icon-btn-disabled" : ""}`}
             >
               <Pencil className="w-4 h-4" />
             </button>)}
 
           {(userpermission === "superadmin" || userpermission?.delete) && (
-            <button
+            <button title="Delete"
               onClick={() => handleDelete(lead)}
               disabled={!!lead?.applicationId}
-              className={`flex items-center justify-center px-3 py-1 rounded-md text-white transition-all duration-200
-      ${lead?.applicationId
-                  ? "bg-gray-400 cursor-not-allowed opacity-60"
-                  : "bg-red-600 hover:bg-red-700"
-                }`}
+              className={`icon-btn icon-btn-delete ${lead?.applicationId ? "icon-btn-disabled" : ""}`}
             >
               <Trash2 className="w-4 h-4" />
             </button>)}
@@ -1102,7 +1093,7 @@ export default function LeadsPage() {
                 {/* Customize Columns Button */}
                 <button
                   onClick={() => setCustomizeOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] hover:from-[#2a3970] hover:to-[#4a5d9e] text-white rounded-lg transition-all shadow-sm"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all shadow-sm"
                 >
                   <Settings className="w-3.5 h-3.5" />
                   <span>Customize</span>
@@ -1419,7 +1410,7 @@ export default function LeadsPage() {
               {(userpermission === "superadmin" || userpermission?.create) && (
                 <Link
                   href="/leads/addlead"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] hover:from-[#2a3970] hover:to-[#4a5d9e] text-white rounded-md transition-all shadow-sm"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-md transition-all shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Lead</span>

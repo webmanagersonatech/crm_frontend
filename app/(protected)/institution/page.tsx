@@ -265,7 +265,7 @@ export default function InstitutionsPage() {
 
 
           {userpermission === "superadmin" || userpermission?.view ? (
-            <button
+            <button title="View"
               onClick={() => {
                 const limitedData = {
                   name: inst.name,
@@ -281,7 +281,7 @@ export default function InstitutionsPage() {
                 setSelected(limitedData);
                 setViewOpen(true);
               }}
-              className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md"
+              className="icon-btn icon-btn-view"
             >
               <Eye className="w-4 h-4" />
             </button>
@@ -289,9 +289,9 @@ export default function InstitutionsPage() {
 
 
           {userpermission === "superadmin" || userpermission?.edit ? (
-            <Link
+            <Link title="Edit"
               href={`/institution/editinstitution?id=${inst._id}` as any}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md"
+              className="icon-btn icon-btn-edit"
             >
               <Pencil className="w-4 h-4" />
             </Link>
@@ -301,7 +301,8 @@ export default function InstitutionsPage() {
             <button
               onClick={() => handleDelete(inst)
               }
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+              title="Delete"
+              className="icon-btn icon-btn-delete"
             >
               <Trash2 className="w-4 h-4" />
             </button >
@@ -341,7 +342,7 @@ export default function InstitutionsPage() {
                 {/* Customize Columns Button */}
                 <button
                   onClick={() => setCustomizeOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] hover:from-[#2a3970] hover:to-[#4a5d9e] text-white rounded-lg transition-all shadow-sm whitespace-nowrap order-1 sm:order-1 w-full sm:w-auto"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg transition-all shadow-sm whitespace-nowrap order-1 sm:order-1 w-full sm:w-auto"
                 >
                   <Settings className="w-4 h-4" />
                   <span>Customize Columns</span>

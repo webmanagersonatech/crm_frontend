@@ -887,7 +887,7 @@ export default function SettingsPage() {
 
 
       <div className="border rounded">
-        <div className=" bg-gradient-to-b from-[#2a3970] to-[#5667a8]
+        <div className=" bg-gradient-to-b from-blue-600 to-blue-700
 
 text-white px-4 py-2 font-semibold rounded-t">
           Select Institute
@@ -915,7 +915,7 @@ text-white px-4 py-2 font-semibold rounded-t">
           {/* BUILDER */}
           <div className="border rounded flex flex-col">
             {/* HEADER */}
-            <div className="bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white px-4 py-2 font-semibold rounded-t">
+            <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-4 py-2 font-semibold rounded-t">
               Form Builder
             </div>
 
@@ -1131,7 +1131,7 @@ text-white px-4 py-2 font-semibold rounded-t">
           {/* PREVIEW */}
           <div className="border rounded flex flex-col max-h-[65vh]">
             {/* HEADER */}
-            <div className="bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white px-4 py-2 font-semibold rounded-t">
+            <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-4 py-2 font-semibold rounded-t">
               Live Preview
             </div>
 

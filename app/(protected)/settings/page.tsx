@@ -330,7 +330,7 @@ export default function SettingsPage() {
     <div className="p-6 space-y-8  mx-auto">
       {/* ---------- General Settings ---------- */}
       <div className="border rounded-lg shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white px-4 py-3 font-semibold">
+        <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-4 py-3 font-semibold">
           General Settings
         </div>
 
@@ -614,7 +614,7 @@ export default function SettingsPage() {
 
       {/* ---------- Payment Settings ---------- */}
       <div className="border rounded-lg shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white px-4 py-3 font-semibold">
+        <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-4 py-3 font-semibold">
           Payment Settings
         </div>
 
@@ -748,7 +748,7 @@ export default function SettingsPage() {
       <div className="flex justify-end">
         <button
           onClick={handleSaveAll}
-          className="px-6 py-2 bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white text-sm rounded hover:opacity-90 transition shadow-md"
+          className="px-6 py-2 bg-gradient-to-b from-blue-600 to-blue-700 text-white text-sm rounded hover:opacity-90 transition shadow-md"
         >
           Save Settings
         </button>

@@ -247,9 +247,9 @@ export default function DynamicFormsPage() {
 
           {/* Edit Button */}
           {(userPermission === "superadmin" || userPermission?.edit) && (
-            <Link
+            <Link title="Edit"
               href={`/dynamic-forms/editdynamicform/${f._id}` as any}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md"
+              className="icon-btn icon-btn-edit"
             >
               <Pencil className="w-4 h-4" />
             </Link>
@@ -259,9 +259,10 @@ export default function DynamicFormsPage() {
           {(userPermission === "superadmin" || userPermission?.delete) && (
             <button
               onClick={() => handleDelete(f)}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+              title="Delete"
+              className="icon-btn icon-btn-delete"
             >
-              Delete
+              <Trash2 className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -309,7 +310,7 @@ export default function DynamicFormsPage() {
 
           <button
             onClick={() => setCustomizeOpen(true)}
-            className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
+            className="flex items-center gap-1 bg-gradient-to-b from-blue-600 to-blue-700 text-white px-3 py-2 text-sm rounded-md"
           >
             <Settings className="w-4 h-4" /> Customize Columns
           </button>
@@ -354,7 +355,7 @@ export default function DynamicFormsPage() {
           {(userPermission === "superadmin" || userPermission?.create) && (
             <Link
               href="/dynamic-forms/adddynamicform"
-              className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
+              className="flex items-center gap-1 bg-gradient-to-b from-blue-600 to-blue-700 text-white px-3 py-2 text-sm rounded-md"
             >
               <Plus className="w-4 h-4" /> Add New
             </Link>

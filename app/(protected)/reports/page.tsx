@@ -1407,7 +1407,7 @@ export default function ReportsPage() {
         <button
           onClick={() => setActiveTab("application")}
           className={`flex items-center px-4 py-2 rounded-t-lg text-sm font-medium transition-all ${activeTab === "application"
-            ? "bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white"
+            ? "bg-gradient-to-b from-blue-600 to-blue-700 text-white"
             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
         >
@@ -1417,7 +1417,7 @@ export default function ReportsPage() {
         <button
           onClick={() => setActiveTab("lead")}
           className={`flex items-center px-4 py-2 rounded-t-lg text-sm font-medium transition-all ${activeTab === "lead"
-            ? "bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white"
+            ? "bg-gradient-to-b from-blue-600 to-blue-700 text-white"
             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
         >
@@ -1426,7 +1426,7 @@ export default function ReportsPage() {
         <button
           onClick={() => setActiveTab("student")}
           className={`flex items-center px-4 py-2 rounded-t-lg text-sm font-medium transition-all ${activeTab === "student"
-            ? "bg-gradient-to-b from-[#2a3970] to-[#5667a8] text-white"
+            ? "bg-gradient-to-b from-blue-600 to-blue-700 text-white"
             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
         >
@@ -1442,7 +1442,7 @@ export default function ReportsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <button
             onClick={() => setCustomizeOpen(true)}
-            className="flex items-center justify-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md hover:opacity-90 transition"
+            className="flex items-center justify-center gap-1 bg-gradient-to-b from-blue-600 to-blue-700 text-white px-3 py-2 text-sm rounded-md hover:opacity-90 transition"
           >
             <Settings className="w-4 h-4" /> Customize Columns
           </button>

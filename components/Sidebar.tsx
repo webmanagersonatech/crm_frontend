@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -26,66 +25,71 @@ import {
   TentTree,
   GraduationCap,
   ChevronDown,
-  ChevronRight,
   ClipboardList,
   Receipt,
   ShieldCheck,
   CreditCard,
   Trophy,
+  PanelLeftClose,
+  PanelLeftOpen,
   type LucideIcon,
 } from "lucide-react";
 import clsx from "clsx";
 
-// Define types for menu items
+// ---- Types ----
 type MenuItem = {
   href?: string;
   label: string;
-  icon: any;
+  icon: LucideIcon;
   submenu?: MenuItem[];
 };
 
-// Map menu labels to permission names for matching
+type NavGroupType = {
+  title: string;
+  items: MenuItem[];
+};
+
+// ---- Permission map ----
 const labelToPermissionMap: Record<string, string> = {
-  "Dashboard": "Dashboard",
-  "Institution": "Institution",
-  "Users": "Users",
-  "Permissions": "Permissions",
-  "Students": "Students",
+  Dashboard: "Dashboard",
+  Institution: "Institution",
+  Users: "Users",
+  Permissions: "Permissions",
+  Students: "Students",
   "Students Pass Change": "Students Pass Change",
   "Applications Manager": "Application",
   "Leads Manager": "Lead Manager",
-  "Communications": "Communication",
+  Communications: "Communication",
   "Email Templates": "Email templates",
-  "Reports": "Reports",
+  Reports: "Reports",
   "Login History": "Login History",
-  "CIICP": "CIICP",
+  CIICP: "CIICP",
   "Application Payment": "Application Payment",
   "Summer Camp": "Summer Camp",
   "Sona Champs": "Sona Champs",
   "MAT Registration": "MAT Registration",
   "Fee Configuration": "Fee Configuration",
-  "Events": "Events",
+  Events: "Events",
   "Fee Concession Approval": "Fee Concession Approval",
   "Tuition Fee Configuration": "Tuition Fee Configuration",
-  "Others": "Others",
+  Others: "Others",
   "Dynamic Forms": "Dynamic Forms",
-  "Settings": "Settings",
+  Settings: "Settings",
   "Application Settings": "Application Settings",
-  "Payments": "Payments",
+  Payments: "Payments",
   "Advance Token Amount": "Advance Token Amount",
   "Tuition Fee": "Tuition Fee",
+  Registrations: "Registrations",
+  "Additional Fee Configuration": "Additional Fee Configuration",
 };
 
+// ---- Flat items ----
 const allItems: MenuItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/institution", label: "Institution", icon: Building },
   { href: "/users", label: "Users", icon: Users },
   { href: "/permissions", label: "Permissions", icon: Key },
-  {
-    href: "/passwordchange",
-    label: "Students Pass Change",
-    icon: ShieldCheck,          // import this
-  },
+  { href: "/passwordchange", label: "Students Pass Change", icon: ShieldCheck },
   { href: "/students", label: "Students", icon: GraduationCap },
   { href: "/applications", label: "Applications Manager", icon: FileText },
   {
@@ -94,7 +98,6 @@ const allItems: MenuItem[] = [
     submenu: [
       { href: "/payments/application-payment", label: "Application Payment", icon: Receipt },
       { href: "/payments/advance-token-amount", label: "Advance Token Amount", icon: CreditCard },
-      // { href: "/payments/tuition-fee",           label: "Tuition Fee",           icon: IndianRupee },
     ],
   },
   { href: "/leads", label: "Leads Manager", icon: UserPlus },
@@ -102,7 +105,6 @@ const allItems: MenuItem[] = [
   { href: "/templates", label: "Email Templates", icon: Mail },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/login-history", label: "Login History", icon: History },
-
   {
     label: "Registrations",
     icon: Grid,
@@ -111,176 +113,276 @@ const allItems: MenuItem[] = [
       { href: "/summercamp", label: "Summer Camp", icon: TentTree },
       { href: "/sonachamp", label: "Sona Champs", icon: Trophy },
       { href: "/mat-registration", label: "MAT Registration", icon: ClipboardList },
-    ]
+    ],
   },
   { href: "/events", label: "Events", icon: CalendarDays },
   { href: "/others", label: "Others", icon: Grid },
-  // { href: "/dynamic-forms", label: "Dynamic Forms", icon: Layers },
   { href: "/fees", label: "Tuition Fee Configuration", icon: Receipt },
   { href: "/additional-fees", label: "Additional Fee Configuration", icon: Receipt },
-  { href: "/fee-concession-approval", label: "Fee Concession Approval", icon: BadgeCheck, },
+  { href: "/fee-concession-approval", label: "Fee Concession Approval", icon: BadgeCheck },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/application-settings", label: "Application Settings", icon: Settings2 },
 ];
 
+// ---- Sections ----
+const sectionOrder = ["Overview", "Management", "Finance", "Registrations", "Configuration"];
+
+const labelToSectionMap: Record<string, string> = {
+  Dashboard: "Overview",
+  Institution: "Management",
+  Users: "Management",
+  Permissions: "Management",
+  "Students Pass Change": "Management",
+  Students: "Management",
+  "Applications Manager": "Management",
+  "Leads Manager": "Management",
+  Communications: "Management",
+  "Email Templates": "Management",
+  Reports: "Management",
+  "Login History": "Management",
+  Events: "Management",
+  Others: "Management",
+  Payments: "Finance",
+  "Tuition Fee Configuration": "Configuration",
+  "Additional Fee Configuration": "Configuration",
+  "Fee Concession Approval": "Finance",
+  Registrations: "Registrations",
+  Settings: "Configuration",
+  "Application Settings": "Configuration",
+};
+
+// ---- Helpers ----
+function isActivePath(href: string | undefined, pathname: string) {
+  if (!href) return false;
+  return pathname === href || pathname.startsWith(href + "/");
+}
+
+const focusRing = "outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40";
 
 const filterItemsByPermissions = (items: MenuItem[], permissions: string[]): MenuItem[] => {
-  // If permissions is empty or undefined, return empty array
-  if (!permissions || permissions.length === 0) {
-    return [];
-  }
+  if (!permissions || permissions.length === 0) return [];
+  const isSuper = permissions.includes("superadmin") || permissions.includes("*");
 
   return items.reduce((acc: MenuItem[], item) => {
-    // Super admin can see everything
-    if (permissions.includes("superadmin") || permissions.includes("*")) {
+    if (isSuper) {
       acc.push(item);
       return acc;
     }
-
-    // For regular users, filter based on permissions
     const permissionKey = labelToPermissionMap[item.label];
-
-    // Check if this item has a matching permission
     if (item.href && permissionKey && permissions.includes(permissionKey)) {
       acc.push(item);
       return acc;
     }
-
-    // Check if it's a parent item with submenu
     if (item.submenu) {
-      // Filter submenu items based on permissions
-      const filteredSubmenu = item.submenu.filter(subItem => {
+      const filteredSubmenu = item.submenu.filter((subItem) => {
         const subPermissionKey = labelToPermissionMap[subItem.label];
         return subPermissionKey && permissions.includes(subPermissionKey);
       });
-
-      // Only include parent if it has any visible submenu items
-      if (filteredSubmenu.length > 0) {
-        acc.push({
-          ...item,
-          submenu: filteredSubmenu
-        });
-      }
+      if (filteredSubmenu.length > 0) acc.push({ ...item, submenu: filteredSubmenu });
     }
-
     return acc;
   }, []);
 };
 
-// Recursive component to render menu items with submenus
-function MenuItemComponent({
+function groupItems(items: MenuItem[]): NavGroupType[] {
+  const groups: Record<string, MenuItem[]> = {};
+  for (const item of items) {
+    const section = labelToSectionMap[item.label] || "Others";
+    if (!groups[section]) groups[section] = [];
+    groups[section].push(item);
+  }
+  return sectionOrder
+    .filter((title) => groups[title]?.length)
+    .map((title) => ({ title, items: groups[title] }));
+}
+
+// ---- Dragon watermark ----
+// Put a single-color dragon silhouette (transparent bg) at /public/dragon.svg
+// Change color/opacity with the bg-* class, size with h-* w-*.
+function DragonWatermark({ collapsed }: { collapsed: boolean }) {
+  const mask = "url(/HIKA-CRM.png) center / contain no-repeat";
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center"
+    >
+      <div
+        className={clsx(
+          "bg-slate-500/20 transition-all duration-300",
+          collapsed ? "hidden h-9 w-9 lg:block" : "h-64 w-64"
+        )}
+        style={{ WebkitMask: mask, mask }}
+      />
+    </div>
+  );
+}
+
+// ---- NavLink ----
+function NavLink({
   item,
   pathname,
-  onClose
+  collapsed,
+  onClose,
+  nested = false,
 }: {
   item: MenuItem;
   pathname: string;
+  collapsed: boolean;
   onClose: () => void;
+  nested?: boolean;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const hasSubmenu = item.submenu && item.submenu.length > 0;
-  const isActive = item.href === pathname;
+  const active = isActivePath(item.href, pathname);
 
-  // Check if any submenu item is active
-  const isSubmenuActive = hasSubmenu && item.submenu?.some(sub => sub.href === pathname);
-
-  // Auto-expand if submenu item is active
-  useEffect(() => {
-    if (isSubmenuActive) {
-      setIsOpen(true);
-    }
-  }, [isSubmenuActive]);
-
-  if (hasSubmenu) {
-    return (
-      <div>
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className={clsx(
-            "w-full flex items-center justify-between px-4 py-3 rounded-lg text-base transition-all",
-            isSubmenuActive
-              ? "bg-white/20 text-white font-semibold shadow-sm"
-              : "text-white/80 hover:bg-white/10 hover:text-white"
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <item.icon className="w-5 h-5" />
-            <span>{item.label}</span>
-          </div>
-          {isOpen ? (
-            <ChevronDown className="w-4 h-4" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
-          )}
-        </button>
-
-        {isOpen && (
-          <div className="ml-6 mt-1 space-y-1 border-l border-white/10 pl-3">
-            {item.submenu?.map((subItem) => (
-              <MenuItemComponent
-                key={subItem.href || subItem.label}
-                item={subItem}
-                pathname={pathname}
-                onClose={onClose}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Regular link item
   return (
     <Link
       href={item.href as any}
       onClick={onClose}
+      title={collapsed ? item.label : undefined}
+      aria-current={active ? "page" : undefined}
       className={clsx(
-        "flex items-center gap-3 px-4 py-3 rounded-lg text-base transition-all",
-        isActive
-          ? "bg-white/20 text-white font-semibold shadow-sm"
-          : "text-white/80 hover:bg-white/10 hover:text-white"
+        "group relative flex items-center gap-3 rounded-lg text-[14.5px] transition-colors",
+        focusRing,
+        collapsed ? "mx-auto h-10 w-10 justify-center" : nested ? "h-9 px-3" : "h-11 px-3",
+        active
+          ? "font-semibold text-blue-700"
+          : "font-medium text-slate-600 hover:bg-slate-100/70 hover:text-slate-900"
       )}
     >
-      <item.icon className="w-5 h-5" />
-      {item.label}
+      {!nested && (
+        <item.icon
+          strokeWidth={1.75}
+          className={clsx(
+            "h-[18px] w-[18px] shrink-0 transition-colors",
+            active ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
+          )}
+        />
+      )}
+      {!collapsed && <span className="truncate">{item.label}</span>}
+      {active && !collapsed && !nested && (
+        <span className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r bg-blue-600" />
+      )}
     </Link>
   );
 }
 
+// ---- NavGroup ----
+function NavGroup({
+  item,
+  pathname,
+  collapsed,
+  onClose,
+  onExpand,
+}: {
+  item: MenuItem;
+  pathname: string;
+  collapsed: boolean;
+  onClose: () => void;
+  onExpand: () => void;
+}) {
+  const childActive = !!item.submenu?.some((s) => isActivePath(s.href, pathname));
+  const [open, setOpen] = useState(childActive);
+
+  useEffect(() => {
+    if (childActive) setOpen(true);
+  }, [childActive]);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => (collapsed ? onExpand() : setOpen((o) => !o))}
+        title={collapsed ? item.label : undefined}
+        aria-expanded={open}
+        className={clsx(
+          "group flex items-center gap-3 rounded-lg text-[14.5px] transition-colors",
+          focusRing,
+          collapsed ? "mx-auto h-10 w-10 justify-center" : "h-11 w-full px-3",
+          childActive
+            ? "bg-blue-50/80 font-semibold text-blue-700 ring-1 ring-blue-100"
+            : "font-medium text-slate-600 hover:bg-slate-100/70 hover:text-slate-900"
+        )}
+      >
+        <item.icon
+          strokeWidth={1.75}
+          className={clsx(
+            "h-[18px] w-[18px] shrink-0 transition-colors",
+            childActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
+          )}
+        />
+        {!collapsed && (
+          <>
+            <span className="flex-1 truncate text-left">{item.label}</span>
+            <ChevronDown
+              strokeWidth={2}
+              className={clsx(
+                "h-4 w-4 text-slate-400 transition-transform duration-200",
+                open && "rotate-180"
+              )}
+            />
+          </>
+        )}
+      </button>
+
+      {!collapsed && (
+        <div
+          className={clsx(
+            "grid transition-[grid-template-rows] duration-200 ease-out",
+            open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          )}
+        >
+          <div className="overflow-hidden">
+            <div className="ml-[27px] mt-0.5 space-y-0.5 border-l border-slate-200 pl-3">
+              {item.submenu?.map((s) => (
+                <NavLink
+                  key={s.href || s.label}
+                  item={s}
+                  pathname={pathname}
+                  collapsed={false}
+                  onClose={onClose}
+                  nested
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---- Sidebar ----
 export default function Sidebar({
   open,
   permissions,
   tempAdmin,
   onClose,
+  collapsed,
+  onToggleCollapse,
 }: {
   open: boolean;
   tempAdmin: boolean;
   permissions: string[];
   onClose: () => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }) {
   const pathname = usePathname();
   const [role, setRole] = useState<string>("");
 
-
   useEffect(() => {
     const token = localStorage.getItem("token");
-
     if (!token) {
       toast.error("Not authorized: please log in.");
       return;
     }
-
     try {
       const payload = token.split(".")[1];
       const decoded: any = JSON.parse(atob(payload));
-
       const userRole = decoded?.role?.toLowerCase();
       if (!userRole) {
         toast.error("Invalid user role.");
         return;
       }
-
       setRole(userRole);
     } catch (error) {
       console.error("Failed to decode token:", error);
@@ -288,73 +390,179 @@ export default function Sidebar({
     }
   }, []);
 
-  // Determine which items to show
   let itemsToShow: MenuItem[] = [];
+  if (role === "superadmin") itemsToShow = allItems;
+  else if (role === "admin" || role === "user")
+    itemsToShow = filterItemsByPermissions(allItems, permissions);
 
-  if (role === "superadmin") {
-    // Super admin sees everything
-    itemsToShow = allItems;
-  } else if (role === "admin" && tempAdmin) {
-    // Temp admin uses permissions array
-    itemsToShow = filterItemsByPermissions(allItems, permissions);
-  } else if (role === "admin") {
-    // Regular admin uses permissions array
-    itemsToShow = filterItemsByPermissions(allItems, permissions);
-  } else if (role === "user") {
-    // Regular user uses permissions array
-    itemsToShow = filterItemsByPermissions(allItems, permissions);
-  } else {
-    itemsToShow = [];
-  }
+  void tempAdmin;
 
+  const groups = groupItems(itemsToShow);
+  const rail = collapsed;
 
   return (
     <aside
       className={clsx(
-        "fixed inset-y-0 left-0 w-72 z-40 shadow-lg transition-transform duration-300",
-        "bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white",
+        "fixed inset-y-0 left-0 z-40 flex flex-col overflow-hidden border-r border-slate-200 bg-white",
+        "text-slate-900 shadow-sm",
+        "transition-[transform,width] duration-300 ease-out",
+        "w-72",
+        rail ? "lg:w-[68px]" : "lg:w-72",
         open ? "translate-x-0" : "-translate-x-full",
         "lg:translate-x-0"
       )}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-5 border-b border-white/10">
-        <div className="flex items-center gap-3">
+      {/* Dragon watermark (center, gray) */}
+      <DragonWatermark collapsed={rail} />
+
+      {/* Brand */}
+      <div
+        className={clsx(
+          "relative z-10 flex h-20 shrink-0 items-center border-b border-slate-200 bg-white/80",
+          rail ? "justify-center px-2" : "justify-between px-4"
+        )}
+      >
+        {!rail && (
+          <div className="flex items-center gap-3">
+            <img
+              src="/sonastar-logo.png"
+              alt="Logo"
+              width={44}
+              height={44}
+              className="rounded-lg ring-1 ring-slate-200"
+            />
+            <div className="flex flex-col leading-none">
+              <span className="text-[28px] tracking-wider text-slate-900">
+                <span className="font-['Metal_Mania']">
+                  HIKA <span className="text-blue-600">CRM</span>
+                </span>
+              </span>
+              <span className="mt-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                Connect • Convert
+              </span>
+            </div>
+          </div>
+        )}
+        {rail && (
           <img
             src="/sonastar-logo.png"
             alt="Logo"
-            width={52}
-            height={52}
-            className="rounded-lg"
+            width={36}
+            height={36}
+            className="hidden rounded-lg ring-1 ring-slate-200 lg:block"
           />
-          <span className="text-xl font-semibold tracking-wide">HIKA</span>
-        </div>
-
+        )}
         <button
+          type="button"
           onClick={onClose}
-          className="lg:hidden p-2 hover:bg-white/10 rounded-lg"
+          className={clsx(
+            "grid h-8 w-8 place-items-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 lg:hidden",
+            focusRing
+          )}
+          aria-label="Close menu"
         >
-          <X className="w-6 h-6" />
+          <X className="h-4 w-4" strokeWidth={2} />
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="p-4 space-y-1 overflow-y-auto h-[calc(100%-70px)]">
-        {itemsToShow.length > 0 ? (
-          itemsToShow.map((item) => (
-            <MenuItemComponent
-              key={item.href || item.label}
-              item={item}
-              pathname={pathname}
-              onClose={onClose}
-            />
-          ))
-        ) : (
-          <p className="text-white/70 px-4 py-3 text-sm">
+      {/* Nav */}
+      <nav
+        className="thin-scroll relative z-10 flex-1 space-y-4 overflow-y-auto px-2 pb-3 pt-3"
+        aria-label="Main"
+      >
+        {groups.length === 0 && (
+          <p className="px-3 py-2 text-[14px] text-slate-400">
             No menu available for this role.
           </p>
         )}
+        {groups.map((g) => (
+          <div key={g.title}>
+            {!rail ? (
+              <p className="mb-1.5 px-3 text-[12px] font-semibold uppercase tracking-wider text-slate-400">
+                {g.title}
+              </p>
+            ) : (
+              <div className="mx-auto mb-2 h-px w-6 bg-slate-200" />
+            )}
+            <div className="space-y-0.5">
+              {g.items.map((item) =>
+                item.submenu ? (
+                  <NavGroup
+                    key={item.label}
+                    item={item}
+                    pathname={pathname}
+                    collapsed={rail}
+                    onClose={onClose}
+                    onExpand={onToggleCollapse}
+                  />
+                ) : (
+                  <NavLink
+                    key={item.href || item.label}
+                    item={item}
+                    pathname={pathname}
+                    collapsed={rail}
+                    onClose={onClose}
+                  />
+                )
+              )}
+            </div>
+          </div>
+        ))}
       </nav>
+
+      {/* Footer */}
+      <div className="relative z-10 shrink-0 border-t border-slate-200 bg-white/80 p-2">
+        {rail ? (
+          <div className="hidden flex-col items-center gap-1 lg:flex">
+            <span
+              className="grid h-8 w-8 place-items-center rounded-full bg-blue-600 text-[12px] font-semibold uppercase text-white"
+              title={role}
+            >
+              {role.charAt(0)}
+            </span>
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className={clsx(
+                "grid h-8 w-8 place-items-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700",
+                focusRing
+              )}
+              aria-label="Expand sidebar"
+              title="Expand sidebar"
+            >
+              <PanelLeftOpen className="h-4 w-4" strokeWidth={2} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5 px-1">
+            {role && (
+              <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-blue-600 text-[12px] font-semibold uppercase text-white">
+                  {role.charAt(0)}
+                </span>
+                <div className="min-w-0 leading-tight">
+                  <p className="truncate text-[13.5px] font-semibold capitalize text-slate-900">
+                    {role}
+                  </p>
+                  <p className="text-[11.5px] text-slate-400">Signed in</p>
+                </div>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={onToggleCollapse}
+              className={clsx(
+                "hidden h-8 w-8 shrink-0 place-items-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 lg:grid",
+                focusRing
+              )}
+              aria-label="Collapse sidebar"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose className="h-4 w-4" strokeWidth={2} />
+            </button>
+          </div>
+        )}
+      </div>
     </aside>
   );
 }

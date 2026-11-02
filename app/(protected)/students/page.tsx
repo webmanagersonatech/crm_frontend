@@ -687,35 +687,35 @@ export default function StudentsPage() {
             <KeyRound className="w-4 h-4" />
             {reshareLoading ? "Sending..." : "Reshare"}
           </button>
-          <button
+          <button title="View"
             onClick={() => {
               setSelected(s);
               setViewOpen(true);
             }}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md"
+            className="icon-btn icon-btn-view"
           >
             <Eye className="w-4 h-4" />
           </button>
 
-          <button
+          <button title="Edit"
             onClick={() => {
               setSelected(s);
               setIsOpen(true);
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md"
+            className="icon-btn icon-btn-edit"
           >
             <Pencil className="w-4 h-4" />
           </button>
 
 
           {role === "superadmin" && (
-            <button
+            <button title="Delete"
               onClick={() => {
                 setSelected(s);
                 setConfirmType("delete");
                 setConfirmOpen(true);
               }}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+              className="icon-btn icon-btn-delete"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -743,7 +743,7 @@ export default function StudentsPage() {
             {/* Left side - Customize button */}
             <button
               onClick={() => setCustomizeOpen(true)}
-              className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md order-1"
+              className="flex items-center gap-1 bg-gradient-to-b from-blue-600 to-blue-700 text-white px-3 py-2 text-sm rounded-md order-1"
             >
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Customize Columns</span>

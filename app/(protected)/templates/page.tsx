@@ -233,16 +233,16 @@ export default function EmailTemplatesPage() {
         <div className="flex gap-2">
 
 
-          {(userpermission === "superadmin" || userpermission?.edit) && (<Link
+          {(userpermission === "superadmin" || userpermission?.edit) && (<Link title="Edit"
             href={`/templates/edittemplate/${t.id}` as any}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md"
+            className="icon-btn icon-btn-edit"
           >
             <Pencil className="w-4 h-4" />
           </Link>)}
 
-          {(userpermission === "superadmin" || userpermission?.delete) && (<button
+          {(userpermission === "superadmin" || userpermission?.delete) && (<button title="Delete"
             onClick={() => handleDelete(t)}
-            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+            className="icon-btn icon-btn-delete"
           >
             <Trash2 className="w-4 h-4" />
           </button>)}
@@ -291,7 +291,7 @@ export default function EmailTemplatesPage() {
               {/* Customize Columns */}
               <button
                 onClick={() => setCustomizeOpen(true)}
-                className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
+                className="flex items-center gap-1 bg-gradient-to-b from-blue-600 to-blue-700 text-white px-3 py-2 text-sm rounded-md"
               >
                 <Settings className="w-4 h-4" /> Customize Columns
               </button>
@@ -346,7 +346,7 @@ export default function EmailTemplatesPage() {
           {/* Add Template */}
           {(userpermission === "superadmin" || userpermission?.create) && (<Link
             href="/templates/addtemplate"
-            className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
+            className="flex items-center gap-1 bg-gradient-to-b from-blue-600 to-blue-700 text-white px-3 py-2 text-sm rounded-md"
           >
             <Plus className="w-4 h-4" /> Add New
           </Link>)}

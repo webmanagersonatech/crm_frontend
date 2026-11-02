@@ -174,24 +174,24 @@ export default function EventsPageClient() {
 
                         {/* View Details */}
                         {(userpermission === "superadmin" || userpermission?.view) && (
-                            <button
+                            <button title="View"
                                 onClick={() => {
                                     setSelected(o);
                                     setViewOpen(true);
                                 }}
-                                className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-md"
+                                className="icon-btn icon-btn-view"
                             >
                                 <Eye className="w-4 h-4" />
                             </button>
                         )}
                         {/* Edit */}
                         {(userpermission === "superadmin" || userpermission?.edit) && (
-                            <button
+                            <button title="Edit"
                                 onClick={() => {
                                     setSelected(o);
                                     setEditOpen(true);
                                 }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md"
+                                className="icon-btn icon-btn-edit"
                             >
                                 <Pencil className="w-4 h-4" />
                             </button>
@@ -199,13 +199,13 @@ export default function EventsPageClient() {
 
                         {/* Delete */}
                         {(userpermission === "superadmin" || userpermission?.delete) && (
-                            <button
+                            <button title="Delete"
                                 onClick={() => {
                                     setSelected(o);
                                     setConfirmType("delete");
                                     setConfirmOpen(true);
                                 }}
-                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md"
+                                className="icon-btn icon-btn-delete"
                             >
                                 <Trash2 className="w-4 h-4" />
                             </button>
@@ -508,7 +508,7 @@ John Doe,9876543210,john@example.com,Chennai,React Workshop,2025-01-05`;
                     {(userpermission === "superadmin" || userpermission?.filter) && (<button
                         onClick={() => setCustomizeOpen(true)}
                         className="flex items-center gap-2
-                       bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91]
+                       bg-gradient-to-b from-blue-600 to-blue-700
                        text-white px-4 py-2 text-sm
                        rounded-lg shadow-sm transition"
                     >

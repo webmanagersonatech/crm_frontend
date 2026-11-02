@@ -48,7 +48,9 @@ api.interceptors.response.use(
 );
 
 // ---------------- Types ----------------
+
 export interface DashboardData {
+  accessorname: string;
   totalInstitutes: number;
   totalLeads: number;
   totalApplications: number;

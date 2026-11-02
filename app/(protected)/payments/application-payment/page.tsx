@@ -520,7 +520,7 @@ export default function PaymentsPage() {
           <button
             type="button"
             onClick={() => setCustomizeOpen(true)}
-            className="flex items-center gap-1 bg-gradient-to-b from-[#1e2a5a] to-[#3d4f91] text-white px-3 py-2 text-sm rounded-md"
+            className="flex items-center gap-1 bg-gradient-to-b from-blue-600 to-blue-700 text-white px-3 py-2 text-sm rounded-md"
           >
             <Settings className="w-4 h-4" />
             <span className="hidden sm:inline">Customize Columns</span>

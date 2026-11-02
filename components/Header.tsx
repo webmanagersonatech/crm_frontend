@@ -1,16 +1,29 @@
 "use client";
 
-import { Bell, ChevronDown, Menu, User, Lock, LogOut, Settings, Shield } from "lucide-react";
+import {
+  Bell,
+  ChevronDown,
+  Menu,
+  Lock,
+  LogOut,
+  Settings,
+  Shield,
+} from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import clsx from "clsx";
 
 import { getInstitutionName } from "@/app/lib/request/institutionRequest";
+
 type HeaderProps = {
   onMenuOpen: () => void;
-  tempAdmin: any; // you can replace with proper type
+  tempAdmin: any;
 };
+
+const focusRing =
+  "outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40";
 
 export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -22,17 +35,22 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
   const router = useRouter();
   const [institutionName, setInstitutionName] = useState<string>("");
 
-  // Handle clicks outside dropdowns
+  // Click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setIsDropdownOpen(false);
       }
-      if (notificationsRef.current && !notificationsRef.current.contains(e.target as Node)) {
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(e.target as Node)
+      ) {
         setIsNotificationsOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -41,21 +59,15 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
     try {
       localStorage.removeItem("token");
       localStorage.clear();
-
-      // Show loading toast
       const toastId = toast.loading("Logging out...");
-
       setTimeout(() => {
         toast.update(toastId, {
           render: "Logged out successfully",
           type: "success",
           isLoading: false,
-          autoClose: 2000
+          autoClose: 2000,
         });
-
-        setTimeout(() => {
-          router.replace("/");
-        }, 500);
+        setTimeout(() => router.replace("/"), 500);
       }, 500);
     } catch (error) {
       console.error("Logout failed:", error);
@@ -65,36 +77,25 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-
     if (!token) {
       toast.error("Not authorized: please log in.");
       return;
     }
-
     try {
       const payload = token.split(".")[1];
       const decoded: any = JSON.parse(atob(payload));
-
       const userRole = decoded?.role?.toLowerCase();
       const email = decoded?.email || decoded?.sub || "User";
-
       if (!userRole) {
         toast.error("Invalid user role.");
         return;
       }
-
       setRole(userRole);
       setUserEmail(email);
-
-      // Call API only for admin and user
       if (userRole === "admin" || userRole === "user") {
         getInstitutionName()
-          .then((res) => {
-            setInstitutionName(res.name);
-          })
-          .catch((err) => {
-            console.error(err);
-          });
+          .then((res) => setInstitutionName(res.name))
+          .catch((err) => console.error(err));
       }
     } catch (error) {
       console.error("Failed to decode token:", error);
@@ -102,101 +103,120 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
     }
   }, []);
 
-  // Get role badge color (adjusted for your color scheme)
   const getRoleBadgeColor = () => {
     switch (role) {
-      case 'admin': return 'bg-purple-500/20 text-purple-200 border-purple-500/30';
-      case 'user': return 'bg-blue-500/20 text-blue-200 border-blue-500/30';
-      case 'superadmin': return 'bg-amber-500/20 text-amber-200 border-amber-500/30';
-      default: return 'bg-gray-500/20 text-gray-200 border-gray-500/30';
+      case "admin":
+        return "bg-purple-50 text-purple-700 border-purple-200";
+      case "user":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      case "superadmin":
+        return "bg-amber-50 text-amber-700 border-amber-200";
+      default:
+        return "bg-slate-100 text-slate-600 border-slate-200";
     }
   };
 
-  // Mock notifications
   const notifications = [
     { id: 1, title: "New update available", time: "5 min ago", read: false },
     { id: 2, title: "System maintenance at 2 AM", time: "1 hour ago", read: false },
     { id: 3, title: "Your report is ready", time: "Yesterday", read: true },
   ];
-
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <header className="sticky top-0 z-20 bg-gradient-to-r from-[#1e2a5a] to-[#3d4f91] text-white backdrop-blur border-b border-white/10 shadow-sm">
-      <div className="flex items-center justify-between px-4 sm:px-6 h-20">
-        {/* Left section */}
-        <div className="flex items-center gap-3 sm:gap-6">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white text-slate-900 shadow-sm">
+      <div className="flex h-20 items-center justify-between px-4 sm:px-6">
+        {/* Left */}
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
+            type="button"
             onClick={onMenuOpen}
-            className="lg:hidden p-2.5 rounded-xl hover:bg-white/10 active:bg-white/20 focus:ring-2 focus:ring-blue-400/50 focus:outline-none transition-all duration-200"
+            className={clsx(
+              "rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 lg:hidden",
+              focusRing
+            )}
             aria-label="Open sidebar"
           >
-            <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+            <Menu className="h-5 w-5" strokeWidth={1.75} />
           </button>
 
           <div className="flex items-center gap-3">
-            {/* Logo/Brand */}
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-base sm:text-lg font-semibold tracking-wide">
-                  {institutionName || "Institution"}
-                </h1>
-                <p className="text-xs text-white/70"> {tempAdmin ? "User" : role} Portal </p>
-              </div>
+            <div className="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 ring-1 ring-blue-100">
+              <Shield className="h-4 w-4 text-blue-600" strokeWidth={1.75} />
+            </div>
+            <div className="hidden sm:block leading-tight">
+              <h1 className="max-w-[220px] truncate text-[13.5px] font-semibold tracking-wide text-slate-900">
+                {institutionName || "Institution"}
+              </h1>
+              <p className="text-[12px] capitalize text-slate-500">
+                {tempAdmin ? "User" : role} Portal
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Right section */}
-        <div className="flex items-center gap-2 sm:gap-4">
+        {/* Right */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Notifications */}
           <div className="relative" ref={notificationsRef}>
             <button
-              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className="relative p-2.5 rounded-xl hover:bg-white/10 active:bg-white/20 focus:ring-2 focus:ring-blue-400/50 focus:outline-none transition-all duration-200"
+              type="button"
+              onClick={() => setIsNotificationsOpen((o) => !o)}
+              className={clsx(
+                "relative grid h-10 w-10 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900",
+                focusRing
+              )}
               aria-label="Notifications"
             >
-              <Bell className="w-5 h-5 sm:w-6 sm:h-6" />
+              <Bell className="h-[18px] w-[18px]" strokeWidth={1.75} />
               {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-[#1e2a5a] animate-pulse"></span>
+                <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
               )}
             </button>
 
-            {/* Notifications Dropdown - with your colors */}
             {isNotificationsOpen && (
-              <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-[#1e2a5a] text-white rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-5 duration-200">
-                <div className="p-4 border-b border-white/10">
+              <div className="absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-xl shadow-slate-900/10 sm:w-96">
+                <div className="border-b border-slate-200 p-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Notifications</h3>
-                    <span className="text-xs text-blue-300 bg-blue-500/20 px-2 py-1 rounded-full">
+                    <h3 className="text-[13.5px] font-semibold">Notifications</h3>
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700 ring-1 ring-blue-100">
                       {unreadCount} new
                     </span>
                   </div>
                 </div>
-                <div className="max-h-96 overflow-y-auto">
+                <div className="thin-scroll max-h-96 overflow-y-auto">
                   {notifications.length > 0 ? (
-                    notifications.map((notification) => (
+                    notifications.map((n) => (
                       <div
-                        key={notification.id}
-                        className={`p-4 border-b border-white/5 hover:bg-white/5 transition cursor-pointer ${!notification.read ? 'bg-blue-500/10' : ''
-                          }`}
+                        key={n.id}
+                        className={clsx(
+                          "cursor-pointer border-b border-slate-100 p-4 transition-colors hover:bg-slate-50",
+                          !n.read && "bg-blue-50/50"
+                        )}
                       >
-                        <p className="text-sm font-medium">{notification.title}</p>
-                        <p className="text-xs text-white/50 mt-1">{notification.time}</p>
+                        <p className="text-[13.5px] font-medium text-slate-900">
+                          {n.title}
+                        </p>
+                        <p className="mt-1 text-[11.5px] text-slate-500">
+                          {n.time}
+                        </p>
                       </div>
                     ))
                   ) : (
-                    <div className="p-8 text-center text-white/50">
-                      <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <div className="p-8 text-center text-slate-400">
+                      <Bell
+                        className="mx-auto mb-2 h-8 w-8 opacity-50"
+                        strokeWidth={1.75}
+                      />
                       <p className="text-sm">No notifications</p>
                     </div>
                   )}
                 </div>
-                <div className="p-3 border-t border-white/10 text-center">
-                  <button className="text-xs text-blue-300 hover:text-blue-200 transition">
+                <div className="border-t border-slate-200 p-3 text-center">
+                  <button
+                    type="button"
+                    className="text-[12px] font-medium text-blue-600 hover:text-blue-700"
+                  >
                     View all notifications
                   </button>
                 </div>
@@ -207,82 +227,101 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
           {/* User dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 rounded-xl hover:bg-white/10 active:bg-white/20 focus:ring-2 focus:ring-blue-400/50 focus:outline-none transition-all duration-200"
+              type="button"
+              onClick={() => setIsDropdownOpen((o) => !o)}
+              className={clsx(
+                "flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-100 sm:gap-3 sm:px-3",
+                focusRing
+              )}
             >
-              {/* User Avatar with Gradient */}
               <div className="relative">
-                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                  <span className="text-base sm:text-lg font-semibold text-white">
-                    {userEmail.charAt(0).toUpperCase()}
-                  </span>
+                <div className="grid h-9 w-9 place-items-center rounded-full bg-blue-600 text-sm font-semibold uppercase text-white">
+                  {userEmail.charAt(0)}
                 </div>
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full ring-2 ring-[#1e2a5a]"></div>
+                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-white" />
               </div>
 
-              {/* User Info - Hidden on mobile */}
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-medium truncate max-w-[150px]">
-                  {userEmail.split('@')[0] || 'User'}
+              <div className="hidden text-left leading-tight md:block">
+                <p className="max-w-[150px] truncate text-[13.5px] font-medium text-slate-900">
+                  {userEmail.split("@")[0] || "User"}
                 </p>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-full border ${getRoleBadgeColor()}`}>
-                    {tempAdmin ? "User" : role}
-                  </span>
-                </div>
+                <span
+                  className={clsx(
+                    "mt-0.5 inline-block rounded-full border px-2 py-0.5 text-[10.5px] font-medium capitalize",
+                    getRoleBadgeColor()
+                  )}
+                >
+                  {tempAdmin ? "User" : role}
+                </span>
               </div>
 
-              <ChevronDown className={`w-4 h-4 opacity-70 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                className={clsx(
+                  "h-4 w-4 text-slate-400 transition-transform duration-200",
+                  isDropdownOpen && "rotate-180"
+                )}
+                strokeWidth={1.75}
+              />
             </button>
 
-            {/* Dropdown Menu - with your colors */}
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-3 w-64 bg-[#1e2a5a] text-white rounded-2xl border border-white/10 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-5 duration-200">
-                {/* User Info Header */}
-                <div className="p-4 border-b border-white/10 bg-white/5">
-                  <p className="text-sm font-medium">{userEmail}</p>
-                  <p className="text-xs text-white/50 mt-1 capitalize"> {tempAdmin ? "User" : role} Account</p>
+              <div className="absolute right-0 mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-xl shadow-slate-900/10">
+                <div className="border-b border-slate-200 bg-slate-50 p-4">
+                  <p className="truncate text-[13.5px] font-medium text-slate-900">
+                    {userEmail}
+                  </p>
+                  <p className="mt-1 text-[11.5px] capitalize text-slate-500">
+                    {tempAdmin ? "User" : role} Account
+                  </p>
                 </div>
 
-                {/* Menu Items */}
                 <div className="p-2">
-                  {/* <Link
-                    href="/profile"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm hover:bg-white/10 transition group"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    <User className="w-4 h-4 text-blue-300 group-hover:text-blue-200" />
-                    <span>My Profile</span>
-                  </Link> */}
-
                   <Link
                     href="/change-password"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm hover:bg-white/10 transition group"
+                    className={clsx(
+                      "group flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900",
+                      focusRing
+                    )}
                     onClick={() => setIsDropdownOpen(false)}
                   >
-                    <Lock className="w-4 h-4 text-blue-300 group-hover:text-blue-200" />
+                    <Lock
+                      className="h-[16px] w-[16px] text-slate-400 group-hover:text-slate-600"
+                      strokeWidth={1.75}
+                    />
                     <span>Change Password</span>
                   </Link>
 
-                  {role === 'admin' && (
+                  {role === "admin" && (
                     <Link
                       href="/settings"
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm hover:bg-white/10 transition group"
+                      className={clsx(
+                        "group flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900",
+                        focusRing
+                      )}
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      <Settings className="w-4 h-4 text-blue-300 group-hover:text-blue-200" />
+                      <Settings
+                        className="h-[16px] w-[16px] text-slate-400 group-hover:text-slate-600"
+                        strokeWidth={1.75}
+                      />
                       <span>Settings</span>
                     </Link>
                   )}
                 </div>
 
-                {/* Logout Button */}
-                <div className="p-2 border-t border-white/10">
+                <div className="border-t border-slate-200 p-2">
                   <button
+                    type="button"
                     onClick={handleLogout}
-                    className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl text-sm text-red-400 hover:bg-red-500/10 transition group"
+                    className={clsx(
+                      "group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[13.5px] font-medium text-red-600 transition-colors hover:bg-red-50",
+                      focusRing
+                    )}
                   >
-                    <LogOut className="w-4 h-4 group-hover:rotate-180 transition-transform duration-300" />
+                    <LogOut
+                      className="h-[16px] w-[16px] transition-transform duration-300 group-hover:rotate-180"
+                      strokeWidth={1.75}
+                    />
                     <span>Logout</span>
                   </button>
                 </div>
@@ -292,12 +331,14 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
         </div>
       </div>
 
-      {/* Mobile Institution Name - Visible only on mobile */}
-      <div className="sm:hidden px-4 pb-2 -mt-1">
-        <h1 className="text-sm font-medium truncate text-white/90">
+      {/* Mobile institution name */}
+      <div className="-mt-2 px-4 pb-3 sm:hidden">
+        <h1 className="truncate text-[13.5px] font-semibold text-slate-900">
           {institutionName || "Institution"}
         </h1>
-        <p className="text-xs text-white/60">{tempAdmin ? "User" : role}  Portal</p>
+        <p className="text-[11.5px] capitalize text-slate-500">
+          {tempAdmin ? "User" : role} Portal
+        </p>
       </div>
     </header>
   );
