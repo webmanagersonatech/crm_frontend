@@ -10,7 +10,7 @@ import { getActivedata } from "@/app/lib/request/institutionRequest";
 import AddapplicationForm from "@/components/Forms/Addapplicationform";
 import { getLeads, deleteLead, updateLead, bulkUploadLeads, exportLeads, markAsNonDuplicate } from "@/app/lib/request/leadRequest";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
@@ -20,7 +20,6 @@ import BulkLeadGenerator from "@/components/oko";
 import DuplicatePopup from "@/components/DuplicatePopup";
 import LeadFunnel from "@/components/LeadFunnel";
 import AsyncSelect from "react-select/async";
-
 
 
 interface OptionType {
@@ -64,8 +63,6 @@ interface Lead {
 
 export default function LeadsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const statusFromUrl = searchParams.get("status");
   // ------------------ STATE ------------------
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +71,7 @@ export default function LeadsPage() {
   const [limit, setLimit] = useState(10);
   const [institutions, setInstitutions] = useState<OptionType[]>([]);
   const [selectedInstitution, setSelectedInstitution] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState(statusFromUrl || "all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedCommunication, setSelectedCommunication] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -99,10 +96,8 @@ export default function LeadsPage() {
   const [selectedLeadSource, setSelectedLeadSource] = useState("all");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
-
-  const [activeFilter, setActiveFilter] = useState<string[]>(
-    statusFromUrl ? ["status"] : []
-  );
+  const [selectedCity, setSelectedCity] = useState("");
+  const [activeFilter, setActiveFilter] = useState<string[]>([]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [exportData, setExportData] = useState<any[]>([]);
