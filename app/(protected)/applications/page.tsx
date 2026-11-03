@@ -13,7 +13,7 @@ import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import { Column } from "@/components/Tablecomponents";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { getActivedata } from "@/app/lib/request/institutionRequest";
 import CreateLeadform from "@/components/Forms/CreateLeadForm";
@@ -70,8 +70,6 @@ export interface UiFilter extends FilterMeta {
 export default function ApplicationsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const isReportsPage = pathname?.startsWith("/reports");
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -159,8 +157,8 @@ export default function ApplicationsPage() {
 
 
   const [activeFilters, setActiveFilters] = useState<string[]>(
-    paymentFromUrl ? ["paymentStatus"] : []
-  );
+  paymentFromUrl ? ["paymentStatus"] : []
+);
 
 
   const filterOptions = [
@@ -960,14 +958,11 @@ export default function ApplicationsPage() {
         const canEdit = userpermission?.edit === true;
         const isPaid = a.paymentStatus === "Paid";
 
-
-        const canEditPayment = !isReportsPage && (isSuperAdmin || canEdit);
-
-        const disableSelect = isPaid || !canEditPayment;
+        const disableSelect = isPaid || (!isSuperAdmin && !canEdit);
 
         return (
           <>
-            {canEditPayment ? (
+            {(isSuperAdmin || canEdit) ? (
               <select
                 value={a.paymentStatus}
                 disabled={disableSelect}
@@ -980,10 +975,11 @@ export default function ApplicationsPage() {
                     return;
                   }
 
+                  // 🚨 Prevent payment if form incomplete
                   if (newStatus === "Paid" && a.formStatus !== "Complete") {
-                    toast.warning(
-                      "Form is incomplete. Please complete the form before marking payment as Paid."
-                    );
+                    toast.warning("Form is incomplete. Please complete the form before marking payment as Paid.");
+
+                    // reset dropdown back to original value
                     e.target.value = a.paymentStatus;
                     return;
                   }
@@ -1025,7 +1021,7 @@ export default function ApplicationsPage() {
     },
 
 
-    !isReportsPage && {
+    {
       header: "Follow-ups",
       render: (a: Application) => {
         const leadId = a.lead?._id;
@@ -1082,7 +1078,7 @@ export default function ApplicationsPage() {
 
 
 
-    !isReportsPage && {
+    {
       header: "Actions",
       render: (a: Application) => (
         <div className="flex gap-2">
@@ -1168,12 +1164,10 @@ export default function ApplicationsPage() {
 
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
 
-       {!isReportsPage && (
-  <div className="flex items-center gap-2">
-    <FileText className="w-6 h-6 text-blue-700" />
-    <h1 className="text-2xl font-semibold"> Applications Manager</h1>
-  </div>
-)}
+        <div className="flex items-center gap-2">
+          <FileText className="w-6 h-6 text-blue-700" />
+          <h1 className="text-2xl font-semibold"> Applications Manager</h1>
+        </div>
         {/* <BulkUploadForm /> */}
 
 
@@ -1476,7 +1470,7 @@ export default function ApplicationsPage() {
               )}
 
               {/* Add Application Button */}
-              {!isReportsPage && (userpermission === "superadmin" || userpermission?.create) && (
+              {(userpermission === "superadmin" || userpermission?.create) && (
                 <Link
                   href="/applications/addapplication"
                   className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-md transition-all shadow-sm hover:shadow-md"
