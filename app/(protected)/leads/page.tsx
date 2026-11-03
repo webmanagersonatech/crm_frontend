@@ -10,7 +10,7 @@ import { getActivedata } from "@/app/lib/request/institutionRequest";
 import AddapplicationForm from "@/components/Forms/Addapplicationform";
 import { getLeads, deleteLead, updateLead, bulkUploadLeads, exportLeads, markAsNonDuplicate } from "@/app/lib/request/leadRequest";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter,  usePathname } from "next/navigation";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
@@ -20,6 +20,7 @@ import BulkLeadGenerator from "@/components/oko";
 import DuplicatePopup from "@/components/DuplicatePopup";
 import LeadFunnel from "@/components/LeadFunnel";
 import AsyncSelect from "react-select/async";
+
 
 
 interface OptionType {
@@ -63,6 +64,11 @@ interface Lead {
 
 export default function LeadsPage() {
   const router = useRouter();
+
+  const pathname = usePathname();                        // 👈 add
+  const isReportsPage = pathname?.startsWith("/reports"); // 👈 add
+
+
   // ------------------ STATE ------------------
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +102,7 @@ export default function LeadsPage() {
   const [selectedLeadSource, setSelectedLeadSource] = useState("all");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
-  const [selectedCity, setSelectedCity] = useState("");
+
   const [activeFilter, setActiveFilter] = useState<string[]>([]);
   const [selectedCities, setSelectedCities] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
@@ -851,7 +857,7 @@ export default function LeadsPage() {
       },
     },
 
-    columnVisibility.applicationStatus && {
+    !isReportsPage && columnVisibility.applicationStatus && {
       header: "Application Status",
       render: (lead: Lead) => {
         const applicationMongoId = lead.application?._id;
@@ -889,7 +895,7 @@ export default function LeadsPage() {
       },
     },
 
-    {
+    !isReportsPage && {
       header: "Dup",
       render: (lead: Lead) => {
         if (!lead.isduplicate) return null;
@@ -930,7 +936,7 @@ export default function LeadsPage() {
 
 
     // Always visible (actions etc.)
-    {
+    !isReportsPage && {
       header: "Actions",
       render: (lead: Lead) => (
         <div className="flex  gap-2">
@@ -998,8 +1004,13 @@ export default function LeadsPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
-          <Users className="w-6 h-6 text-blue-600" />
-          <h1 className="text-2xl font-semibold">Leads Manager</h1>
+
+          {!isReportsPage && (
+            <>
+              <Users className="w-6 h-6 text-blue-600" />
+              <h1 className="text-2xl font-semibold">Leads Manager</h1></>
+
+          )}
         </div>
 
         {/* FILTERS */}
@@ -1396,7 +1407,7 @@ export default function LeadsPage() {
               )}
 
 
-              {(userpermission === "superadmin" || userpermission?.view) && (
+              {(userpermission === "superadmin" || userpermission?.view) && !isReportsPage && (
                 <Link
                   href="/leads/followupsreport"
                   className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-gradient-to-b from-[#059669] to-[#047857] hover:from-[#047857] hover:to-[#065f46] text-white rounded-md transition-all shadow-sm"
@@ -1407,7 +1418,8 @@ export default function LeadsPage() {
               )}
 
               {/* Add Lead Button */}
-              {(userpermission === "superadmin" || userpermission?.create) && (
+              {(userpermission === "superadmin" || userpermission?.create) && !isReportsPage && (
+
                 <Link
                   href="/leads/addlead"
                   className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-gradient-to-b from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-md transition-all shadow-sm"

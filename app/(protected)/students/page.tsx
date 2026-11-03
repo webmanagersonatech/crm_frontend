@@ -19,6 +19,7 @@ import { DataTable, Column } from "@/components/Tablecomponents";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import StudentViewDialog from "@/components/StudentViewDialog";
 import ExportModal from "@/components/ExportModal";
+import { usePathname } from "next/navigation";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import GivenAmountDialog from "@/components/GivenAmountDialog";
 import FeesConcessionDialog from "@/components/FeesConcessionDialog";
@@ -93,6 +94,8 @@ interface Student {
 
 
 export default function StudentsPage() {
+  const pathname = usePathname();
+  const isReportsPage = pathname?.startsWith("/reports");
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [startCutoff, setStartCutoff] = useState("");
@@ -627,7 +630,7 @@ export default function StudentsPage() {
     //   ),
     // },
 
-    {
+    !isReportsPage && {
       header: "Actions",
       render: (s: any) => (
         <div className="flex gap-2">
@@ -732,10 +735,12 @@ export default function StudentsPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <GraduationCap className="w-6 h-6 text-blue-700" />
-          <h1 className="text-2xl font-semibold">Students</h1>
-        </div>
+        {!isReportsPage && (
+          <div className="flex items-center gap-2">
+            <GraduationCap className="w-6 h-6 text-blue-700" />
+            <h1 className="text-2xl font-semibold">Students</h1>
+          </div>
+        )}
 
         <div className="flex flex-col gap-3 p-4 bg-white rounded-lg">
           {/* Top Row - Essential Controls */}
