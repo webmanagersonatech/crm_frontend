@@ -10,7 +10,7 @@ import { getActivedata } from "@/app/lib/request/institutionRequest";
 import AddapplicationForm from "@/components/Forms/Addapplicationform";
 import { getLeads, deleteLead, updateLead, bulkUploadLeads, exportLeads, markAsNonDuplicate } from "@/app/lib/request/leadRequest";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter,  usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
@@ -915,7 +915,7 @@ export default function LeadsPage() {
               <AlertTriangle size={18} />
             </button>
             {/* Non-Duplicate Icon */}
-            {(institute === "INS-3-ZXYXKM" || selectedInstitution === "INS-3-ZXYXKM") && (
+            {(lead.instituteId === "INS-3-ZXYXKM") && (
               <button
                 title="Make as Non-Duplicate"
                 onClick={() => {
