@@ -170,7 +170,7 @@ export default function DashboardPage() {
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
   const [institutionsLoaded, setInstitutionsLoaded] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
- 
+
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalEntries, setTotalEntries] = useState(0);
@@ -223,9 +223,9 @@ export default function DashboardPage() {
       try {
         const payload = token.split(".")[1];
         const decoded: any = JSON.parse(atob(payload));
-    
+
         setUserRole(decoded.role);
-      
+
 
         if ((decoded.role === "admin" || decoded.role === "user") && decoded.instituteId && decoded.id) {
           const data = await getaccesscontrol({
@@ -348,6 +348,8 @@ export default function DashboardPage() {
     setSelectedInstitution("all");
   };
 
+
+
   const hasActiveFilters = !!(dateRange || startDate || endDate || selectedInstitution !== "all");
 
   /* ---------- derived data ---------- */
@@ -427,7 +429,7 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-[28px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-            {greeting}{accessorName ? `, ${accessorName}` : ""} 
+            {greeting}{accessorName ? `, ${accessorName}` : ""}
           </h1>
           <p className="text-sm text-slate-500 mt-0.5">
             Here&apos;s what&apos;s happening across your CRM
@@ -459,11 +461,10 @@ export default function DashboardPage() {
                 <button
                   key={r.value}
                   onClick={() => setDateRange(r.value)}
-                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    dateRange === r.value
-                      ? "bg-white text-blue-600 shadow-sm dark:bg-neutral-700"
-                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                  }`}
+                  className={`rounded-md px-3 py-1.5 text-xs font-medium transition ${dateRange === r.value
+                    ? "bg-white text-blue-600 shadow-sm dark:bg-neutral-700"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
                 >
                   {r.label}
                 </button>
@@ -539,6 +540,8 @@ export default function DashboardPage() {
                 icon={<Building2 className="w-[18px] h-[18px]" />}
                 accent={C.indigo}
                 loading={loading}
+                onClick={() => router.push("/institution")}
+
               />
             )}
             <KpiCard
@@ -550,6 +553,7 @@ export default function DashboardPage() {
               accent={C.blue}
               spark={sparkLeads}
               loading={loading}
+              onClick={() => router.push("/leads")}
             />
             <KpiCard
               label="Applications"
@@ -560,6 +564,7 @@ export default function DashboardPage() {
               accent={C.purple}
               spark={sparkApps}
               loading={loading}
+              onClick={() => router.push("/applications")}
             />
             <KpiCard
               label="Follow-up Leads"
@@ -569,6 +574,7 @@ export default function DashboardPage() {
               icon={<PhoneCall className="w-[18px] h-[18px]" />}
               accent={C.amber}
               loading={loading}
+              onClick={() => router.push("/leads?status=Followup")}
             />
             <KpiCard
               label="Paid Applications"
@@ -577,6 +583,7 @@ export default function DashboardPage() {
               icon={<GraduationCap className="w-[18px] h-[18px]" />}
               accent={C.green}
               loading={loading}
+              onClick={() => router.push("/applications?paymentStatus=paid")}
             />
           </div>
 
@@ -772,8 +779,8 @@ export default function DashboardPage() {
                             phone.length > 3
                               ? "*".repeat(phone.length - 3) + phone.slice(-3)
                               : phone
-                              ? "*".repeat(phone.length)
-                              : "—";
+                                ? "*".repeat(phone.length)
+                                : "—";
                           const st = statusStyle[lead.status] || statusStyle.New;
                           const fu = lead.followUpDate?.slice(0, 10);
                           const isToday = fu === todayISO();
@@ -862,11 +869,10 @@ export default function DashboardPage() {
                                     onClick={() => router.push(`/leads/editlead/${lead._id}`)}
                                     disabled={!!lead?.applicationId}
                                     title={lead?.applicationId ? "Already converted to application" : "Edit lead"}
-                                    className={`flex items-center justify-center rounded-lg p-2 transition ${
-                                      lead?.applicationId
-                                        ? "bg-slate-100 text-slate-300 cursor-not-allowed"
-                                        : "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white"
-                                    }`}
+                                    className={`flex items-center justify-center rounded-lg p-2 transition ${lead?.applicationId
+                                      ? "bg-slate-100 text-slate-300 cursor-not-allowed"
+                                      : "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white"
+                                      }`}
                                   >
                                     <Pencil className="w-3.5 h-3.5" />
                                   </button>
@@ -940,9 +946,8 @@ export default function DashboardPage() {
                           <p className="truncate text-xs text-slate-500">{l.program || "—"}</p>
                         </div>
                         <span
-                          className={`rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap ${
-                            overdue ? "bg-rose-50 text-rose-600" : "bg-blue-50 text-blue-600"
-                          }`}
+                          className={`rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap ${overdue ? "bg-rose-50 text-rose-600" : "bg-blue-50 text-blue-600"
+                            }`}
                         >
                           {fmtShort(l.followUpDate)}
                         </span>
@@ -1036,6 +1041,9 @@ function KpiCard({
   hint,
   spark,
   loading,
+  href,
+  onClick,
+  disabled,
 }: {
   label: string;
   value: number;
@@ -1045,10 +1053,47 @@ function KpiCard({
   hint?: string;
   spark?: { v: number }[];
   loading?: boolean;
+  href?: string;
+  onClick?: () => void;
+  disabled?: boolean;
 }) {
+  const clickable = !!href || !!onClick;
+  const inactive = disabled || (clickable === false);
+
+  const handleClick = () => {
+    if (disabled || loading) return;
+    if (onClick) onClick();
+    if (href) window.location.href = href;
+  };
+
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md dark:bg-neutral-900 dark:border-neutral-800">
+    <div
+      onClick={clickable && !disabled ? handleClick : undefined}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable && !disabled ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (!clickable || disabled) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
+      className={`group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition dark:bg-neutral-900 dark:border-neutral-800 ${
+        clickable && !disabled
+          ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5 hover:border-blue-300"
+          : ""
+      } ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+    >
       <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
+
+      {/* Click to view indicator */}
+      {clickable && !disabled && (
+        <span className="absolute right-3 top-3 inline-flex items-center gap-0.5 text-[10px] font-medium text-slate-400 opacity-0 transition-opacity group-hover:opacity-100">
+          Click to view
+          <ArrowUpRight className="w-3 h-3" />
+        </span>
+      )}
+
       <div className="flex items-center justify-between">
         <span className="text-sm text-slate-500">{label}</span>
         <span
@@ -1063,7 +1108,11 @@ function KpiCard({
         <div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
-              {loading ? <span className="inline-block h-8 w-16 animate-pulse rounded bg-slate-100 dark:bg-neutral-800" /> : value.toLocaleString()}
+              {loading ? (
+                <span className="inline-block h-8 w-16 animate-pulse rounded bg-slate-100 dark:bg-neutral-800" />
+              ) : (
+                value.toLocaleString()
+              )}
             </span>
             {!loading && delta !== undefined && delta > 0 && (
               <span className="flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-600">
@@ -1084,7 +1133,13 @@ function KpiCard({
                     <stop offset="100%" stopColor={accent} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <Area type="monotone" dataKey="v" stroke={accent} strokeWidth={1.8} fill={`url(#sp-${label})`} />
+                <Area
+                  type="monotone"
+                  dataKey="v"
+                  stroke={accent}
+                  strokeWidth={1.8}
+                  fill={`url(#sp-${label})`}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -1093,7 +1148,6 @@ function KpiCard({
     </div>
   );
 }
-
 function RateTile({
   icon,
   label,

@@ -25,7 +25,7 @@ type HeaderProps = {
 const focusRing =
   "outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40";
 
-const PLATFORM_NAME = "Hika CRM";
+const PLATFORM_NAME = "HIKA CRM";
 const PLATFORM_LOGO = "/sonastar-logo.png";
 
 export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {

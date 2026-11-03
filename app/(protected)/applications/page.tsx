@@ -13,7 +13,7 @@ import { getaccesscontrol } from "@/app/lib/request/permissionRequest";
 import ExportModal from "@/components/ExportModal";
 import ColumnCustomizeDialog from "@/components/ColumnCustomizeDialog";
 import { Column } from "@/components/Tablecomponents";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { getActivedata } from "@/app/lib/request/institutionRequest";
 import CreateLeadform from "@/components/Forms/CreateLeadForm";
@@ -69,12 +69,13 @@ export interface UiFilter extends FilterMeta {
 
 export default function ApplicationsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [selectedPayment, setSelectedPayment] = useState("all");
+
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [searchApplicationId, setSearchApplicationId] = useState("");
   const [searchApplicantName, setSearchApplicantName] = useState("");
@@ -110,7 +111,7 @@ export default function ApplicationsPage() {
   const [selectedApplicationSource, setSelectedApplicationSource] = useState("");
   const [selectedInteraction, setSelectedInteraction] = useState("");
   const [totalEntries, setTotalEntries] = useState(0);
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
+
   const [uiFilters, setUiFilters] = useState<UiFilter[]>([]);
   const [startCutoff, setStartCutoff] = useState<string>("");
   const [endCutoff, setEndCutoff] = useState<string>("");
@@ -144,6 +145,21 @@ export default function ApplicationsPage() {
   const [exportFieldModalOpen, setExportFieldModalOpen] = useState(false);
   const [selectedExportFields, setSelectedExportFields] = useState<string[]>([]);
   const [exportFieldSearch, setExportFieldSearch] = useState("");
+
+  const paymentFromUrl = (() => {
+    const raw = searchParams.get("paymentStatus");
+    if (!raw) return null;
+    const known = ["Paid", "Unpaid", "Partially"];
+    return known.find((s) => s.toLowerCase() === raw.toLowerCase()) ?? null;
+  })();
+
+  const [selectedPayment, setSelectedPayment] = useState(paymentFromUrl || "all");
+
+
+  const [activeFilters, setActiveFilters] = useState<string[]>(
+    paymentFromUrl ? ["paymentStatus"] : []
+  );
+
 
   const filterOptions = [
     { value: "academicYear", label: "Academic Year" },
