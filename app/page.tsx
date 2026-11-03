@@ -60,7 +60,7 @@ export default function LoginPage() {
           />
           <span className="h-6 w-px bg-slate-300 dark:bg-slate-700" />
           <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            Hika CRM
+            HIKA CRM
           </span>
           <span className="ml-auto hidden sm:flex items-center gap-1.5  border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
             <ShieldCheck className="w-3.5 h-3.5" />
