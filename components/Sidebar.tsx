@@ -240,7 +240,7 @@ function NavLink({
       title={collapsed ? item.label : undefined}
       aria-current={active ? "page" : undefined}
       className={clsx(
-        "group relative flex items-center gap-3 rounded-lg text-[14.5px] transition-colors",
+        "group relative flex items-center gap-3 text-[14.5px] transition-colors",
         focusRing,
         collapsed ? "mx-auto h-10 w-10 justify-center" : nested ? "h-9 px-3" : "h-11 px-3",
         active
