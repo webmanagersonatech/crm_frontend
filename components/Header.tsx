@@ -193,14 +193,14 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
               )}
             </div>
 
-            <div className="hidden sm:block leading-tight">
-              <h1 className="max-w-[220px] truncate text-[13.5px] font-semibold tracking-wide text-slate-900">
-                {displayName}
-              </h1>
-              <p className="text-[12px] capitalize text-slate-500">
-                {displayRole} Portal
-              </p>
-            </div>
+           <div className="hidden sm:block leading-tight">
+  <h1 className="whitespace-nowrap text-[18px] font-semibold tracking-wide text-slate-900">
+    {displayName}
+  </h1>
+  <p className="text-[12px] capitalize text-slate-500">
+    {displayRole} Portal
+  </p>
+</div>
           </div>
         </div>
 

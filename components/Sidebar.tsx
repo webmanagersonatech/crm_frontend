@@ -125,23 +125,23 @@ const allItems: MenuItem[] = [
 ];
 
 // ---- Sections ----
-const sectionOrder = ["Overview", "Management", "Finance", "Registrations", "Configuration"];
+const sectionOrder = ["Overview", "Admission", "Finance", "Registrations", "Configuration"];
 
 const labelToSectionMap: Record<string, string> = {
   Dashboard: "Overview",
-  Institution: "Management",
-  Users: "Management",
-  Permissions: "Management",
-  "Students Pass Change": "Management",
-  Students: "Management",
-  "Applications Manager": "Management",
-  "Leads Manager": "Management",
-  Communications: "Management",
-  "Email Templates": "Management",
-  Reports: "Management",
-  "Login History": "Management",
-  Events: "Management",
-  Others: "Management",
+  Institution: "Admission",
+  Users: "Admission",
+  Permissions: "Admission",
+  "Students Pass Change": "Admission",
+  Students: "Admission",
+  "Applications Manager": "Admission",
+  "Leads Manager": "Admission",
+  Communications: "Admission",
+  "Email Templates": "Admission",
+  Reports: "Admission",
+  "Login History": "Admission",
+  Events: "Admission",
+  Others: "Admission",
   Payments: "Finance",
   "Tuition Fee Configuration": "Configuration",
   "Additional Fee Configuration": "Configuration",
@@ -200,7 +200,7 @@ function groupItems(items: MenuItem[]): NavGroupType[] {
 // Put a single-color dragon silhouette (transparent bg) at /public/dragon.svg
 // Change color/opacity with the bg-* class, size with h-* w-*.
 function DragonWatermark({ collapsed }: { collapsed: boolean }) {
-  const mask = "url(/HIKA-CRM.png) center / contain no-repeat";
+  const mask = "url(/HIKA-CRzM.png) center / contain no-repeat";
   return (
     <div
       aria-hidden
