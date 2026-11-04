@@ -327,7 +327,7 @@ export default function LeadsPage() {
     { key: "city", label: "city" },
     { key: "communication", label: "Communication" },
     { key: "followUp", label: "Follow Up" },
-    { key: "createdBy", label: "Created By" },
+    // { key: "createdBy", label: "Created By" },
     { key: "status", label: "Status" },
     { key: "applicationStatus", label: "Application Status" },
 
@@ -791,13 +791,13 @@ export default function LeadsPage() {
     },
 
 
-    columnVisibility.createdBy && {
-      header: "Created By",
-      render: (lead: any) =>
-        lead.creator
-          ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
-          : "Website",
-    },
+    // columnVisibility.createdBy && {
+    //   header: "Created By",
+    //   render: (lead: any) =>
+    //     lead.creator
+    //       ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`
+    //       : "Website",
+    // },
 
     columnVisibility.status && {
       header: "Status",
