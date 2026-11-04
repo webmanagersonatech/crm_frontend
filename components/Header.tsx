@@ -342,22 +342,7 @@ export default function Header({ onMenuOpen, tempAdmin }: HeaderProps) {
                     <span>Change Password</span>
                   </Link>
 
-                  {role === "admin" && (
-                    <Link
-                      href="/settings"
-                      className={clsx(
-                        "group flex items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900",
-                        focusRing
-                      )}
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      <Settings
-                        className="h-[16px] w-[16px] text-slate-400 group-hover:text-slate-600"
-                        strokeWidth={1.75}
-                      />
-                      <span>Settings</span>
-                    </Link>
-                  )}
+              
                 </div>
 
                 <div className="border-t border-slate-200 p-2">
