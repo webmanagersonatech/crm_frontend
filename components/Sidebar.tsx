@@ -32,7 +32,10 @@ import {
   Trophy,
   PanelLeftClose,
   PanelLeftOpen,
+  CalendarOff,
+  Award,
   type LucideIcon,
+
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -81,6 +84,8 @@ const labelToPermissionMap: Record<string, string> = {
   "Tuition Fee": "Tuition Fee",
   Registrations: "Registrations",
   "Additional Fee Configuration": "Additional Fee Configuration",
+  "Leave Management": "Leave Management",
+  Certification: "Certification",
 };
 
 // ---- Flat items ----
@@ -116,12 +121,14 @@ const allItems: MenuItem[] = [
     ],
   },
   { href: "/events", label: "Events", icon: CalendarDays },
+  { href: "/leave-management", label: "Leave Management", icon: CalendarOff },
   { href: "/others", label: "Others", icon: Grid },
   { href: "/fees", label: "Tuition Fee Configuration", icon: Receipt },
   { href: "/additional-fees", label: "Additional Fee Configuration", icon: Receipt },
   { href: "/fee-concession-approval", label: "Fee Concession Approval", icon: BadgeCheck },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/application-settings", label: "Application Settings", icon: Settings2 },
+  { href: "/certification", label: "Certification", icon: Award },
 ];
 
 // ---- Sections ----
@@ -145,6 +152,8 @@ const labelToSectionMap: Record<string, string> = {
   Payments: "Finance",
   "Tuition Fee Configuration": "Configuration",
   "Additional Fee Configuration": "Configuration",
+  "Leave Management": "Overview",   // ✅ new
+  Certification: "Overview",   // ✅ new
   "Fee Concession Approval": "Finance",
   Registrations: "Registrations",
   Settings: "Configuration",
