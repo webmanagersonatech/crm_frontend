@@ -601,11 +601,11 @@ export default function LeadsPage() {
             : "-";
         }
 
-        if (columnVisibility.createdBy) {
-          obj.CreatedBy = lead.creator
-            ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`.trim()
-            : "Website";
-        }
+        // if (columnVisibility.createdBy) {
+        //   obj.CreatedBy = lead.creator
+        //     ? `${lead.creator.firstname || ""} ${lead.creator.lastname || ""}`.trim()
+        //     : "Website";
+        // }
 
         if (columnVisibility.status) {
           obj.Status = lead.status || "-";
