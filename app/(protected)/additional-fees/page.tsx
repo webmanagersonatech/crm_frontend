@@ -419,7 +419,7 @@ export default function HostelFeeStructurePage() {
             {/* Institute Selection */}
             {isSuperAdmin && (
                 <div className="border rounded-lg shadow-sm overflow-hidden">
-                    <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-4 py-3 font-semibold">
+                    <div className="bg-gradient-to-b from-gray-300 to-gray-400 text-white px-4 py-3 font-semibold">
                         Institute Selection
                     </div>
                     <div className="p-6 bg-white">
@@ -464,7 +464,7 @@ export default function HostelFeeStructurePage() {
                 <>
                     {/* Institute Header */}
                     <div className="border rounded-lg shadow-sm overflow-hidden">
-                        <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-4 py-3 font-semibold">
+                        <div className="bg-gradient-to-b from-gray-300 to-gray-400 text-white px-4 py-3 font-semibold">
                             Institute Details
                         </div>
                         <div className="p-6 bg-white">
@@ -491,7 +491,7 @@ export default function HostelFeeStructurePage() {
 
                     {/* Hostel Fee Structure */}
                     <div className="border rounded-lg shadow-sm overflow-hidden">
-                        <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-4 py-3 font-semibold flex items-center justify-between">
+                        <div className="bg-gradient-to-b from-gray-300 to-gray-400 text-white px-4 py-3 font-semibold flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <FaBed className="text-white" />
                                 Hostel Fee Structure by Year & Room Type
@@ -638,7 +638,7 @@ export default function HostelFeeStructurePage() {
                         <button
                             onClick={handleSaveAll}
                             disabled={isLoading}
-                            className={`px-6 py-3 bg-gradient-to-b from-blue-600 to-blue-700 text-white text-sm rounded-lg hover:opacity-90 transition shadow-md font-semibold ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                            className={`px-6 py-3 bg-gradient-to-b from-gray-300 to-gray-400 text-white text-sm rounded-lg hover:opacity-90 transition shadow-md font-semibold ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                         >
                             {isLoading ? 'Saving...' : 'Save Hostel Fee Structure'}

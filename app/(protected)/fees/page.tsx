@@ -1175,7 +1175,7 @@ export default function FeeStructurePage() {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-gradient-to-b from-blue-600 to-blue-700 text-white px-6 py-4 flex justify-between items-center">
+          <div className="sticky top-0 bg-gradient-to-b from-gray-300 to-gray-400 text-white px-6 py-4 flex justify-between items-center">
             <div>
               <h2 className="text-xl font-semibold">Payment Options Setup</h2>
               <p className="text-sm opacity-90">Total Amount: ₹{totalAmount}</p>
@@ -1475,7 +1475,7 @@ export default function FeeStructurePage() {
       {/* Institute Selection (superadmin only) */}
       {isSuperAdmin && (
         <div className="border rounded-lg shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-4 py-3 font-semibold">
+          <div className="bg-gradient-to-b from-gray-300 to-gray-400 text-white px-4 py-3 font-semibold">
             Institute Selection
           </div>
           <div className="p-6 bg-white">
@@ -1517,7 +1517,7 @@ export default function FeeStructurePage() {
         <>
           {/* Institute Header */}
           <div className="border rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-4 py-3 font-semibold">
+            <div className="bg-gradient-to-b from-gray-300 to-gray-400 text-white px-4 py-3 font-semibold">
               Institute Details
             </div>
             <div className="p-6 bg-white">
@@ -1548,7 +1548,7 @@ export default function FeeStructurePage() {
 
           {/* Academic Year Selector */}
           <div className="border rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-4 py-3 font-semibold">
+            <div className="bg-gradient-to-b from-gray-300 to-gray-400 text-white px-4 py-3 font-semibold">
               Academic Year
             </div>
 
@@ -1605,7 +1605,7 @@ export default function FeeStructurePage() {
 
           {/* Course Fee Structure */}
           <div className="border rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-4 py-3 font-semibold">
+            <div className="bg-gradient-to-b from-gray-300 to-gray-400 text-white px-4 py-3 font-semibold">
               Course Fee Structure
             </div>
 
@@ -1893,7 +1893,7 @@ export default function FeeStructurePage() {
 
           {/* Concession Management */}
           <div className="border rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white px-4 py-3 font-semibold">
+            <div className="bg-gradient-to-b from-gray-300 to-gray-400 text-white px-4 py-3 font-semibold">
               Concession Management
             </div>
 
@@ -2011,7 +2011,7 @@ export default function FeeStructurePage() {
             <button
               onClick={handleSaveAll}
               disabled={isLoading}
-              className={`px-6 py-3 bg-gradient-to-b from-blue-600 to-blue-700 text-white text-sm rounded-lg hover:opacity-90 transition shadow-md font-semibold ${
+              className={`px-6 py-3 bg-gradient-to-b from-gray-300 to-gray-400 text-white text-sm rounded-lg hover:opacity-90 transition shadow-md font-semibold ${
                 isLoading ? "opacity-50 cursor-not-allowed" : ""
               }`}
             >
