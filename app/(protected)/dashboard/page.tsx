@@ -15,6 +15,7 @@ import {
   UserPlus,
   FilePlus2,
   CalendarDays,
+  Award,
   BarChart3,
   GraduationCap as StudentsIcon,
   ArrowRight,
@@ -94,6 +95,7 @@ const C = {
   indigo: "#6366f1",
   green: "#10b981",
   amber: "#f59e0b",
+  blueink: "#0072f5",
   rose: "#f43f5e",
   purple: "#a78bfa",
   ink: "#1e293b",
@@ -566,7 +568,7 @@ export default function DashboardPage() {
               loading={loading}
               onClick={() => router.push("/applications")}
             />
-            <KpiCard
+            {/* <KpiCard
               label="Follow-up Leads"
               value={followUp}
               delta={dashboardData?.todayFollowUpLeads}
@@ -575,8 +577,8 @@ export default function DashboardPage() {
               accent={C.amber}
               loading={loading}
               onClick={() => router.push("/leads?status=Followup")}
-            />
-            <KpiCard
+            /> */}
+            {/* <KpiCard
               label="Paid Applications"
               value={paidApps}
               hint={`${pct(paidApps, totalApplications)}% of applications`}
@@ -584,6 +586,30 @@ export default function DashboardPage() {
               accent={C.green}
               loading={loading}
               onClick={() => router.push("/applications?paymentStatus=paid")}
+            /> */}
+
+            <KpiCard
+              label="Leave Management"
+              value={5}
+              delta={2}
+              hint="leave requests • 2 pending"
+              icon={<CalendarDays className="w-[18px] h-[18px]" />}
+              accent={C.blueink}
+              spark={[]}
+              loading={false}
+              onClick={() => router.push("/leave-management")}
+            />
+
+            <KpiCard
+              label="Certification"
+              value={5}
+              delta={2}
+              hint="certificate requests • 2 pending"
+              icon={<Award className="w-[18px] h-[18px]" />}
+              accent={C.purple}
+              spark={[]}
+              loading={false}
+              onClick={() => router.push("/certification")}
             />
           </div>
 
@@ -1078,11 +1104,10 @@ function KpiCard({
           handleClick();
         }
       }}
-      className={`group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition dark:bg-neutral-900 dark:border-neutral-800 ${
-        clickable && !disabled
-          ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5 hover:border-blue-300"
-          : ""
-      } ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
+      className={`group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition dark:bg-neutral-900 dark:border-neutral-800 ${clickable && !disabled
+        ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5 hover:border-blue-300"
+        : ""
+        } ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
     >
       <div className="absolute inset-x-0 top-0 h-1" style={{ background: accent }} />
 
