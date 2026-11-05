@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Mail, Lock, ShieldCheck, Cloud, Database, Cpu } from "lucide-react";
 import { toast } from "react-toastify";
@@ -15,6 +15,27 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+
+    if (storedToken) {
+      router.replace("/dashboard");
+    } else {
+      router.replace("/");
+      setCheckingAuth(false);
+    }
+  }, [router]);
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -177,7 +198,7 @@ export default function LoginPage() {
         </div>
 
         <footer className="relative space-y-4">
-        
+
           <p className="text-xs text-slate-400 text-center lg:text-left">
             © {new Date().getFullYear()} Sona. All rights reserved.
           </p>
@@ -185,41 +206,41 @@ export default function LoginPage() {
       </main>
 
       {/* LEFT: background image + promo text */}
-    <aside
-  className="hidden lg:flex flex-1 items-center justify-center relative overflow-hidden p-12"
->
-  {/* background image (turned gray) */}
-  <div
-    className="absolute inset-0 bg-cover bg-center grayscale"
-    style={{ backgroundImage: "url('/background.jpg')" }}
-  />
-
-  {/* gray overlay so text is readable */}
-  <div className="absolute inset-0 bg-gray-900/70" />
-
-  {/* content */}
-  <div className="relative max-w-md text-center text-white space-y-6">
-    <h2 className="text-3xl font-bold">Transform Your Future with Sona!</h2>
-    <p className="text-gray-200 text-base">
-      Join our growing network of professionals, explore learning opportunities,
-      and take your next big step toward success.
-    </p>
-    <div className="flex justify-center gap-4 pt-2">
-      <button
-        type="button"
-        className="bg-white text-gray-900 font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 transition"
+      <aside
+        className="hidden lg:flex flex-1 items-center justify-center relative overflow-hidden p-12"
       >
-        Get Started →
-      </button>
-      <button
-        type="button"
-        className="border border-white text-white font-semibold px-6 py-3 rounded-lg hover:bg-white hover:text-gray-900 transition"
-      >
-        Learn More
-      </button>
-    </div>
-  </div>
-</aside>
+        {/* background image (turned gray) */}
+        <div
+          className="absolute inset-0 bg-cover bg-center grayscale"
+          style={{ backgroundImage: "url('/background.jpg')" }}
+        />
+
+        {/* gray overlay so text is readable */}
+        <div className="absolute inset-0 bg-gray-900/70" />
+
+        {/* content */}
+        <div className="relative max-w-md text-center text-white space-y-6">
+          <h2 className="text-3xl font-bold">Transform Your Future with Sona!</h2>
+          <p className="text-gray-200 text-base">
+            Join our growing network of professionals, explore learning opportunities,
+            and take your next big step toward success.
+          </p>
+          <div className="flex justify-center gap-4 pt-2">
+            <button
+              type="button"
+              className="bg-white text-gray-900 font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 transition"
+            >
+              Get Started →
+            </button>
+            <button
+              type="button"
+              className="border border-white text-white font-semibold px-6 py-3 rounded-lg hover:bg-white hover:text-gray-900 transition"
+            >
+              Learn More
+            </button>
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }

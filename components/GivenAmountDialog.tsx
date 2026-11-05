@@ -59,68 +59,68 @@ const VIJAY_DASHAMI_PRESETS: Record<
   Record<string, { label: string; tuitionFee: number; otherFee: number }>
 > = {
 
-  "2025-2026": {
-    PREKG00001: {
-      label: "Vijayadashami 2025-26 — Pre-KG",
-      tuitionFee: 50000,
-      otherFee: 0,
-    },
-    LKG0000002: {
-      label: "Vijayadashami 2025-26 — LKG",
-      tuitionFee: 50000,
-      otherFee: 0,
-    },
-    UKG0000003: {
-      label: "Vijayadashami 2025-26 — UKG",
-      tuitionFee: 50000,
-      otherFee: 0,
-    },
-    STD0000001: {
-      label: "Vijayadashami 2025-26 — I Std",
-      tuitionFee: 55000,
-      otherFee: 0,
-    },
-    STD0000002: {
-      label: "Vijayadashami 2025-26 — II Std",
-      tuitionFee: 55000,
-      otherFee: 0,
-    },
-    STD0000003: {
-      label: "Vijayadashami 2025-26 — III Std",
-      tuitionFee: 55000,
-      otherFee: 0,
-    },
-    STD0000004: {
-      label: "Vijayadashami 2025-26 — IV Std",
-      tuitionFee: 55000,
-      otherFee: 0,
-    },
-    STD0000005: {
-      label: "Vijayadashami 2025-26 — V Std",
-      tuitionFee: 55000,
-      otherFee: 0,
-    },
-    STD0000006: {
-      label: "Vijayadashami 2025-26 — VI Std",
-      tuitionFee: 55000,
-      otherFee: 0,
-    },
-    STD0000007: {
-      label: "Vijayadashami 2025-26 — VII Std",
-      tuitionFee: 55000,
-      otherFee: 0,
-    },
-    STD0000008: {
-      label: "Vijayadashami 2025-26 — VIII Std",
-      tuitionFee: 55000,
-      otherFee: 0,
-    },
-    STD0000009: {
-      label: "Vijayadashami 2025-26 — IX Std",
-      tuitionFee: 55000,
-      otherFee: 0,
-    },
+"2026-2027": {
+  PREKG00001: {
+    label: "Vijayadashami 2026-27 — Pre-KG",
+    tuitionFee: 50000,
+    otherFee: 0,
   },
+  LKG0000002: {
+    label: "Vijayadashami 2026-27 — LKG",
+    tuitionFee: 50000,
+    otherFee: 0,
+  },
+  UKG0000003: {
+    label: "Vijayadashami 2026-27 — UKG",
+    tuitionFee: 50000,
+    otherFee: 0,
+  },
+  STD0000001: {
+    label: "Vijayadashami 2026-27 — I Std",
+    tuitionFee: 55000,
+    otherFee: 0,
+  },
+  STD0000002: {
+    label: "Vijayadashami 2026-27 — II Std",
+    tuitionFee: 55000,
+    otherFee: 0,
+  },
+  STD0000003: {
+    label: "Vijayadashami 2026-27 — III Std",
+    tuitionFee: 55000,
+    otherFee: 0,
+  },
+  STD0000004: {
+    label: "Vijayadashami 2026-27 — IV Std",
+    tuitionFee: 55000,
+    otherFee: 0,
+  },
+  STD0000005: {
+    label: "Vijayadashami 2026-27 — V Std",
+    tuitionFee: 55000,
+    otherFee: 0,
+  },
+  STD0000006: {
+    label: "Vijayadashami 2026-27 — VI Std",
+    tuitionFee: 55000,
+    otherFee: 0,
+  },
+  STD0000007: {
+    label: "Vijayadashami 2026-27 — VII Std",
+    tuitionFee: 55000,
+    otherFee: 0,
+  },
+  STD0000008: {
+    label: "Vijayadashami 2026-27 — VIII Std",
+    tuitionFee: 55000,
+    otherFee: 0,
+  },
+  STD0000009: {
+    label: "Vijayadashami 2026-27 — IX Std",
+    tuitionFee: 55000,
+    otherFee: 0,
+  },
+},
 
   "2027-2028": {
     PREKG00001: {
